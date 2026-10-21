@@ -73,13 +73,13 @@ button { cursor: pointer; }
 .brand h1 { font-family: var(--display); font-weight: 700; font-size: 24px; letter-spacing: -.02em; margin: 0; white-space: nowrap; }
 .brand h1 span { color: var(--match); }
 .brand p { margin: 0; color: var(--muted); font-size: 13px; }
-.add { position: relative; flex: 1 1 320px; max-width: 520px; margin-left: auto; }
+.add { position: relative; flex: 1 1 320px; max-width: 640px; margin-left: auto; }
 .add input {
   width: 100%; box-sizing: border-box; padding: 9px 12px 9px 36px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--bg);
 }
 .add input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
-.add svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.add > svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
 .menu {
   position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 6px); max-height: min(60vh, 480px); overflow: auto;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 6px;
@@ -121,7 +121,7 @@ button { cursor: pointer; }
 .mapwrap { position: relative; background: var(--ocean); overflow: hidden; min-height: 0; }
 #map { width: 100%; height: 100%; display: block; touch-action: none; }
 #map path { fill: var(--land); stroke: var(--border); stroke-width: .5; vector-effect: non-scaling-stroke; transition: fill .25s; }
-#map path.near { fill: var(--near); }
+#map path.near { fill: url(#nearHatch); }
 #map path.match { fill: var(--match); }
 #map path.hover { stroke: var(--ink); stroke-width: 1.4; }
 #map path.sel { stroke: var(--ink); stroke-width: 2; }
@@ -324,8 +324,9 @@ button { cursor: pointer; }
 .chip[data-g] > button.lab::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--gc); margin-right: 7px; vertical-align: 1px; }
 .chip[data-g].open { border-color: var(--gc); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gc) 30%, transparent); }
 .chip[data-g].idle { background: var(--surface); }
-.menu .cats { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; gap: 5px; padding: 4px 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
-.menu .cats button { display: inline-flex; flex: none; white-space: nowrap; width: auto; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; }
+.menu .cats { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 4px 10px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.menu .cats button { display: inline-flex; flex: none; white-space: nowrap; width: auto; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--gc, var(--muted)) 35%, var(--line)); background: color-mix(in srgb, var(--gc, var(--muted)) 10%, var(--surface)); font-size: 12.5px; }
 .menu .cats button[data-g]::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--gc); }
 .menu .cats button.on { background: color-mix(in srgb, var(--gc, var(--accent)) 16%, var(--surface)); border-color: var(--gc, var(--accent)); font-weight: 600; }
 .menu .cats button:hover { background: color-mix(in srgb, var(--gc, var(--accent)) 10%, var(--surface)); }
@@ -367,3 +368,41 @@ button { cursor: pointer; }
 .menu button.item .ytag { font-size: 11px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 999px; padding: 0 6px; margin-left: auto; margin-right: 6px; }
 .menu button.item > span:first-child { flex: 1; min-width: 0; }
 .sentence .tnote { color: var(--muted); font-style: italic; }
+.sw.hatch { background: repeating-linear-gradient(45deg, var(--match) 0 2px, var(--land) 2px 5px); }
+.timebar.off .tyear { color: var(--muted); }
+.timebar .play:disabled { opacity: .35; cursor: default; }
+.timebar .tslide { display: flex; align-items: center; gap: 8px; }
+.timebar .tend { font-size: 11px; color: var(--muted); }
+
+/* ---------- Add-filter menu: shaded category panels of chips ---------- */
+.menu { left: auto; right: 0; width: min(960px, calc(100vw - 32px)); max-height: min(78vh, 680px); padding: 10px; }
+/* three columns that pack panels top to bottom, so short categories don't leave gaps */
+.menu .browse { display: block; columns: 3; column-gap: 8px; }
+.menu .browse.one { columns: 1; }
+.menu .browse .gsec { break-inside: avoid; margin-bottom: 8px; display: inline-block; width: 100%; box-sizing: border-box; }
+.menu .gsec { background: color-mix(in srgb, var(--gc) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--gc) 20%, transparent); border-radius: 10px; padding: 9px 10px 10px; min-width: 0; }
+.menu .gsec h4 { margin: 0 0 7px; font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: 0; text-transform: none; color: color-mix(in srgb, var(--gc) 80%, var(--ink)); }
+.menu .fchips { display: flex; flex-wrap: wrap; gap: 5px; }
+.menu button.fchip { display: inline-flex; width: auto; max-width: 100%; justify-content: flex-start; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
+  font-size: 12.5px; line-height: 1.35; background: var(--surface); border: 1px solid color-mix(in srgb, var(--gc) 30%, var(--line)); border-left-width: 1px; }
+.menu button.fchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu button.fchip:hover, .menu button.fchip.on { background: color-mix(in srgb, var(--gc) 16%, var(--surface)); border-color: var(--gc); }
+.menu button.fchip.on { box-shadow: 0 0 0 2px color-mix(in srgb, var(--gc) 35%, transparent); }
+.menu button.fchip.added { background: color-mix(in srgb, var(--gc) 26%, var(--surface)); border-color: var(--gc); font-weight: 600; }
+.menu .fchip .tick, .menu .mtick { color: var(--gc, var(--accent)); font-weight: 700; }
+.menu .rh { margin: 10px 8px 4px; }
+.clock { flex: none; vertical-align: -2px; }
+.menu .fchip .clock, .menu button.item .clock { color: color-mix(in srgb, var(--gc) 85%, var(--ink)); margin-right: 1px; }
+.menu button.item:not(.fchip) .clock { margin-right: 6px; }
+.menu .mkey { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 4px 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.menu .mkey .clock { color: var(--accent); }
+.menu .mkey .mtick { margin-left: 10px; }
+.chip .yclock { display: inline-flex; margin-left: 6px; color: var(--accent); vertical-align: -1px; }
+.chip .yr { display: inline-flex; align-items: center; gap: 3px; }
+.chip .yr .clock { width: 11px; height: 11px; }
+.editor .tinfo { display: flex; gap: 6px; align-items: flex-start; margin-top: -4px; }
+.editor .tinfo .clock { color: var(--accent); margin-top: 2px; }
+.timebar .tclock { color: var(--accent); display: inline-flex; align-self: center; }
+.timebar .tclock .clock { width: 16px; height: 16px; }
+@media (max-width: 900px) { .menu .browse { columns: 2; } }
+@media (max-width: 760px) { .menu { width: auto; left: 0; } .menu .browse { columns: 1; } }

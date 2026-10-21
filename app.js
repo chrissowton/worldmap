@@ -21,13 +21,28 @@
   const REGIMES = ["Closed autocracy", "Electoral autocracy", "Electoral democracy", "Liberal democracy"];
   const TIME_KEYS = new Set(Object.keys(TS).concat(TS.regime ? ["democracy"] : []));
   FILTERS.forEach((f) => { if (TIME_KEYS.has(f.key)) f.time = true; });
-  const timeFrom = (key) => {
-    const s = TS[key === "democracy" ? "regime" : key];
-    if (!s) return null;
-    let first = Infinity;
-    for (const arr of Object.values(s)) { const i = arr.findIndex((v) => v != null); if (i >= 0 && i < first) first = i; }
-    return first === Infinity ? null : TS_YEARS[first];
-  };
+  // First and last years with data for a reasonable number of countries (at least 20)
+  const TS_SPAN = {};
+  for (const [key, s] of Object.entries(TS)) {
+    const counts = TS_YEARS.map((_, i) => Object.values(s).filter((arr) => arr[i] != null).length);
+    const first = counts.findIndex((n) => n >= 20), last = counts.length - 1 - [...counts].reverse().findIndex((n) => n >= 20);
+    if (first >= 0) TS_SPAN[key] = [TS_YEARS[first], TS_YEARS[last]];
+  }
+  const TS_EXT = {};
+  for (const [key, s] of Object.entries(TS)) {
+    if (key === "regime") continue;
+    const all = Object.values(s).flat().filter((v) => typeof v === "number" && (key === "refugees_hosted" || key === "refugees_from" ? v > 0 : true));
+    TS_EXT[key] = [d3.quantile(all.sort((a, b) => a - b), 0.01), d3.quantile(all, 0.99)];
+  }
+  const span = (key) => TS_SPAN[key === "democracy" ? "regime" : key] || null;
+  const timeFrom = (key) => span(key)?.[0] ?? null;
+  // Years the slider offers: the overlap of the active yearly filters' spans
+  function sliderSpan() {
+    const spans = state.filters.filter((fl) => F[fl.key].time).map((fl) => span(fl.key)).filter(Boolean);
+    if (!spans.length) return null;
+    const a = Math.max(...spans.map((x) => x[0])), b = Math.min(...spans.map((x) => x[1]));
+    return a <= b ? [a, b] : null;
+  }
   const SITE = window.SITE || {};
   const F = Object.fromEntries(FILTERS.map((f) => [f.key, f]));
   const byIso = new Map(rows.map((r) => [r.iso3, r]));
@@ -36,6 +51,7 @@
 
   const $ = (s) => document.querySelector(s);
   // category slug used for colour-coding, e.g. "UN & treaties" -> "un-treaties"
+  const CLOCK = `<svg class="clock" viewBox="0 0 16 16" width="13" height="13" aria-label="yearly data" role="img"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 4.4V8l2.6 1.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const gslug = (g) => g.toLowerCase().replace(/&/g, "").replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -182,15 +198,15 @@
   // Does a filter currently restrict anything?
   function isActive(fl) {
     const f = F[fl.key];
-    if (f.type === "range") return fl.min > f.dmin || fl.max < f.dmax;
+    if (f.type === "range") return true; // even at "no limit" it keeps countries that have data
     if (f.type === "bool") return true;
     return fl.values.length > 0;
   }
+  const isLimited = (fl) => { const f = F[fl.key]; return fl.min > f.dmin || fl.max < f.dmax; };
   function passes(r, fl) {
     const f = F[fl.key];
     const v = r[fl.key];
     if (f.type === "range") {
-      if (!isActive(fl)) return true;
       if (typeof v !== "number") return false;
       // the ends of the slider mean "no limit"
       const lo = fl.min <= f.dmin ? -Infinity : fl.min, hi = fl.max >= f.dmax ? Infinity : fl.max;
@@ -259,7 +275,7 @@
   function phrase(fl) {
     const f = F[fl.key];
     if (!isActive(fl)) return null;
-    if (f.type === "range") return f.say(bound(fl));
+    if (f.type === "range") return isLimited(fl) ? f.say(bound(fl)) : `there is data on ${f.label}`;
     if (f.type === "bool") return f.say(fl.value);
     // optional per-value wording, e.g. "the Commonwealth", "a liberal democracy"
     return f.say(joinOr(fl.values.map((v) => (f.article && f.article[v]) || v)));
@@ -269,7 +285,7 @@
     const name = f.short || f.label;
     if (f.type === "bool") return fl.value ? f.yes : f.no;
     if (f.type === "range") {
-      if (!isActive(fl)) return `${name}: any`;
+      if (!isLimited(fl)) return `${name}: all`;
       const lo = fl.min > f.dmin, hi = fl.max < f.dmax;
       if (f.format === "rank" && hi && !lo) return `${name}: top ${Math.round(fl.max)}`;
       if (lo && hi) return `${name} ${fmtShort(f, fl.min)}–${fmtShort(f, fl.max)}`;
@@ -304,6 +320,11 @@
   // ---------- Map ----------
   const svg = d3.select("#map");
   const gRoot = svg.append("g");
+  // striped fill for near misses, so they can't be mistaken for a light shade
+  const defs = svg.append("defs");
+  const hatch = defs.append("pattern").attr("id", "nearHatch").attr("patternUnits", "userSpaceOnUse").attr("width", 5).attr("height", 5).attr("patternTransform", "rotate(45)");
+  hatch.append("rect").attr("width", 5).attr("height", 5).attr("style", "fill: var(--land)");
+  hatch.append("rect").attr("width", 2).attr("height", 5).attr("style", "fill: var(--match)");
   const gLand = gRoot.append("g");
   const gDots = gRoot.append("g");
   const gCities = gRoot.append("g");
@@ -386,17 +407,33 @@
 
   // ---------- Colour by ----------
   const numericFilters = FILTERS.filter((f) => f.type === "range" && !f.target);
+  // Which number to shade matching countries by: the user's choice, else the last number filter added
+  function colourKey() {
+    if (state.colourBy === "none") return null;
+    if (state.colourBy) return state.colourBy;
+    const nums = active().filter((fl) => F[fl.key].type === "range");
+    return nums.length ? nums[nums.length - 1].key : null;
+  }
   function colourScale(matches) {
-    if (!state.colourBy) return null;
-    const f = F[state.colourBy];
+    const key = colourKey();
+    if (!key) return null;
+    const f = F[key];
     const vals = matches.map((r) => r[f.key]).filter((v) => typeof v === "number");
     if (vals.length < 2) return null;
-    const ext = d3.extent(vals.map(f.toT));
-    if (ext[0] === ext[1]) return null;
+    // Scale over the chosen range of the filter (so colours mean the same thing in every year);
+    // an end left at "no limit" uses the actual values
+    const fl = state.filters.find((x) => x.key === key);
+    // for yearly measures use the range across all years, so a colour means the same value in every year
+    const dataExt = f.time && TS_EXT[key] ? TS_EXT[key] : d3.extent(vals);
+    let from = fl && fl.min > f.dmin ? fl.min : dataExt[0], to = fl && fl.max < f.dmax ? fl.max : dataExt[1];
+    if (!fl) [from, to] = [f.dmin, f.dmax];
+    if (f.scale === "log") from = Math.max(from, f.dmin);
+    const ext = [f.toT(from), f.toT(to)];
+    if (!(ext[1] > ext[0])) return null;
     const css = getComputedStyle(document.documentElement);
     const lo = css.getPropertyValue("--ramp-lo").trim(), hi = css.getPropertyValue("--ramp-hi").trim();
     const interp = d3.interpolateRgb(lo, hi);
-    const s = (v) => (typeof v === "number" ? interp((f.toT(v) - ext[0]) / (ext[1] - ext[0])) : null);
+    const s = (v) => (typeof v === "number" ? interp(Math.min(1, Math.max(0, (f.toT(v) - ext[0]) / (ext[1] - ext[0])))) : null);
     s.f = f; s.ext = ext.map(f.fromT); s.lo = lo; s.hi = hi;
     return s;
   }
@@ -448,7 +485,7 @@
       const el = document.createElement("span");
       el.className = "chip" + (state.open === fl.key ? " open" : "") + (isActive(fl) ? "" : " idle");
       el.dataset.g = gslug(F[fl.key].group);
-      const clock = state.year && F[fl.key].time ? `<span class="yr">${state.year}</span>` : "";
+      const clock = F[fl.key].time ? (state.year ? `<span class="yr">${CLOCK}${state.year}</span>` : `<span class="yclock" title="Has yearly data">${CLOCK}</span>`) : "";
       el.innerHTML = `<button type="button" class="lab">${esc(chipLabel(fl))}${clock}</button><button type="button" class="x" aria-label="Remove ${esc(F[fl.key].label)}">×</button>`;
       el.querySelector(".lab").onclick = () => { state.open = state.open === fl.key ? null : fl.key; render(); };
       el.querySelector(".x").onclick = () => removeFilter(fl.key);
@@ -462,25 +499,33 @@
     const el = $("#timebar");
     if (!TS_YEARS.length) { el.hidden = true; return; }
     el.hidden = !!state.flow;
-    const y0 = TS_YEARS[0], y1 = TS_YEARS[TS_YEARS.length - 1];
-    const cur = state.year ?? y1;
+    const sp = sliderSpan();
+    // keep the chosen year inside the span of the current filters
+    if (state.year && (!sp || state.year < sp[0] || state.year > sp[1])) {
+      const y = sp ? Math.min(Math.max(state.year, sp[0]), sp[1]) : null;
+      state.year = y; applyYear(y);
+      setTimeout(() => render(), 0);
+    }
     if (!el.dataset.built) {
       el.dataset.built = "1";
       el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>
-        <div class="tmain"><div class="trow"><span class="tyear num" id="tYear"></span><span class="tnote" id="tNote"></span>
+        <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="tnote" id="tNote"></span>
         <button type="button" class="linkbtn" id="tLatest">Back to latest</button></div>
-        <input type="range" id="tRange" min="${y0}" max="${y1}" step="1" aria-label="Year"></div>`;
+        <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div></div>`;
       const range = $("#tRange");
       range.oninput = () => { stopPlay(); setYear(+range.value); };
       $("#tLatest").onclick = () => { stopPlay(); setYear(null); };
       $("#tPlay").onclick = () => (playing ? stopPlay() : startPlay());
     }
-    $("#tRange").value = cur;
+    const range = $("#tRange");
+    el.classList.toggle("off", !sp);
+    range.disabled = !sp; $("#tPlay").disabled = !sp;
+    if (sp) { range.min = sp[0]; range.max = sp[1]; range.value = state.year ?? sp[1]; $("#tMin").textContent = sp[0]; $("#tMax").textContent = sp[1]; }
+    else { $("#tMin").textContent = ""; $("#tMax").textContent = ""; }
     $("#tYear").textContent = state.year ? state.year : "Latest";
-    const timeAct = state.filters.filter((fl) => F[fl.key].time).length;
-    $("#tNote").textContent = state.year
-      ? (timeAct ? "Filters with yearly data now show " + state.year + "." : "Add a filter with yearly data, like population, HDI or democracy.")
-      : "Drag to go back to " + y0 + ".";
+    $("#tNote").textContent = !sp
+      ? (state.filters.some((fl) => F[fl.key].time) ? "These filters have no years in common." : "Add a filter marked “yearly” (like population, HDI or democracy) to go back in time.")
+      : state.year ? `Showing ${state.year} for filters with yearly data.` : `Data from ${sp[0]} to ${sp[1]}. Drag or press play.`;
     $("#tLatest").hidden = !state.year;
     $("#tPlay").textContent = playing ? "❚❚" : "▶";
     $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
@@ -492,7 +537,9 @@
     if (state.open && document.activeElement?.id !== "tRange") renderEditor();
   }
   function startPlay() {
-    const y0 = TS_YEARS[0], y1 = TS_YEARS[TS_YEARS.length - 1];
+    const sp = sliderSpan();
+    if (!sp) return;
+    const [y0, y1] = sp;
     if (!state.year || state.year >= y1) setYear(y0);
     playing = setInterval(() => {
       if (state.year >= y1) return stopPlay();
@@ -546,12 +593,12 @@
     el.hidden = false;
     let h = "";
     if (cs) {
-      h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+      h += `<div class="lrow"><span>${esc(cs.f.label)}${state.year && cs.f.time ? `, ${state.year}` : ""}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
     } else if (act.length) {
       h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every filter</div>`;
     }
     const anyShade = [...lastEval.groups.values()].some((g) => g.length <= NEAR_MAP);
-    if (anyShade) h += `<div class="lrow"><span class="sw" style="background:var(--near)"></span>Near miss: fails just one filter</div>`;
+    if (anyShade) h += `<div class="lrow"><span class="sw hatch"></span>Near miss: fails just one filter</div>`;
     if (showCities()) h += `<div class="lrow"><span class="sw city"></span>City, sized by population<span class="sw city cap"></span>Capital</div>`;
     el.innerHTML = h;
   }
@@ -619,7 +666,7 @@
     const src = window.SOURCES[f.source];
     const year = state.year && f.time ? String(state.year) : yearLabel(f);
     const timeNote = !f.time ? (state.year ? `<br><b>Not yearly:</b> this filter uses the latest data, whatever year you pick.` : "")
-      : `<br>Has yearly data from ${timeFrom(f.key)}: use the year slider under the map to go back in time.`;
+      : `</p><p class="info tinfo">${CLOCK} <span><b>Yearly data from ${timeFrom(f.key)}.</b> Use the year slider under the map to see this filter in earlier years.</span>`;
     const keepSearch = el.querySelector(".optsearch")?.value || "";
     const scroll = el.querySelector(".opts")?.scrollTop || 0;
     el.hidden = false;
@@ -782,11 +829,11 @@
     if (showCities() && state.tab === "cities") return renderCityResults(matches);
     const el = $("#results");
     const rangeAct = act.map((fl) => F[fl.key]).filter((f) => f.type === "range");
-    const sortKey = state.sort || state.colourBy || rangeAct[0]?.key || "__name";
+    const sortKey = state.sort || colourKey() || rangeAct[0]?.key || "__name";
     const sf = F[sortKey] || null;
     const list = [...matches];
     if (sf) list.sort((a, b) => (b[sortKey] ?? -Infinity) - (a[sortKey] ?? -Infinity));
-    const valF = sf || (state.colourBy ? F[state.colourBy] : rangeAct[0]) || null;
+    const valF = sf || (colourKey() ? F[colourKey()] : rangeAct[0]) || null;
     const groups = [...lastEval.groups.entries()].sort((a, b) => a[1].length - b[1].length);
     const total = pool().length;
     const noun = state.territories ? "places" : "countries";
@@ -799,7 +846,7 @@
           <label><input type="checkbox" id="terr" ${state.territories ? "checked" : ""}> Include territories</label>
           <label>Sort <select id="sortSel"><option value="__name">Name</option>
             ${numericFilters.map((f) => `<option value="${f.key}" ${sortKey === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}</select></label>
-          <label>Colour <select id="colSel"><option value="">Single colour</option>
+          <label>Shade by <select id="colSel"><option value="">Automatic</option><option value="none" ${state.colourBy === "none" ? "selected" : ""}>Single colour</option>
             ${numericFilters.map((f) => `<option value="${f.key}" ${state.colourBy === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}</select></label>
         </div>
       </div>
@@ -961,25 +1008,28 @@
     const used = new Set(state.filters.map((x) => x.key));
     const inCat = (f) => !menuCat || f.group === menuCat;
     items = [];
-    // one menu row: coloured by category; filters already added are marked
-    const item = (f, label, valueOf) => {
-      items.push({ key: f.key, value: valueOf ? label : undefined });
-      const added = used.has(f.key) && !valueOf;
-      let right = "";
-      if (added) right = `<span class="added-tag">✓ Added</span>`;
-      else if (valueOf) right = `<span class="gtag">${esc(f.label)}</span>`;
-      else if (q) right = `<span class="gtag">${esc(f.group)}</span>`;
-      if (f.time && !added && !valueOf) right = `<span class="ytag" title="Has yearly data for the year slider">yearly</span>` + right;
-      return `<button type="button" role="option" class="item${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"><span>${esc(label)}</span>${right}</button>`;
+    // Browsing: each filter is a small chip, coloured by category. Added ones are filled in.
+    const chip = (f) => {
+      items.push({ key: f.key });
+      const added = used.has(f.key);
+      return `<button type="button" role="option" class="item fchip${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"
+        title="${esc(f.label)}${f.time ? " · has yearly data" : ""}${added ? " · added" : ""}">${f.time ? CLOCK : ""}<span>${esc(f.label)}</span>${added ? `<span class="tick" aria-label="added">✓</span>` : ""}</button>`;
+    };
+    // Searching: a row per result, with its category
+    const row = (f, label, isValue) => {
+      items.push({ key: f.key, value: isValue ? label : undefined });
+      const added = used.has(f.key) && !isValue;
+      const right = added ? `<span class="added-tag">✓ Added</span>` : `<span class="gtag">${esc(isValue ? f.label : f.group)}</span>`;
+      return `<button type="button" role="option" class="item${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"><span>${!isValue && f.time ? CLOCK : ""}${esc(label)}</span>${right}</button>`;
     };
     let html = `<div class="cats" role="group" aria-label="Categories">
       <button type="button" class="${menuCat ? "" : "on"}" data-cat="">All</button>
       ${window.FILTER_GROUPS.map((g) => `<button type="button" data-cat="${esc(g)}" data-g="${gslug(g)}" class="${menuCat === g ? "on" : ""}">${esc(g)}</button>`).join("")}</div>`;
     if (!q) {
       const groups = menuCat ? [menuCat] : window.FILTER_GROUPS;
-      html += `<div class="${menuCat ? "" : "browse"}">${groups.map((g) => {
+      html += `<div class="browse${menuCat ? " one" : ""}">${groups.map((g) => {
         const fs = FILTERS.filter((f) => f.group === g);
-        return `<section>${menuCat ? "" : `<h4 data-g="${gslug(g)}">${esc(g)}</h4>`}${fs.map((f) => item(f, f.label)).join("")}</section>`;
+        return `<section class="gsec" data-g="${gslug(g)}"><h4>${esc(g)}</h4><div class="fchips">${fs.map(chip).join("")}</div></section>`;
       }).join("")}</div>`;
     } else {
       const fs = FILTERS.filter(inCat).map((f) => ({ f, s: score(f, q) })).filter((x) => x.s).sort((a, b) => b.s - a.s);
@@ -991,18 +1041,17 @@
         }
         vals.sort((a, b) => b.s - a.s || a.o.length - b.o.length);
       }
-      if (fs.length) html += `<h4>Filters</h4>` + fs.slice(0, 12).map(({ f }) => item(f, f.label)).join("");
-      if (vals.length) html += `<h4>Values</h4>` + vals.slice(0, 6).map((v) => item(v.f, v.o, true)).join("");
+      if (fs.length) html += `<h4 class="rh">Filters</h4>` + fs.slice(0, 12).map(({ f }) => row(f, f.label)).join("");
+      if (vals.length) html += `<h4 class="rh">Values</h4>` + vals.slice(0, 6).map((v) => row(v.f, v.o, true)).join("");
       if (!fs.length && !vals.length) html += `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”${menuCat ? ` in ${esc(menuCat)}` : ""}. Try a broader word, like “religion” or “money”.</p>`;
     }
+    html += `<p class="mkey">${CLOCK}<span>Has data for past years. Add one of these, then use the year slider under the map to go back in time.</span> <span class="mtick">✓</span><span>Already added</span></p>`;
     cursor = 0;
     menu.innerHTML = html;
     menu.hidden = false;
     input.setAttribute("aria-expanded", "true");
     markCursor();
     menu.querySelectorAll("button").forEach((b) => (b.onmousedown = (e) => e.preventDefault()));
-    const onCat = menu.querySelector(".cats button.on"), cats = menu.querySelector(".cats");
-    if (onCat && cats) cats.scrollLeft = Math.max(0, onCat.offsetLeft - cats.offsetLeft - 40);
     menu.querySelectorAll(".cats button").forEach((b) => (b.onclick = () => { menuCat = b.dataset.cat || null; openMenu(); input.focus(); }));
     menu.querySelectorAll("button.item").forEach((b) => (b.onclick = () => choose(items[+b.dataset.i])));
   }
@@ -1063,7 +1112,7 @@
     $("#aboutClose").onclick = () => (el.hidden = true);
     el.onclick = (e) => { if (e.target === el) el.hidden = true; };
   }
-  $("#aboutBtn").onclick = openAbout;
+  if ($("#aboutBtn")) $("#aboutBtn").onclick = openAbout;
 
   // ---------- Shareable URL ----------
   function encodeState() {
@@ -1095,7 +1144,7 @@
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";
     const y = +p.get("y");
-    if (y && TS_YEARS.includes(y)) { state.year = y; applyYear(y); }
+    if (y && TS_YEARS.includes(y)) { state.year = y; applyYear(y); }  // clamped to the filters' years on first render
   }
   function saveURL() {
     try {

@@ -20,10 +20,10 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Near misses.** Countries that fail just one filter are listed (grouped by the filter they fail) and, when there are only a few, shaded on the map.
 - **Help with dead ends.** If nothing matches, it tells you which filter to drop and how many countries that would bring back.
 - **Cities.** Add a city filter (population, capital) to show cities as dots sized by population, inside the countries that match your other filters. A Cities tab lists them.
-- **Year slider.** Drag back to 1960, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. [DATA.md](DATA.md) marks which measures have yearly data.
+- **Year slider.** Drag back in time, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. The slider only covers years the active filters have data for (HDI from 1990, for example). [DATA.md](DATA.md) marks which measures have yearly data.
 - **Refugee flows.** Open any country's profile to see where its refugees have gone, or where the refugees it hosts come from, and map either one.
 - **Colour-coded categories.** Each category has its own colour, used in the search menu, the filter chips and the filter panel.
-- **Colour by any number,** e.g. filter to democracies, then colour them by GDP per person.
+- **Shading by value.** Matching countries are shaded darker for higher values of the last number filter you added, or any number you pick under "Shade by". Near misses are striped.
 - **Country profiles** with every value and its source year.
 - **Shareable links.** The URL holds the current filters, e.g. `?f=official_languages:Portuguese,democracy:1`.
 - **Starter questions and a question of the day** for people who don't know where to begin.
