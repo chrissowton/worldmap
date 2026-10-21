@@ -13,6 +13,9 @@
   --near: #f2d79d;
   --accent: #0d5f70;
   --ramp-lo: #f6dea6;
+  --river: #8fb3c4;
+  --label-land: #6b5a44;
+  --label-water: #3f6f86;
   /* one colour per filter category */
   --g-development: #3463c9;
   --g-population: #0e8f83;
@@ -41,14 +44,14 @@
   :root:not([data-theme="light"]) {
     --bg: #0d161b; --surface: #142028; --ink: #e5ecef; --muted: #91a3ab; --line: #253540;
     --ocean: #0a1317; --land: #2a3943; --border: #0d161b; --match: #f2b13a; --match-deep: #ffe2a6;
-    --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
+    --river: #2f5566; --label-land: #c2ad8f; --label-water: #7fb2c9; --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
     --shadow: 0 8px 28px rgba(0, 0, 0, .5); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0d161b; --surface: #142028; --ink: #e5ecef; --muted: #91a3ab; --line: #253540;
   --ocean: #0a1317; --land: #2a3943; --border: #0d161b; --match: #f2b13a; --match-deep: #ffe2a6;
-  --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
+  --river: #2f5566; --label-land: #c2ad8f; --label-water: #7fb2c9; --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
   --shadow: 0 8px 28px rgba(0, 0, 0, .5); color-scheme: dark;
 }
 
@@ -406,3 +409,31 @@ button { cursor: pointer; }
 .timebar .tclock .clock { width: 16px; height: 16px; }
 @media (max-width: 900px) { .menu .browse { columns: 2; } }
 @media (max-width: 760px) { .menu { width: auto; left: 0; } .menu .browse { columns: 1; } }
+
+/* ---------- Place names, rivers and lakes ---------- */
+#map .phys path.river { fill: none; stroke: var(--river); stroke-width: 0.9; vector-effect: non-scaling-stroke; pointer-events: none; }
+#map .phys path.lake { fill: var(--ocean); stroke: var(--river); stroke-width: 0.5; vector-effect: non-scaling-stroke; pointer-events: none; }
+#map .labels { pointer-events: none; }
+#map .labels text { font-family: var(--body); paint-order: stroke; stroke: var(--surface); stroke-linejoin: round; stroke-opacity: .85; fill: var(--ink); }
+#map .labels .country text { font-weight: 600; letter-spacing: .02em; fill: color-mix(in srgb, var(--ink) 82%, transparent); }
+#map .labels .water text { font-style: italic; fill: var(--label-water); stroke: var(--ocean); }
+#map .labels .ocean text, #map .labels .water text { letter-spacing: .04em; }
+#map .labels .land text { font-style: italic; fill: var(--label-land); }
+#map .labels .peak text { fill: var(--label-land); }
+#map .labels .city circle { fill: var(--surface); stroke: var(--ink); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+#map .labels .city.cap circle { fill: var(--ink); }
+#map .labels .city.cap text { font-weight: 600; }
+.zoom #zlabels { font-family: var(--display); font-weight: 700; font-size: 13px; }
+.zoom #zlabels[aria-pressed="false"] { color: var(--muted); text-decoration: line-through; }
+
+/* ---------- Sort buttons and map Clear all ---------- */
+.sortctl { display: inline-flex; align-items: center; gap: 4px; }
+.sbtn { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 2px 7px; font-size: 12px; font-weight: 600; line-height: 1.4; color: var(--ink); }
+.sbtn:hover { border-color: var(--accent); }
+.sbtn.on { background: var(--accent-soft); border-color: var(--accent); }
+.mapclear { position: absolute; top: 12px; right: 12px; z-index: 19; border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 13px;
+  background: var(--danger); color: #fff; box-shadow: var(--shadow); }
+.mapclear:hover { filter: brightness(1.08); }
+:root[data-theme="dark"] .mapclear { color: #1a0d09; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mapclear { color: #1a0d09; } }
+.detail dl.nbrs dt .goto { text-align: left; font: inherit; color: var(--accent); }

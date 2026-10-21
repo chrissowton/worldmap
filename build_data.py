@@ -425,6 +425,23 @@ with open(os.path.join(ROOT, "refugee_flows.json"), "w", encoding="utf-8") as f:
     json.dump(flows, f, separators=(",", ":"))
 print(f"Wrote {len(flows)} refugee flows")
 
+# --- 13b. Land borders: each neighbour and the shared border length (borders.csv, from make_borders.mjs) ---
+for rec in countries.values():
+    rec.pop("borders_list", None)
+for line in open(raw("borders.csv"), encoding="utf-8"):
+    if line.startswith("#") or line.startswith("country_a") or not line.strip():
+        continue
+    a, b, km = line.strip().split(",")
+    for x, y in ((a, b), (b, a)):
+        if x in countries:
+            countries[x].setdefault("borders_list", []).append([y, int(km)])
+for rec in countries.values():
+    bl = sorted(rec.get("borders_list", []), key=lambda p: -p[1])
+    rec["borders_list"] = bl
+    rec["neighbours"] = len(bl)
+    rec["border_km"] = sum(k for _, k in bl)
+    rec["no_land_borders"] = not bl and not rec["landlocked"]
+
 # --- 14. Time series for the year slider (timeseries.csv + pop/gdp/co2 files) -> timeseries.json ---
 YEARS = list(range(1960, 2026))
 TS_CODES = {  # field on the site: indicator in timeseries.csv

@@ -29,9 +29,10 @@ def main():
     cities = read("cities.json")
     flows = read("refugee_flows.json")
     timeseries = read("timeseries.json")
+    features = read("features.json")
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
     inline = (
-        f"<script>window.__COUNTRIES__={data};window.__WORLD__={world};window.__CITIES__={cities};window.__FLOWS__={flows};window.__TIMESERIES__={timeseries};</script>\n"
+        f"<script>window.__COUNTRIES__={data};window.__WORLD__={world};window.__CITIES__={cities};window.__FLOWS__={flows};window.__TIMESERIES__={timeseries};window.__FEATURES__={features};</script>\n"
         f"<script>{read('filters.js')}</script>\n<script>{read('app.js')}</script>"
     )
     head = (

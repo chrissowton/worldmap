@@ -21,6 +21,9 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Help with dead ends.** If nothing matches, it tells you which filter to drop and how many countries that would bring back.
 - **Cities.** Add a city filter (population, capital) to show cities as dots sized by population, inside the countries that match your other filters. A Cities tab lists them.
 - **Year slider.** Drag back in time, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. The slider only covers years the active filters have data for (HDI from 1990, for example). [DATA.md](DATA.md) marks which measures have yearly data.
+- **Zoom in for detail.** Country names, then capitals and cities, seas, lakes, rivers, mountain ranges, deserts and peaks appear as you zoom in. The **Aa** button turns them on and off.
+- **Neighbours.** Every country profile lists its neighbours and the approximate length of each land border.
+- **Sorting.** A–Z and ↑/↓ buttons sort the results, like a spreadsheet. The red **Clear all** button on the map resets everything.
 - **Refugee flows.** Open any country's profile to see where its refugees have gone, or where the refugees it hosts come from, and map either one.
 - **Colour-coded categories.** Each category has its own colour, used in the search menu, the filter chips and the filter panel.
 - **Shading by value.** Matching countries are shaded darker for higher values of the last number filter you added, or any number you pick under "Shade by". Near misses are striped.
@@ -73,9 +76,12 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `timeseries.json` | The yearly values for the website (built by `build_data.py`) |
 | `refugee_flows.json` | The refugee routes for the website (built by `build_data.py`) |
 | `groups.csv` | Membership of the EU, NATO, OECD, G7, G20, BRICS, ASEAN, African Union, Arab League, Commonwealth, Mercosur and OPEC. **Edited by hand**: update it when a country joins or leaves |
+| `features.json` | Rivers, lakes and named seas, mountain ranges, deserts and peaks for the zoom labels (built by `make_features.mjs`) |
+| `borders.csv` | Every land border and its length (built by `make_borders.mjs`) |
+| `make_features.mjs`, `make_borders.mjs`, `package.json` | Node tools for the two files above: run `npm install`, then `npm run features` or `npm run borders` |
 | `fetch_raw.py` | Downloads fresh copies of the source files |
 | `build_data.py` | Joins the source files into `countries.json` and `cities.json` |
-| `make_data_table.js` | Writes `DATA.md` from the filter list |
+| `make_data_table.cjs` | Writes `DATA.md` from the filter list |
 | `build_single.py` | Bundles everything into one self-contained HTML file in `dist/` |
 
 Libraries: [D3](https://d3js.org/) and [topojson-client](https://github.com/topojson/topojson-client), loaded from cdnjs. No build step and no framework.
@@ -84,7 +90,7 @@ Libraries: [D3](https://d3js.org/) and [topojson-client](https://github.com/topo
 
 1. Get a source file with one value per country, ideally keyed by ISO 3-letter code, and add it to the repository.
 2. In `build_data.py`, add a few lines that read it and set a field on each country, e.g. `rec["life_expectancy"] = ...`.
-3. Run `python3 build_data.py`, then `node make_data_table.js` to refresh `DATA.md`.
+3. Run `python3 build_data.py`, then `node make_data_table.cjs` to refresh `DATA.md`.
 4. In `filters.js`, add an entry describing the field: its type (`range`, `multi`, `cat` or `bool`), group, label, the sentence wording, the source and a one-line explanation.
 5. If it's a new source, add it to `SOURCES` at the bottom of `filters.js`.
 
@@ -96,7 +102,7 @@ That's it: the search menu, chip, slider or checklist, histogram, profile page a
 pip install pyreadr pandas geonamescache
 python3 fetch_raw.py
 python3 build_data.py
-node make_data_table.js
+node make_data_table.cjs
 ```
 
 ## Data sources and licences
@@ -119,6 +125,7 @@ node make_data_table.js
 | Regime type, democracy and freedom of expression scores | [V-Dem Institute](https://v-dem.net/) via [vdemdata](https://github.com/vdeminstitute/vdemdata) | CC BY-SA 4.0 |
 | CO₂ per person | [Our World in Data](https://github.com/owid/co2-data) | CC BY 4.0 |
 | Driving side | [samayo/country-json](https://github.com/samayo/country-json), with corrections | MIT |
+| Rivers, lakes, seas, mountain ranges, deserts, peaks, border lengths | [Natural Earth](https://www.naturalearthdata.com/) via [natural-earth-vector](https://github.com/nvkelso/natural-earth-vector) | Public domain |
 | Country shapes | [Natural Earth](https://www.naturalearthdata.com/) via [world-atlas](https://github.com/topojson/world-atlas) | Public domain |
 
 The compiled `countries.json` inherits the ODbL (share-alike) from the base country list and CC BY-SA from V-Dem. Both allow commercial use with attribution and share-alike. **Before adding a dataset, check its licence for "NC" (non-commercial) or "ND" (no derivatives) terms,** which would block posters, paid tiers or other income.
@@ -135,6 +142,7 @@ The compiled `countries.json` inherits the ODbL (share-alike) from the base coun
 - Treaty membership, Security Council seats and sport records are as of October 2026 and compiled by hand, so check `lists.csv` against the UN Treaty Collection now and then. Treaties count countries that have ratified or acceded, not those that have only signed.
 - Refugee figures are for the end of 2025 and cover people under UNHCR's mandate. About 6 million Palestinian refugees cared for by UNRWA are not included.
 - The year slider uses today's borders. For years before 1991, figures for countries that were then part of the Soviet Union, Yugoslavia or Czechoslovakia are estimates for today's territory where the source provides them, and blank otherwise.
+- Border lengths are measured on Natural Earth's 1:10m map, which smooths out bends, so they come out shorter than official figures (often by 10–25%). Compare countries with each other rather than quoting the exact kilometres.
 - Armed forces figures are for 2020, the latest the World Bank publishes.
 - Group memberships are as of October 2026. BRICS excludes Saudi Arabia (status unconfirmed); OPEC excludes the UAE (announced exit, May 2026).
 

@@ -682,8 +682,14 @@ window.FILTERS = [
   num("neighbours", "Geography", "Number of neighbours", {
     short: "Neighbours", format: "int", source: "countries", year: null,
     say: (b) => `it borders ${b} countries`,
-    info: "Countries that share a land border.",
+    info: "Countries that share a land border, from Natural Earth's map. Open a country's profile to see who they are and how long each border is.",
     keywords: "borders neighbours neighbors bordering",
+  }),
+  num("border_km", "Geography", "Length of land borders", {
+    short: "Land borders", scale: "linear", format: "kmlen", source: "boundaries", year: null, clip: true,
+    say: (b) => `land borders total ${b}`,
+    info: "Total length of all land borders, measured on Natural Earth's 1:10m map, so treat it as approximate. Open a country's profile to see each neighbour and border length.",
+    keywords: "border length frontier km neighbours boundary",
   }),
   num("area_km2", "Geography", "Area", {
     short: "Area", scale: "log", format: "km2", source: "countries", year: null,
