@@ -1,0 +1,297 @@
+# Membership of international groups, as of October 2026. One row per member.
+# Notes: BRICS excludes Saudi Arabia (status unconfirmed). OPEC excludes the UAE (announced exit, May 2026).
+# Mercosur lists full members only (Venezuela is suspended). G20 lists the 19 member countries (the EU and African Union are also members).
+group,iso3
+European Union,AUT
+European Union,BEL
+European Union,BGR
+European Union,HRV
+European Union,CYP
+European Union,CZE
+European Union,DNK
+European Union,EST
+European Union,FIN
+European Union,FRA
+European Union,DEU
+European Union,GRC
+European Union,HUN
+European Union,IRL
+European Union,ITA
+European Union,LVA
+European Union,LTU
+European Union,LUX
+European Union,MLT
+European Union,NLD
+European Union,POL
+European Union,PRT
+European Union,ROU
+European Union,SVK
+European Union,SVN
+European Union,ESP
+European Union,SWE
+NATO,ALB
+NATO,BEL
+NATO,BGR
+NATO,CAN
+NATO,HRV
+NATO,CZE
+NATO,DNK
+NATO,EST
+NATO,FIN
+NATO,FRA
+NATO,DEU
+NATO,GRC
+NATO,HUN
+NATO,ISL
+NATO,ITA
+NATO,LVA
+NATO,LTU
+NATO,LUX
+NATO,MNE
+NATO,NLD
+NATO,MKD
+NATO,NOR
+NATO,POL
+NATO,PRT
+NATO,ROU
+NATO,SVK
+NATO,SVN
+NATO,ESP
+NATO,SWE
+NATO,TUR
+NATO,GBR
+NATO,USA
+OECD,AUS
+OECD,AUT
+OECD,BEL
+OECD,CAN
+OECD,CHL
+OECD,COL
+OECD,CRI
+OECD,CZE
+OECD,DNK
+OECD,EST
+OECD,FIN
+OECD,FRA
+OECD,DEU
+OECD,GRC
+OECD,HUN
+OECD,ISL
+OECD,IRL
+OECD,ISR
+OECD,ITA
+OECD,JPN
+OECD,KOR
+OECD,LVA
+OECD,LTU
+OECD,LUX
+OECD,MEX
+OECD,NLD
+OECD,NZL
+OECD,NOR
+OECD,POL
+OECD,PRT
+OECD,SVK
+OECD,SVN
+OECD,ESP
+OECD,SWE
+OECD,CHE
+OECD,TUR
+OECD,GBR
+OECD,USA
+G7,CAN
+G7,FRA
+G7,DEU
+G7,ITA
+G7,JPN
+G7,GBR
+G7,USA
+G20,ARG
+G20,AUS
+G20,BRA
+G20,CAN
+G20,CHN
+G20,FRA
+G20,DEU
+G20,IND
+G20,IDN
+G20,ITA
+G20,JPN
+G20,MEX
+G20,RUS
+G20,SAU
+G20,ZAF
+G20,KOR
+G20,TUR
+G20,GBR
+G20,USA
+BRICS,BRA
+BRICS,RUS
+BRICS,IND
+BRICS,CHN
+BRICS,ZAF
+BRICS,EGY
+BRICS,ETH
+BRICS,IRN
+BRICS,ARE
+BRICS,IDN
+ASEAN,BRN
+ASEAN,KHM
+ASEAN,IDN
+ASEAN,LAO
+ASEAN,MYS
+ASEAN,MMR
+ASEAN,PHL
+ASEAN,SGP
+ASEAN,THA
+ASEAN,VNM
+ASEAN,TLS
+OPEC,DZA
+OPEC,COG
+OPEC,GNQ
+OPEC,GAB
+OPEC,IRN
+OPEC,IRQ
+OPEC,KWT
+OPEC,LBY
+OPEC,NGA
+OPEC,SAU
+OPEC,VEN
+Mercosur,ARG
+Mercosur,BRA
+Mercosur,PRY
+Mercosur,URY
+Mercosur,BOL
+African Union,DZA
+African Union,AGO
+African Union,BEN
+African Union,BWA
+African Union,BFA
+African Union,BDI
+African Union,CPV
+African Union,CMR
+African Union,CAF
+African Union,TCD
+African Union,COM
+African Union,COG
+African Union,COD
+African Union,CIV
+African Union,DJI
+African Union,EGY
+African Union,GNQ
+African Union,ERI
+African Union,SWZ
+African Union,ETH
+African Union,GAB
+African Union,GMB
+African Union,GHA
+African Union,GIN
+African Union,GNB
+African Union,KEN
+African Union,LSO
+African Union,LBR
+African Union,LBY
+African Union,MDG
+African Union,MWI
+African Union,MLI
+African Union,MRT
+African Union,MUS
+African Union,MAR
+African Union,MOZ
+African Union,NAM
+African Union,NER
+African Union,NGA
+African Union,RWA
+African Union,STP
+African Union,SEN
+African Union,SYC
+African Union,SLE
+African Union,SOM
+African Union,ZAF
+African Union,SSD
+African Union,SDN
+African Union,TZA
+African Union,TGO
+African Union,TUN
+African Union,UGA
+African Union,ZMB
+African Union,ZWE
+African Union,ESH
+Commonwealth,BWA
+Commonwealth,CMR
+Commonwealth,GAB
+Commonwealth,GMB
+Commonwealth,GHA
+Commonwealth,KEN
+Commonwealth,LSO
+Commonwealth,MWI
+Commonwealth,MUS
+Commonwealth,MOZ
+Commonwealth,NAM
+Commonwealth,NGA
+Commonwealth,RWA
+Commonwealth,SYC
+Commonwealth,SLE
+Commonwealth,ZAF
+Commonwealth,SWZ
+Commonwealth,TZA
+Commonwealth,TGO
+Commonwealth,UGA
+Commonwealth,ZMB
+Commonwealth,BGD
+Commonwealth,BRN
+Commonwealth,IND
+Commonwealth,MYS
+Commonwealth,MDV
+Commonwealth,PAK
+Commonwealth,SGP
+Commonwealth,LKA
+Commonwealth,ATG
+Commonwealth,BHS
+Commonwealth,BRB
+Commonwealth,BLZ
+Commonwealth,CAN
+Commonwealth,DMA
+Commonwealth,GRD
+Commonwealth,GUY
+Commonwealth,JAM
+Commonwealth,KNA
+Commonwealth,LCA
+Commonwealth,VCT
+Commonwealth,TTO
+Commonwealth,CYP
+Commonwealth,MLT
+Commonwealth,GBR
+Commonwealth,AUS
+Commonwealth,FJI
+Commonwealth,KIR
+Commonwealth,NRU
+Commonwealth,NZL
+Commonwealth,PNG
+Commonwealth,WSM
+Commonwealth,SLB
+Commonwealth,TON
+Commonwealth,TUV
+Commonwealth,VUT
+Arab League,DZA
+Arab League,BHR
+Arab League,COM
+Arab League,DJI
+Arab League,EGY
+Arab League,IRQ
+Arab League,JOR
+Arab League,KWT
+Arab League,LBN
+Arab League,LBY
+Arab League,MRT
+Arab League,MAR
+Arab League,OMN
+Arab League,PSE
+Arab League,QAT
+Arab League,SAU
+Arab League,SOM
+Arab League,SDN
+Arab League,SYR
+Arab League,TUN
+Arab League,ARE
+Arab League,YEM

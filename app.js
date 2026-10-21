@@ -4,10 +4,13 @@
 
   // ---------- Load data ----------
   const loadJSON = (url) => fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
-  const [rows, topo] = await Promise.all([
+  const [rows, topo, cityRows] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
     window.__WORLD__ || loadJSON("world-50m.json"),
+    window.__CITIES__ || loadJSON("cities.json").catch(() => []),
   ]);
+  // cities.json rows: [name, iso3, lat, lon, population, capital]
+  const cities = cityRows.map(([name, iso3, lat, lon, pop, cap], id) => ({ id, name, iso3, lat, lon, city_population: pop, city_capital: !!cap }));
 
   const FILTERS = window.FILTERS;
   const SITE = window.SITE || {};
@@ -32,15 +35,33 @@
     if (a >= 1e3) return +(v / 1e3).toPrecision(3) + "k";
     return String(+v.toPrecision(3));
   }
+  const UNITS = {
+    per1000: " per 1,000 people", per1000birth: " per 1,000 births", per1000women: " per 1,000 teenage girls",
+    per100k: " per 100,000 births", density: " people per km²", years: " years",
+  };
+  // Full form, used in sentences and profiles: "20 per 1,000 people"
   function fmt(f, v) {
     if (v == null || Number.isNaN(v)) return "no data";
+    return fmtShort(f, v) + (UNITS[f.format] || "");
+  }
+  // Short form, used in chips, sliders and lists: "20"
+  function fmtShort(f, v) {
+    if (v == null || Number.isNaN(v)) return "no data";
+    const a = Math.abs(v);
     switch (f.format) {
-      case "pct": return (v < 1 && v > 0 ? v.toFixed(1) : Math.round(v)) + "%";
+      case "pct": return (a < 10 && !Number.isInteger(v) ? v.toFixed(1) : Math.round(v)) + "%";
       case "people": return compact(v);
       case "usd": return "$" + compact(v);
       case "index": return v.toFixed(2);
+      case "dec1": return String(+v.toFixed(1));
+      case "dec3": return v.toFixed(3);
+      case "dec2": return v.toFixed(2);
+      case "rank": return "#" + Math.round(v);
       case "km2": return compact(v) + " km²";
-      case "tonnes": return (v < 10 ? +v.toFixed(1) : Math.round(v)) + " t";
+      case "tonnes": return (a < 10 ? +v.toFixed(1) : Math.round(v)) + " t";
+      case "per1000": case "per1000birth": case "per1000women": return String(a < 10 ? +v.toFixed(1) : Math.round(v));
+      case "density": return compact(v);
+      case "per100k": case "years": return String(Math.round(v));
       default: return String(Math.round(v));
     }
   }
@@ -52,8 +73,18 @@
     if (f.format === "tonnes") return v.toFixed(2) + " t";
     return fmt(f, v);
   }
+  function yearLabel(f) {
+    if (f.yearText) return f.yearText;
+    if (typeof f.year === "number") return String(f.year);
+    if (!f.year) return "";
+    const ys = rows.map((r) => r[f.year]).filter((y) => typeof y === "number");
+    if (!ys.length) return "";
+    const counts = d3.rollup(ys, (v) => v.length, (y) => y);
+    const [mode, n] = [...counts].sort((a, b) => b[1] - a[1])[0];
+    return n / ys.length >= 0.8 ? String(mode) : `latest available, mostly ${mode}`;
+  }
   function parseNum(f, s) {
-    s = String(s).trim().toLowerCase().replace(/[$,%\s]|km²|km2|t$/g, "");
+    s = String(s).trim().toLowerCase().replace(/[$,%#\s]|km²|km2|t$/g, "");
     const m = s.match(/^(-?[\d.]+)(k|m|bn|b)?$/);
     if (!m) return null;
     const mult = { k: 1e3, m: 1e6, b: 1e9, bn: 1e9 }[m[2]] || 1;
@@ -62,12 +93,13 @@
 
   // ---------- Filter domains and options ----------
   for (const f of FILTERS) {
-    const vals = rows.map((r) => r[f.key]);
+    const vals = (f.target === "city" ? cities : rows).map((r) => r[f.key]);
     if (f.type === "range") {
-      const nums = vals.filter((v) => typeof v === "number" && (f.scale !== "log" || v > 0));
-      f.dmin = d3.min(nums); f.dmax = d3.max(nums);
-      if (f.format === "pct") { f.dmin = 0; f.dmax = 100; }
-      if (f.format === "index") { f.dmin = 0; f.dmax = 1; }
+      const nums = vals.filter((v) => typeof v === "number" && (f.scale !== "log" || v > 0)).sort((a, b) => a - b);
+      if (f.bounds) [f.dmin, f.dmax] = f.bounds;
+      else if (f.clip) { f.dmin = d3.quantileSorted(nums, 0.02); f.dmax = d3.quantileSorted(nums, 0.98); }
+      else { f.dmin = nums[0]; f.dmax = nums[nums.length - 1]; }
+      if (f.clip && f.step) { f.dmin = Math.floor(f.dmin / f.step) * f.step; f.dmax = Math.ceil(f.dmax / f.step) * f.step; }
       f.toT = f.scale === "log" ? (v) => Math.log10(Math.max(v, f.dmin)) : (v) => v;
       f.fromT = f.scale === "log" ? (t) => Math.pow(10, t) : (t) => t;
       f.round = f.scale === "log" ? (v) => sig(v, 2) : (v) => Math.round(v / f.step) * f.step;
@@ -88,6 +120,7 @@
     open: null,           // key of filter whose editor is open
     selected: null,       // iso3 of country in detail view
     starterHidden: false,
+    tab: "countries",     // results list: "countries" or "cities"
   };
 
   function makeFilter(key, preset = {}) {
@@ -113,7 +146,9 @@
     if (f.type === "range") {
       if (!isActive(fl)) return true;
       if (typeof v !== "number") return false;
-      return v >= fl.min - 1e-9 && v <= fl.max + 1e-9;
+      // the ends of the slider mean "no limit"
+      const lo = fl.min <= f.dmin ? -Infinity : fl.min, hi = fl.max >= f.dmax ? Infinity : fl.max;
+      return v >= lo - 1e-9 && v <= hi + 1e-9;
     }
     if (f.type === "bool") return v === fl.value;
     if (!fl.values.length) return true;
@@ -124,7 +159,10 @@
   const NEAR_MAP = 25;
   const expandedNear = new Set();
   const pool = () => rows.filter((r) => r.sovereign || state.territories);
-  const active = () => state.filters.filter(isActive);
+  const isCity = (fl) => F[fl.key].target === "city";
+  const active = () => state.filters.filter((fl) => !isCity(fl) && isActive(fl));
+  const cityActive = () => state.filters.filter((fl) => isCity(fl) && isActive(fl));
+  const showCities = () => state.filters.some(isCity);
 
   function evaluate() {
     const act = active();
@@ -145,7 +183,13 @@
       const shade = list.length <= NEAR_MAP;
       list.forEach((r) => (res.get(r.iso3).shade = shade));
     }
-    return { act, res, groups };
+    // Cities: those in matching countries that pass every city filter
+    let cityList = [];
+    if (showCities()) {
+      const ca = cityActive();
+      cityList = cities.filter((c) => { const e = res.get(c.iso3); return e && e.match && ca.every((fl) => passes(c, fl)); });
+    }
+    return { act, res, groups, cityList };
   }
 
   // ---------- Text: chips and sentence ----------
@@ -158,6 +202,10 @@
   function bound(fl) {
     const f = F[fl.key];
     const lo = fl.min > f.dmin, hi = fl.max < f.dmax;
+    if (f.format === "rank") {
+      if (lo && hi) return `between #${Math.round(fl.min)} and #${Math.round(fl.max)}`;
+      return lo ? `#${Math.round(fl.min)} or lower` : `in the top ${Math.round(fl.max)}`;
+    }
     if (lo && hi) return `between ${fmt(f, fl.min)} and ${fmt(f, fl.max)}`;
     if (lo) return `at least ${fmt(f, fl.min)}`;
     return `at most ${fmt(f, fl.max)}`;
@@ -167,7 +215,8 @@
     if (!isActive(fl)) return null;
     if (f.type === "range") return f.say(bound(fl));
     if (f.type === "bool") return f.say(fl.value);
-    return f.say(joinOr(fl.values));
+    // optional per-value wording, e.g. "the Commonwealth", "a liberal democracy"
+    return f.say(joinOr(fl.values.map((v) => (f.article && f.article[v]) || v)));
   }
   function chipLabel(fl) {
     const f = F[fl.key];
@@ -176,19 +225,31 @@
     if (f.type === "range") {
       if (!isActive(fl)) return `${name}: any`;
       const lo = fl.min > f.dmin, hi = fl.max < f.dmax;
-      if (lo && hi) return `${name} ${fmt(f, fl.min)}–${fmt(f, fl.max)}`;
-      return lo ? `${name} ≥ ${fmt(f, fl.min)}` : `${name} ≤ ${fmt(f, fl.max)}`;
+      if (f.format === "rank" && hi && !lo) return `${name}: top ${Math.round(fl.max)}`;
+      if (lo && hi) return `${name} ${fmtShort(f, fl.min)}–${fmtShort(f, fl.max)}`;
+      return lo ? `${name} ≥ ${fmtShort(f, fl.min)}` : `${name} ≤ ${fmtShort(f, fl.max)}`;
     }
     if (!fl.values.length) return `${name}: choose…`;
     const v = fl.values.length > 2 ? `${fl.values.slice(0, 2).join(", ")} +${fl.values.length - 2}` : fl.values.join(", ");
     return `${name}: ${v}`;
   }
+  function andList(ps) {
+    return ps.length === 1 ? ps[0] : ps.slice(0, -1).join(", ") + " and " + ps[ps.length - 1];
+  }
   function sentence(n, act) {
     const noun = (k) => (state.territories ? (k === 1 ? "place" : "places") : (k === 1 ? "country" : "countries"));
-    if (!act.length) return `Showing all <b>${n} ${noun(n)}</b>. Add a filter to start asking questions.`;
-    const ps = act.map(phrase);
-    const list = ps.length === 1 ? ps[0] : ps.slice(0, -1).join(", ") + " and " + ps[ps.length - 1];
-    return `Showing <b>${n} ${noun(n)}</b> where ${esc(list)}.<button class="clear" id="clearAll" type="button">Clear all</button>`;
+    const clear = `<button class="clear" id="clearAll" type="button">Clear all</button>`;
+    let cityPart = "";
+    if (showCities()) {
+      const m = lastEval.cityList.length;
+      const cp = cityActive().map(phrase);
+      cityPart = `<b>${m.toLocaleString()} ${m === 1 ? "city" : "cities"}</b>${cp.length ? ` where ${esc(andList(cp))}` : ""}`;
+    }
+    if (!act.length) {
+      if (cityPart) return `Showing ${cityPart}.${clear}`;
+      return `Showing all <b>${n} ${noun(n)}</b>. Add a filter to start asking questions.`;
+    }
+    return `Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart}` : ""}.${clear}`;
   }
 
   // ---------- Map ----------
@@ -196,6 +257,7 @@
   const gRoot = svg.append("g");
   const gLand = gRoot.append("g");
   const gDots = gRoot.append("g");
+  const gCities = gRoot.append("g");
   let geo = topojson.feature(topo, topo.objects.countries).features.filter((d) => d.id !== "010");
   geo.forEach((d) => {
     d.rec = (d.id && byNum.get(String(+d.id))) || byIso.get(NAME_FIX[d.properties.name]) || null;
@@ -210,16 +272,20 @@
     const box = $("#mapwrap").getBoundingClientRect();
     const w = Math.max(320, box.width), h = Math.max(240, box.height);
     svg.attr("viewBox", `0 0 ${w} ${h}`);
+    citySize = Math.max(0.45, Math.min(1, w / 1100));
     projection.fitExtent([[10, 10], [w - 10, h - 10]], { type: "FeatureCollection", features: geo });
     paths.attr("d", path);
     invalidatePoints();
+    cities.forEach((c) => delete c._pt);
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
+    drawCities();
   }
   const zoom = d3.zoom().scaleExtent([1, 12]).on("zoom", (e) => {
     k = e.transform.k;
     gRoot.attr("transform", e.transform);
     gDots.selectAll("circle").attr("r", 4.2 / k);
+    gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
   });
   svg.call(zoom).on("dblclick.zoom", null);
   $("#zin").onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1.6);
@@ -230,8 +296,8 @@
 
   // Dots make tiny countries visible when they match.
   function drawDots() {
-    const { res } = lastEval;
-    const dots = rows.filter((r) => {
+    const { res, act } = lastEval;
+    const dots = !act.length ? [] : rows.filter((r) => {
       const e = res.get(r.iso3);
       return e && (e.match || (e.near && e.shade)) && ((r.area_km2 ?? 0) < 4000 || !onMap.has(r.iso3)) && (r._pt || (r._pt = centroidFor(r)));
     });
@@ -252,8 +318,25 @@
   }
   function invalidatePoints() { rows.forEach((r) => delete r._pt); }
 
+  // City dots, sized by population
+  const MAX_CITY_DOTS = 2500;
+  const cityRadius = d3.scaleSqrt().domain([0, d3.max(cities, (c) => c.city_population) || 1]).range([0, 15]);
+  let citySize = 1; // shrinks dots on narrow screens
+  const cityR = (c) => Math.max(1.6, cityRadius(c.city_population) * citySize);
+  function drawCities() {
+    const list = (lastEval.cityList || []).slice(0, MAX_CITY_DOTS);
+    gCities.selectAll("circle").data(list, (d) => d.id).join("circle")
+      .attr("class", (d) => "city" + (d.city_capital ? " cap" : ""))
+      .attr("data-city", (d) => d.id)
+      .attr("r", (d) => cityR(d) / k)
+      .attr("transform", (d) => {
+        const p = d._pt || (d._pt = projection([d.lon, d.lat]));
+        return p ? `translate(${p[0]},${p[1]})` : "translate(-99,-99)";
+      });
+  }
+
   // ---------- Colour by ----------
-  const numericFilters = FILTERS.filter((f) => f.type === "range");
+  const numericFilters = FILTERS.filter((f) => f.type === "range" && !f.target);
   function colourScale(matches) {
     if (!state.colourBy) return null;
     const f = F[state.colourBy];
@@ -279,7 +362,8 @@
     paths
       .attr("class", (d) => {
         const e = d.rec && res.get(d.rec.iso3);
-        let c = e ? (e.match ? "match" : e.near && e.shade ? "near" : "") : "";
+        // with no country filters, leave countries plain so cities stand out
+        let c = e && act.length ? (e.match ? "match" : e.near && e.shade ? "near" : "") : "";
         if (d.rec && d.rec.iso3 === state.selected) c += " sel";
         return c;
       })
@@ -289,6 +373,7 @@
         return e && e.match ? cs(d.rec[cs.f.key]) : null;
       });
     drawDots();
+    drawCities();
     gDots.selectAll("circle").style("fill", (d) => (cs && res.get(d.iso3).match ? cs(d[cs.f.key]) : null));
 
     renderChips(act);
@@ -317,16 +402,17 @@
 
   function renderLegend(cs, act) {
     const el = $("#legend");
-    if (!act.length) { el.hidden = true; return; }
+    if (!act.length && !showCities()) { el.hidden = true; return; }
     el.hidden = false;
     let h = "";
     if (cs) {
-      h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmt(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmt(cs.f, cs.ext[1])}</span></div>`;
-    } else {
+      h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+    } else if (act.length) {
       h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every filter</div>`;
     }
     const anyShade = [...lastEval.groups.values()].some((g) => g.length <= NEAR_MAP);
     if (anyShade) h += `<div class="lrow"><span class="sw" style="background:var(--near)"></span>Near miss: fails just one filter</div>`;
+    if (showCities()) h += `<div class="lrow"><span class="sw city"></span>City, sized by population<span class="sw city cap"></span>Capital</div>`;
     el.innerHTML = h;
   }
 
@@ -334,7 +420,9 @@
   const puzzles = window.PUZZLES.map((p) => ({ ...p, n: countFor(p.filters) })).filter((p) => p.n >= 1 && p.n <= 8);
   function countFor(presets) {
     const fls = presets.map((p) => makeFilter(p.key, p));
-    return rows.filter((r) => r.sovereign && fls.every((fl) => passes(r, fl))).length;
+    const cf = fls.filter(isCity), nf = fls.filter((fl) => !isCity(fl));
+    return rows.filter((r) => r.sovereign && nf.every((fl) => passes(r, fl)) &&
+      (!cf.length || cities.some((c) => c.iso3 === r.iso3 && cf.every((fl) => passes(c, fl))))).length;
   }
   function todaysPuzzle() {
     if (!puzzles.length) return null;
@@ -344,6 +432,7 @@
   function applyPreset(presets) {
     state.filters = presets.map((p) => makeFilter(p.key, p));
     state.open = null; state.selected = null;
+    state.tab = state.filters.some(isCity) && !state.filters.some((fl) => !isCity(fl)) ? "cities" : "countries";
     render();
   }
   function renderStarter(act) {
@@ -388,7 +477,7 @@
     if (!fl) { el.hidden = true; return; }
     const f = F[fl.key];
     const src = window.SOURCES[f.source];
-    const year = typeof f.year === "number" ? f.year : f.year ? d3.max(rows, (r) => r[f.year]) : null;
+    const year = yearLabel(f);
     const keepSearch = el.querySelector(".optsearch")?.value || "";
     const scroll = el.querySelector(".opts")?.scrollTop || 0;
     el.hidden = false;
@@ -406,8 +495,8 @@
 
   function rangeEditor(body, f, fl) {
     const T0 = f.toT(f.dmin), T1 = f.toT(f.dmax);
-    const vals = pool().map((r) => r[f.key]).filter((v) => typeof v === "number");
-    const bins = d3.bin().domain([T0, T1]).thresholds(28)(vals.map(f.toT));
+    const vals = (f.target === "city" ? cities : pool()).map((r) => r[f.key]).filter((v) => typeof v === "number" && (f.scale !== "log" || v > 0));
+    const bins = d3.bin().domain([T0, T1]).thresholds(28)(vals.map((v) => Math.min(Math.max(f.toT(v), T0), T1)));
     const maxN = d3.max(bins, (b) => b.length) || 1;
     const W = 330, H = 56;
     const x = (t) => ((t - T0) / (T1 - T0)) * W;
@@ -422,7 +511,8 @@
       <div class="bounds">
         <label for="nLo">At least<input id="nLo" inputmode="decimal"></label>
         <label for="nHi">At most<input id="nHi" inputmode="decimal"></label>
-      </div>`;
+      </div>
+      ${UNITS[f.format] ? `<p class="info unit">Values are${esc(UNITS[f.format])}.</p>` : ""}`;
     const lo = $("#rLo"), hi = $("#rHi"), nLo = $("#nLo"), nHi = $("#nHi");
     const toPos = (v) => Math.round(((f.toT(v) - T0) / (T1 - T0)) * 1000);
     const fromPos = (p) => {
@@ -432,7 +522,8 @@
     };
     function sync() {
       lo.value = toPos(fl.min); hi.value = toPos(fl.max);
-      nLo.value = fmt(f, fl.min); nHi.value = fmt(f, fl.max);
+      nLo.value = fl.min <= f.dmin ? "no limit" : fmtShort(f, fl.min);
+      nHi.value = fl.max >= f.dmax ? "no limit" : fmtShort(f, fl.max);
       const a = +lo.value / 10, b = +hi.value / 10;
       body.querySelector(".fill").style.left = a + "%";
       body.querySelector(".fill").style.width = Math.max(0, b - a) + "%";
@@ -450,7 +541,9 @@
   }
 
   function boolEditor(body, f, fl) {
-    const cnt = (v) => pool().filter((r) => r[f.key] === v && othersPass(r, f.key)).length;
+    const cnt = f.target === "city"
+      ? (v) => cities.filter((c) => { const e = lastEval.res.get(c.iso3); return e && e.match && c[f.key] === v && cityActive().every((x) => x.key === f.key || passes(c, x)); }).length
+      : (v) => pool().filter((r) => r[f.key] === v && othersPass(r, f.key)).length;
     body.innerHTML = `<div class="seg" role="group">
       <button type="button" data-v="1" class="${fl.value ? "on" : ""}">${esc(f.yes)}<small>${cnt(true)}</small></button>
       <button type="button" data-v="0" class="${fl.value ? "" : "on"}">${esc(f.no)}<small>${cnt(false)}</small></button></div>`;
@@ -496,7 +589,54 @@
   }
 
   // ---------- Results list ----------
+  function tabsHTML(n) {
+    if (!showCities()) return "";
+    const t = state.tab;
+    return `<div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="countries" aria-selected="${t !== "cities"}" class="${t !== "cities" ? "on" : ""}">Countries <span class="num">${n}</span></button>
+      <button type="button" role="tab" data-tab="cities" aria-selected="${t === "cities"}" class="${t === "cities" ? "on" : ""}">Cities <span class="num">${lastEval.cityList.length.toLocaleString()}</span></button></div>`;
+  }
+  function footHTML() {
+    return `<div class="rfoot">
+        <button type="button" id="srcLink">Sources &amp; methods</button>
+        ${SITE.donate ? `<a href="${SITE.donate}" target="_blank" rel="noopener">Support this project</a>` : ""}
+        ${SITE.github ? `<a href="${SITE.github}" target="_blank" rel="noopener">Contribute on GitHub</a>` : ""}
+        ${window.self === window.top ? `<button type="button" id="copyLink">Copy link to this view</button>` : ""}
+      </div>`;
+  }
+  function bindCommon(el) {
+    $("#srcLink").onclick = openAbout;
+    const cl = $("#copyLink");
+    if (cl) cl.onclick = () => navigator.clipboard?.writeText(location.href).then(() => (cl.textContent = "Link copied"), () => {});
+    el.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => { state.tab = b.dataset.tab; render(); }));
+  }
+  function renderCityResults(matches) {
+    const el = $("#results");
+    const list = lastEval.cityList;
+    const scrollTop = el.querySelector(".rlist")?.scrollTop || 0;
+    el.innerHTML = `
+      <div class="rhead">${tabsHTML(matches.length)}
+        <div class="count"><span class="n num">${list.length.toLocaleString()}</span><span class="of">${list.length === 1 ? "city matches" : "cities match"}</span></div>
+        <p class="note">Population of the city itself, not its suburbs. Ringed dots are capitals.</p>
+      </div>
+      <div class="rlist">
+        ${list.slice(0, 300).map((c) => {
+          const r = byIso.get(c.iso3);
+          return `<button type="button" class="row" data-iso="${c.iso3}" data-city="${c.id}"><span class="fl">${r?.flag || ""}</span><span class="nm">${esc(c.name)}${c.city_capital ? ` <span class="tag">capital</span>` : ""}<small>${esc(r?.name || "")}</small></span><span class="val num">${compact(c.city_population)}</span></button>`;
+        }).join("") || `<p class="empty">No cities match. Try a lower population, or loosen the country filters.</p>`}
+        ${list.length > 300 ? `<p class="empty">Showing the largest 300 of ${list.length.toLocaleString()}.</p>` : ""}
+      </div>${footHTML()}`;
+    el.querySelector(".rlist").scrollTop = scrollTop;
+    bindCommon(el);
+    el.querySelectorAll(".row").forEach((b) => {
+      b.onclick = () => { state.selected = b.dataset.iso; state.open = null; render(); };
+      b.onmouseenter = () => gCities.selectAll("circle").filter((d) => d.id === +b.dataset.city).classed("hover", true).raise();
+      b.onmouseleave = () => gCities.selectAll("circle").classed("hover", false);
+    });
+  }
+
   function renderResults(matches, act, res) {
+    if (showCities() && state.tab === "cities") return renderCityResults(matches);
     const el = $("#results");
     const rangeAct = act.map((fl) => F[fl.key]).filter((f) => f.type === "range");
     const sortKey = state.sort || state.colourBy || rangeAct[0]?.key || "__name";
@@ -510,7 +650,7 @@
     const scrollTop = el.querySelector(".rlist")?.scrollTop || 0;
 
     el.innerHTML = `
-      <div class="rhead">
+      <div class="rhead">${tabsHTML(matches.length)}
         <div class="count"><span class="n num">${matches.length}</span><span class="of">of ${total} ${noun} match</span></div>
         <div class="controls">
           <label><input type="checkbox" id="terr" ${state.territories ? "checked" : ""}> Include territories</label>
@@ -530,20 +670,12 @@
           return `<h4>Near misses · only fail “${esc(chipLabel(fl))}” (${list.length})</h4>${shown.map((r) => rowHTML(r, null, fl)).join("")}
             ${list.length > 6 ? `<button type="button" class="linkbtn more" data-k="${key}" style="margin:2px 8px">${open ? "Show fewer" : `Show all ${list.length}`}</button>` : ""}`;
         }).join("")}
-      </div>
-      <div class="rfoot">
-        <button type="button" id="srcLink">Sources &amp; methods</button>
-        ${SITE.donate ? `<a href="${SITE.donate}" target="_blank" rel="noopener">Support this project</a>` : ""}
-        ${SITE.github ? `<a href="${SITE.github}" target="_blank" rel="noopener">Contribute on GitHub</a>` : ""}
-        ${window.self === window.top ? `<button type="button" id="copyLink">Copy link to this view</button>` : ""}
-      </div>`;
+      </div>${footHTML()}`;
     el.querySelector(".rlist").scrollTop = scrollTop;
     $("#terr").onchange = (e) => { state.territories = e.target.checked; render(); };
     $("#sortSel").onchange = (e) => { state.sort = e.target.value; render(); };
     $("#colSel").onchange = (e) => { state.colourBy = e.target.value; render(); };
-    $("#srcLink").onclick = openAbout;
-    const cl = $("#copyLink");
-    if (cl) cl.onclick = () => navigator.clipboard?.writeText(location.href).then(() => (cl.textContent = "Link copied"), () => {});
+    bindCommon(el);
     el.querySelectorAll(".more").forEach((b) => (b.onclick = () => {
       const k = b.dataset.k; expandedNear.has(k) ? expandedNear.delete(k) : expandedNear.add(k); render();
     }));
@@ -554,7 +686,7 @@
     });
   }
   function rowHTML(r, sf, fail) {
-    const val = sf ? `<span class="val num">${fmt(sf, r[sf.key])}</span>` : "";
+    const val = sf ? `<span class="val num">${fmtShort(sf, r[sf.key])}</span>` : "";
     const why = fail ? `<span class="why">✕ ${esc(F[fail.key].short || F[fail.key].label)}</span>` : "";
     return `<button type="button" class="row" data-iso="${r.iso3}"><span class="fl">${r.flag || ""}</span><span class="nm">${esc(r.name)}</span>${val}${why}</button>`;
   }
@@ -577,7 +709,8 @@
       return v ?? "no data";
     };
     const groups = window.FILTER_GROUPS.map((g) => {
-      const fs = FILTERS.filter((f) => f.group === g);
+      const fs = FILTERS.filter((f) => f.group === g && !f.target);
+      if (!fs.length) return "";
       return `<h4>${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
     }).join("");
     el.innerHTML = `<div class="detail">
@@ -585,6 +718,10 @@
       <h2><span>${r.flag || ""}</span>${esc(r.name)}</h2>
       <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
       ${badge}
+      ${(() => {
+        const cs = cities.filter((c) => c.iso3 === r.iso3).slice(0, 6);
+        return cs.length ? `<h4>Largest cities</h4><dl>${cs.map((c) => `<dt>${esc(c.name)}${c.city_capital ? " (capital)" : ""}</dt><dd>${d3.format(",")(c.city_population)}</dd>`).join("")}</dl>` : "";
+      })()}
       ${groups}
     </div>`;
     $("#back").onclick = () => { state.selected = null; render(); };
@@ -602,11 +739,19 @@
     const dl = act.map((fl) => {
       const f = F[fl.key];
       let v = r[fl.key];
-      v = f.type === "range" ? fmt(f, v) : f.type === "bool" ? (v ? f.yes : f.no) : Array.isArray(v) ? (v.length ? v.join(", ") : "none") : v ?? "no data";
+      v = f.type === "range" ? fmtShort(f, v) : f.type === "bool" ? (v ? f.yes : f.no) : Array.isArray(v) ? (v.length ? v.join(", ") : "none") : v ?? "no data";
       const failed = e && e.fails.includes(fl);
       return `<dt>${esc(f.short || f.label)}</dt><dd class="${failed ? "fail" : ""}">${esc(v)}</dd>`;
     }).join("");
     tip.innerHTML = `<strong>${r.flag || ""} ${esc(r.name)}</strong>${st}${dl ? `<dl>${dl}</dl>` : ""}`;
+    placeTip(evt);
+  }
+  function showCityTip(evt, c) {
+    const r = byIso.get(c.iso3);
+    tip.innerHTML = `<strong>${esc(c.name)}</strong><span class="st">${r?.flag || ""} ${esc(r?.name || "")}${c.city_capital ? " · capital" : ""}</span><dl><dt>Population</dt><dd>${d3.format(",")(c.city_population)}</dd></dl>`;
+    placeTip(evt);
+  }
+  function placeTip(evt) {
     tip.hidden = false;
     const box = $("#mapwrap").getBoundingClientRect();
     let x = evt.clientX - box.left + 14, y = evt.clientY - box.top + 14;
@@ -618,13 +763,17 @@
   svg.on("pointermove", (evt) => {
     if (evt.pointerType === "touch") return;
     const t = evt.target;
+    const cid = t.getAttribute && t.getAttribute("data-city");
+    if (cid) { paths.classed("hover", false); return showCityTip(evt, cities[+cid]); }
     const iso = t.getAttribute && t.getAttribute("data-iso");
     paths.classed("hover", false);
     if (iso) d3.select(t).filter("path").classed("hover", true).raise();
     showTip(evt, iso ? byIso.get(iso) : null);
   }).on("pointerleave", () => { tip.hidden = true; paths.classed("hover", false); });
   svg.on("click", (evt) => {
-    const iso = evt.target.getAttribute && evt.target.getAttribute("data-iso");
+    const t = evt.target;
+    const cid = t.getAttribute && t.getAttribute("data-city");
+    const iso = cid ? cities[+cid].iso3 : t.getAttribute && t.getAttribute("data-iso");
     if (iso && byIso.get(iso)) { state.selected = iso; state.open = null; render(); }
   });
 
@@ -689,6 +838,7 @@
     if (!fl) { fl = makeFilter(it.key); state.filters.push(fl); }
     if (it.value && fl.values && !fl.values.includes(it.value)) fl.values.push(it.value);
     state.open = it.key; state.selected = null;
+    if (F[it.key].target === "city") state.tab = "cities";
     input.value = ""; closeMenu(); input.blur();
     render();
   }
@@ -710,9 +860,10 @@
     state.filters = state.filters.filter((x) => x.key !== key);
     if (state.open === key) state.open = null;
     if (state.colourBy === key) state.colourBy = "";
+    if (!showCities()) state.tab = "countries";
     render();
   }
-  function clearAll() { state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; render(); }
+  function clearAll() { state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; state.tab = "countries"; render(); }
 
   // ---------- About ----------
   function openAbout() {
@@ -722,7 +873,7 @@
       <button type="button" class="iconbtn close" id="aboutClose" aria-label="Close">×</button>
       <h2 id="aboutH">About Which Countries?</h2>
       <p>An open-source map for asking questions about the world. Every filter shows where its data comes from and what year it describes. Measures like “democracy” depend on who defines them, so each filter names its definition.</p>
-      <p>Countries match when they pass <b>every</b> filter. Within a list filter, such as languages, ticking several options matches countries that have <b>any</b> of them. Countries with no data for a filter don’t match it.</p>
+      <p>Countries match when they pass <b>every</b> filter. City filters show cities on the map, inside the countries that match. Each end of a slider means “no limit”. Within a list filter, such as languages, ticking several options matches countries that have <b>any</b> of them. Countries with no data for a filter don’t match it.</p>
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Used for</th><th>Licence</th></tr></thead><tbody>
       ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || "Country shapes")}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
       </tbody></table></div>
@@ -759,6 +910,7 @@
       else out.push(makeFilter(key, { values: v.split("|").filter(Boolean).map(decodeURIComponent).filter((x) => f.options.includes(x)) }));
     });
     state.filters = out;
+    if (out.some(isCity) && !out.some((fl) => !isCity(fl))) state.tab = "cities";
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";
   }

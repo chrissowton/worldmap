@@ -230,6 +230,138 @@ for iso, side in DRIVE_FIX.items():
     if iso in countries:
         countries[iso]["driving_side"] = side.capitalize()
 
+# --- 8. More World Bank indicators (World Development Indicators via open-numbers, CC BY 4.0) ---
+WB = {
+    # field: (indicator code, decimals)
+    "gni_ppp": ("ny_gnp_pcap_pp_cd", 0),
+    "gini": ("si_pov_gini", 1),
+    "extreme_poverty": ("si_pov_dday", 1),
+    "life_expectancy": ("sp_dyn_le00_in", 1),
+    "infant_mortality": ("sp_dyn_imrt_in", 1),
+    "under5_mortality": ("sh_dyn_mort", 1),
+    "maternal_mortality": ("sh_sta_mmrt", 0),
+    "literacy": ("se_adt_litr_zs", 1),
+    "electricity": ("eg_elc_accs_zs", 1),
+    "safe_water": ("sh_h2o_smdw_zs", 1),
+    "internet": ("it_net_user_zs", 1),
+    "health_spend": ("sh_xpd_chex_gd_zs", 1),
+    "education_spend": ("se_xpd_totl_gd_zs", 1),
+    "density": ("en_pop_dnst", 1),
+    "pop_growth": ("sp_pop_grow", 2),
+    "fertility": ("sp_dyn_tfrt_in", 2),
+    "birth_rate": ("sp_dyn_cbrt_in", 1),
+    "death_rate": ("sp_dyn_cdrt_in", 1),
+    "pct_under15": ("sp_pop_0014_to_zs", 1),
+    "pct_over65": ("sp_pop_65up_to_zs", 1),
+    "dependency": ("sp_pop_dpnd", 1),
+    "urban_pct": ("sp_urb_totl_in_zs", 1),
+    "migrants_pct": ("sm_pop_totl_zs", 1),
+    "remittances_pct": ("bx_trf_pwkr_dt_gd_zs", 1),
+    "emp_agriculture": ("sl_agr_empl_zs", 1),
+    "emp_industry": ("sl_ind_empl_zs", 1),
+    "emp_services": ("sl_srv_empl_zs", 1),
+    "trade_pct": ("ne_trd_gnfs_zs", 1),
+    "fdi_pct": ("bx_klt_dinv_wd_gd_zs", 1),
+    "tourists": ("st_int_arvl", 0),
+    "forest_pct": ("ag_lnd_frst_zs", 1),
+    "renewables_pct": ("eg_fec_rnew_zs", 1),
+    "water_stress": ("er_h2o_fwst_zs", 1),
+    "adolescent_births": ("sp_ado_tfrt", 1),
+    "women_parliament": ("sg_gen_parl_zs", 1),
+    "female_labour": ("sl_tlf_cact_fe_zs", 1),
+}
+wb = {}
+for row in csv.DictReader(open(raw("worldbank_latest.csv"), encoding="utf-8")):
+    iso = WB_FIX.get(row["iso3"], row["iso3"])
+    wb[(iso, row["indicator"])] = (int(row["year"]), float(row["value"]))
+for iso, rec in countries.items():
+    for field, (code, dp) in WB.items():
+        v = wb.get((iso, code))
+        if v is None:
+            continue
+        rec[field] = round(v[1], dp) if dp else round(v[1])
+        rec[field + "_year"] = v[0]
+    # net migration per 1,000 people
+    nm, pp = wb.get((iso, "sm_pop_netm")), wb.get((iso, "sp_pop_totl"))
+    if nm and pp and pp[1] > 0:
+        rec["net_migration"] = round(1000 * nm[1] / pp[1], 1)
+        rec["net_migration_year"] = nm[0]
+
+# World Bank income groups (FY2027, from July 2026), from GNI per person, Atlas method
+INCOME = [(1175, "Low income"), (4635, "Lower-middle income"), (14375, "Upper-middle income"), (float("inf"), "High income")]
+for iso, rec in countries.items():
+    g = wb.get((iso, "ny_gnp_pcap_cd"))
+    if g and g[0] >= 2024:
+        rec["income_group"] = next(name for limit, name in INCOME if g[1] <= limit)
+# The World Bank classifies these without publishing GNI figures; Venezuela is unclassified.
+INCOME_FIX = {"CUB": "Upper-middle income", "ERI": "Low income", "LIE": "High income", "MCO": "High income",
+              "PRK": "Low income", "SMR": "High income", "SSD": "Low income", "SYR": "Low income", "YEM": "Low income", "VEN": None}
+for iso, g in INCOME_FIX.items():
+    if iso in countries:
+        if g:
+            countries[iso]["income_group"] = g
+        else:
+            countries[iso].pop("income_group", None)
+
+# --- 9. UNDP Human Development Report 2025 (undp_hdr.csv, extracted from UNDP's composite indices file) ---
+# and median age (UN World Population Prospects, via Gapminder)
+UNDP = {
+    # field: (indicator, decimals)
+    "hdi": ("hdi", 3), "hdi_rank": ("hdi_rank", 0),
+    "gii": ("gii", 3), "gii_rank": ("gii_rank", 0),
+    "gdi": ("gdi", 3), "gdi_group": ("gdi_group", 0),
+    "mean_schooling": ("mys", 1), "expected_schooling": ("eys", 1),
+    "ihdi": ("ihdi", 3), "hdi_loss": ("loss", 1),
+}
+GDI_GROUPS = {1: "1 · High equality", 2: "2 · Medium-high equality", 3: "3 · Medium equality", 4: "4 · Medium-low equality", 5: "5 · Low equality"}
+undp = {}
+for row in csv.DictReader(open(raw("undp_hdr.csv"), encoding="utf-8")):
+    undp[(row["iso3"], row["indicator"])] = (int(row["year"]), float(row["value"]))
+    if row["iso3"] in countries and row["hdi_group"]:
+        countries[row["iso3"]]["hdi_group"] = row["hdi_group"].replace("Very High", "Very high")
+for iso, rec in countries.items():
+    for field, (ind, dp) in UNDP.items():
+        v = undp.get((iso, ind))
+        if v is None:
+            continue
+        rec[field] = round(v[1], dp) if dp else int(v[1])
+        rec[field + "_year"] = v[0]
+    if "gdi_group" in rec:
+        rec["gdi_group"] = GDI_GROUPS[rec["gdi_group"]]
+for row in csv.DictReader(open(raw("hdi_median_age.csv"), encoding="utf-8")):
+    iso = row["iso3"]
+    if iso in countries and row["indicator"] == "median_age":
+        countries[iso]["median_age"] = round(float(row["value"]), 1)
+        countries[iso]["median_age_year"] = int(row["year"])
+
+# --- 10. Membership of international groups (groups.csv, compiled by hand) ---
+for line in open(raw("groups.csv"), encoding="utf-8"):
+    if line.startswith("#") or line.startswith("group,") or not line.strip():
+        continue
+    group, iso = line.strip().split(",")
+    if iso in countries:
+        countries[iso].setdefault("groups", []).append(group)
+for rec in countries.values():
+    rec["groups"] = sorted(rec.get("groups", []))
+
+# --- 11. Cities (GeoNames, CC BY 4.0): written to cities.json ---
+cities = []
+for row in csv.DictReader(open(raw("cities.csv"), encoding="utf-8")):
+    if row["iso3"] not in countries:
+        continue
+    cities.append([row["name"], row["iso3"], float(row["lat"]), float(row["lon"]), int(row["population"]), int(row["capital"])])
+with open(os.path.join(ROOT, "cities.json"), "w", encoding="utf-8") as f:
+    json.dump(cities, f, ensure_ascii=False, separators=(",", ":"))
+print(f"Wrote {len(cities)} cities")
+for rec in countries.values():
+    cs = [c for c in cities if c[1] == rec["iso3"]]
+    rec["cities_1m"] = sum(1 for c in cs if c[4] >= 1_000_000)
+    big = max(cs, key=lambda c: c[4], default=None)
+    cap = max((c for c in cs if c[5]), key=lambda c: c[4], default=None)
+    if big:
+        rec["largest_city"] = big[0]
+        rec["capital_is_largest"] = bool(cap) and cap[0] == big[0]
+
 # --- Write ---
 out = sorted(countries.values(), key=lambda r: r["name"])
 with open(OUT, "w", encoding="utf-8") as f:
