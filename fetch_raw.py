@@ -10,6 +10,10 @@ The repository already contains a copy of every raw file, so you only need
 this when you want to refresh the data. groups.csv (membership of the EU,
 NATO, BRICS and so on) is edited by hand and is not downloaded.
 
+UNHCR refugee data comes from UNHCR's own "refugees" package. Run
+`python3 fetch_raw.py --unhcr` to refresh refugees.csv and refugee_flows.csv
+(needs `pip install pyreadr pandas`).
+
 UNDP's figures (HDI, Gender Inequality Index and so on) can't be downloaded
 automatically. When a new Human Development Report comes out, download the
 "composite indices complete time series" CSV from https://hdr.undp.org/data-center
@@ -54,6 +58,7 @@ WDI_CODES = [
     "sm_pop_netm", "sp_pop_totl", "sm_pop_totl_zs", "bx_trf_pwkr_dt_gd_zs", "sl_agr_empl_zs", "sl_ind_empl_zs",
     "sl_srv_empl_zs", "ne_trd_gnfs_zs", "bx_klt_dinv_wd_gd_zs", "st_int_arvl", "ag_lnd_frst_zs",
     "eg_fec_rnew_zs", "er_h2o_fwst_zs", "sp_ado_tfrt", "sg_gen_parl_zs", "sl_tlf_cact_fe_zs", "sl_tlf_cact_ma_zs",
+    "ms_mil_xpnd_gd_zs", "ms_mil_xpnd_cd", "ms_mil_totl_p1", "ms_mil_totl_tf_zs",
 ]
 # HDI (UNDP) and median age (UN WPP), mirrored by Gapminder
 GM_URL = GH + "open-numbers/ddf--gapminder--systema_globalis/master/countries-etc-datapoints/ddf--datapoints--{}--by--geo--time.csv"
@@ -143,6 +148,66 @@ def fetch_cities():
         w.writerows(rows)
 
 
+TS_WDI = ["sp_dyn_tfrt_in", "sp_dyn_le00_in", "sp_urb_totl_in_zs", "sp_dyn_imrt_in", "sp_pop_65up_to_zs",
+          "sp_dyn_cbrt_in", "sp_dyn_cdrt_in", "sp_pop_grow"]
+
+
+def write_timeseries(new_rows, replace):
+    """Update timeseries.csv: drop the indicators in `replace`, add new_rows."""
+    path = os.path.join(RAW, "timeseries.csv")
+    keep = []
+    if os.path.exists(path):
+        keep = [r for r in csv.reader(open(path, encoding="utf-8"))][1:]
+        keep = [r for r in keep if r[1] not in replace]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["iso3", "indicator", "year", "value"])
+        w.writerows(keep + new_rows)
+
+
+def fetch_timeseries():
+    """Yearly values since 1960 for the year slider (World Bank, UN median age, V-Dem, UNHCR)."""
+    import pyreadr
+    valid = {c["cca3"] for c in json.load(open(os.path.join(RAW, "world_countries.json"), encoding="utf-8"))}
+    out = []
+    for code in TS_WDI:
+        for r in read_csv(WDI_URL.format(code)):
+            iso = {"XKX": "UNK"}.get(r["geo"].upper(), r["geo"].upper())
+            if r[code] and int(r["time"]) >= 1960 and iso in valid:
+                out.append([iso, code, int(r["time"]), f"{float(r[code]):.4g}"])
+    for r in read_csv(GM_URL.format("median_age_years")):
+        y, iso = int(r["time"]), r["geo"].upper()
+        if 1960 <= y <= 2025 and r["median_age_years"] and iso in valid:
+            out.append([iso, "median_age", y, f"{float(r['median_age_years']):.3g}"])
+    tmp = tempfile.mkdtemp()
+    try:
+        path = os.path.join(tmp, "vdem.RData")
+        open(path, "wb").write(get(VDEM_URL))
+        df = pyreadr.read_r(path)["vdem"][["country_text_id", "year", "v2x_regime", "v2x_libdem"]]
+        for r in df[df.year >= 1960].itertuples():
+            iso = {"XKX": "UNK"}.get(r.country_text_id, r.country_text_id)
+            if iso not in valid:
+                continue
+            if r.v2x_regime == r.v2x_regime:
+                out.append([iso, "v2x_regime", int(r.year), int(r.v2x_regime)])
+            if r.v2x_libdem == r.v2x_libdem:
+                out.append([iso, "v2x_libdem", int(r.year), f"{r.v2x_libdem:.3f}"])
+        path = os.path.join(tmp, "population.rda")
+        open(path, "wb").write(get(GH + "cran/refugees/master/data/population.rda"))
+        d = list(pyreadr.read_r(path).values())[0].fillna(0)
+        d = d[d.year >= 1960]
+        d = d.assign(intl=d.refugees + d.oip)
+        for (iso, y), v in d.groupby(["coa_iso", "year"]).intl.sum().items():
+            if iso in valid:
+                out.append([iso, "refugees_hosted", int(y), int(v)])
+        for (iso, y), v in d[d.coo_iso != d.coa_iso].groupby(["coo_iso", "year"]).intl.sum().items():
+            if iso in valid:
+                out.append([iso, "refugees_from", int(y), int(v)])
+    finally:
+        shutil.rmtree(tmp)
+    write_timeseries(out, set(TS_WDI) | {"median_age", "v2x_regime", "v2x_libdem", "refugees_hosted", "refugees_from"})
+
+
 def extract_undp(path):
     """Keep the latest value of each UNDP index per country, from UNDP's composite indices CSV."""
     keep = ["hdi", "hdi_rank", "gii", "gii_rank", "gdi", "gdi_group", "mys", "eys", "ihdi", "loss"]
@@ -157,10 +222,53 @@ def extract_undp(path):
                 if years:
                     y = years[-1]
                     w.writerow([r["iso3"], r["country"], r["hdicode"], k, y, r[f"{k}_{y}"]])
-    print("Wrote undp_hdr.csv. Now run: python3 build_data.py")
+    # HDI history for the year slider
+    hist = []
+    for r in rows:
+        for c, v in r.items():
+            m = re.match(r"^hdi_(\d{4})$", c)
+            if m and v:
+                hist.append([r["iso3"], "hdi", int(m.group(1)), v])
+    write_timeseries(hist, {"hdi"})
+    print("Wrote undp_hdr.csv and updated timeseries.csv. Now run: python3 build_data.py")
+
+
+def fetch_unhcr():
+    """Refugee totals per country and origin -> host routes (100+ people), latest year, from UNHCR's package."""
+    import pyreadr
+    tmp = tempfile.mkdtemp()
+    try:
+        path = os.path.join(tmp, "population.rda")
+        open(path, "wb").write(get(GH + "cran/refugees/master/data/population.rda"))
+        df = list(pyreadr.read_r(path).values())[0]
+    finally:
+        shutil.rmtree(tmp)
+    y = int(df.year.max())
+    d = df[df.year == y].fillna(0)
+    d = d.assign(intl=d.refugees + d.oip)  # refugees plus others in need of international protection
+    valid = {c["cca3"] for c in json.load(open(os.path.join(RAW, "world_countries.json"), encoding="utf-8"))}
+    flows = d[(d.intl >= 100) & (d.coo_iso != d.coa_iso)]
+    with open(os.path.join(RAW, "refugee_flows.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["origin", "host", "refugees"])
+        for r in flows.itertuples():
+            w.writerow([r.coo_iso, r.coa_iso, int(r.intl)])
+    host = d.groupby("coa_iso").agg(refugees=("intl", "sum"), asylum=("asylum_seekers", "sum"))
+    orig = d[d.coo_iso != d.coa_iso].groupby("coo_iso")["intl"].sum()
+    idp = d[d.coo_iso == d.coa_iso].groupby("coa_iso")["idps"].sum()
+    with open(os.path.join(RAW, "refugees.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["iso3", "year", "refugees_hosted", "asylum_seekers_hosted", "refugees_from", "idps"])
+        for iso in sorted((set(host.index) | set(orig.index) | set(idp.index)) & valid):
+            h = host.loc[iso] if iso in host.index else None
+            w.writerow([iso, y, int(h.refugees) if h is not None else 0, int(h.asylum) if h is not None else 0,
+                        int(orig.get(iso, 0)), int(idp.get(iso, 0))])
+    print(f"Wrote refugees.csv and refugee_flows.csv for {y}")
 
 
 def main():
+    if "--unhcr" in sys.argv:
+        return fetch_unhcr()
     if "--undp" in sys.argv:
         return extract_undp(sys.argv[sys.argv.index("--undp") + 1])
     for name, url in FILES.items():
@@ -171,11 +279,16 @@ def main():
         w = csv.writer(f)
         w.writerow(["country", "year", "iso_code", "co2_per_capita"])
         for r in read_csv(CO2_URL):
-            if r["iso_code"] and r["co2_per_capita"] and int(r["year"]) >= 2010:
+            if r["iso_code"] and r["co2_per_capita"] and int(r["year"]) >= 1960:
                 w.writerow([r["country"], r["year"], r["iso_code"], r["co2_per_capita"]])
 
     fetch_worldbank()
     fetch_hdi_median_age()
+    try:
+        fetch_unhcr()
+        fetch_timeseries()
+    except ImportError:
+        print("  skipping UNHCR and yearly data: run `pip install pyreadr pandas` first")
     try:
         fetch_cities()
     except ImportError:

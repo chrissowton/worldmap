@@ -37,8 +37,8 @@ window.SITE = {
 };
 
 window.FILTER_GROUPS = [
-  "Development", "Population", "Health", "Gender", "Work & money",
-  "Global links", "Cities", "Culture", "Politics", "Geography", "Environment",
+  "Development", "Population", "Health", "Gender", "Work & money", "Global links", "Refugees",
+  "Cities", "Culture", "Politics", "UN & treaties", "Military", "Sport", "Geography", "Environment",
 ];
 
 // Helper for number filters. `say` gets a phrase like "at least 50%".
@@ -376,6 +376,44 @@ window.FILTERS = [
     keywords: "remittances migrants money sent home diaspora",
   }),
 
+  // ---------------- Refugees ----------------
+  num("refugees_hosted", "Refugees", "Refugees hosted", {
+    short: "Refugees hosted", scale: "log", format: "people", source: "unhcr",
+    say: (b) => `the country hosts ${b} refugees`,
+    info: "Refugees and others needing international protection living in the country, under UNHCR's mandate. Palestinian refugees cared for by UNRWA (about 6 million, mostly in Jordan, Lebanon, Syria, Gaza and the West Bank) are not included. Open a country's profile to see where its refugees come from.",
+    keywords: "refugees hosting asylum displaced host unhcr",
+  }),
+  num("refugees_hosted_per1000", "Refugees", "Refugees hosted per 1,000 people", {
+    short: "Refugees per 1,000", scale: "log", format: "per1000", source: "unhcr",
+    say: (b) => `refugees hosted are ${b}`,
+    info: "Refugees hosted for every 1,000 people living in the country. Shows the size of hosting compared with the country's own population.",
+    keywords: "refugees per capita hosting share burden",
+  }),
+  num("refugees_from", "Refugees", "Refugees from this country", {
+    short: "Refugees from", scale: "log", format: "people", source: "unhcr",
+    say: (b) => `${b} refugees have fled the country`,
+    info: "People from this country living abroad as refugees or needing international protection, under UNHCR's mandate. Open a country's profile to see where they have gone.",
+    keywords: "refugees origin fled displaced emigration conflict",
+  }),
+  num("refugees_from_per1000", "Refugees", "Refugees from, per 1,000 people", {
+    short: "Fled per 1,000", scale: "log", format: "per1000", source: "unhcr",
+    say: (b) => `refugees who have fled are ${b}`,
+    info: "Refugees from the country for every 1,000 people still living there.",
+    keywords: "refugees origin per capita fled share",
+  }),
+  num("idps", "Refugees", "Internally displaced people", {
+    short: "IDPs", scale: "log", format: "people", source: "unhcr",
+    say: (b) => `${b} people are displaced inside the country`,
+    info: "People forced from their homes who are still inside their own country, mostly because of conflict. Figures come from UNHCR and its partners.",
+    keywords: "idp internally displaced conflict war displacement",
+  }),
+  num("asylum_seekers_hosted", "Refugees", "Asylum seekers waiting", {
+    short: "Asylum seekers", scale: "log", format: "people", source: "unhcr",
+    say: (b) => `${b} asylum seekers are waiting for a decision`,
+    info: "People who have applied for asylum in the country and are waiting for a decision.",
+    keywords: "asylum seekers applications claims waiting",
+  }),
+
   // ---------------- Cities ----------------
   {
     key: "city_population", type: "range", target: "city", group: "Cities",
@@ -500,6 +538,115 @@ window.FILTERS = [
     keywords: "united nations un member recognised",
   },
 
+  // ---------------- UN & treaties ----------------
+  {
+    key: "security_council", type: "cat", group: "UN & treaties",
+    label: "UN Security Council", short: "Security Council",
+    order: ["Permanent member", "Elected member (2026)", "Not on the council"],
+    say: (v) => `the country is ${v === "Not on the council" ? "not on the Security Council" : "a " + v.toLowerCase().replace(" (2026)", "") + " of the Security Council"}`,
+    source: "un", yearText: "2026",
+    info: "The five permanent members, who can veto decisions, and the ten members elected for two-year terms that include 2026.",
+    keywords: "security council unsc veto permanent five p5 united nations",
+  },
+  ...[
+    ["un_crc", "Children's rights (UNCRC)", "UNCRC", "the Convention on the Rights of the Child", "The UN Convention on the Rights of the Child (1989), the most widely ratified human rights treaty. The United States is the only UN member that has not joined.", "children child rights uncrc crc convention"],
+    ["un_icc", "International Criminal Court", "ICC", "the International Criminal Court", "The Rome Statute, which created the International Criminal Court to try genocide, war crimes and crimes against humanity. Burkina Faso, Mali and Niger are leaving; their exit takes effect in 2027.", "icc international criminal court rome statute war crimes"],
+    ["un_paris", "Paris climate agreement", "Paris Agreement", "the Paris climate agreement", "The 2015 agreement to limit global warming to well below 2°C. The United States left in January 2026.", "paris agreement climate change cop unfccc"],
+    ["un_refugee", "Refugee Convention", "Refugee Convention", "the Refugee Convention", "The 1951 Refugee Convention or its 1967 Protocol, which define who is a refugee and their rights. Many countries that host large numbers of refugees have not joined.", "refugee convention 1951 protocol asylum"],
+    ["un_cedaw", "Women's rights (CEDAW)", "CEDAW", "the women's rights convention (CEDAW)", "The Convention on the Elimination of All Forms of Discrimination against Women (1979).", "women cedaw gender discrimination convention rights"],
+    ["un_crpd", "Disability rights (CRPD)", "CRPD", "the disability rights convention", "The Convention on the Rights of Persons with Disabilities (2006).", "disability crpd rights convention"],
+    ["un_npt", "Nuclear Non-Proliferation Treaty", "NPT", "the Nuclear Non-Proliferation Treaty", "The 1968 treaty to stop the spread of nuclear weapons. India, Israel, Pakistan and South Sudan never joined; North Korea left in 2003.", "npt nuclear non-proliferation weapons treaty"],
+    ["un_tpnw", "Nuclear weapons ban", "Nuclear ban", "the nuclear weapons ban treaty", "The Treaty on the Prohibition of Nuclear Weapons (2017), which bans nuclear weapons outright. No nuclear-armed state has joined.", "tpnw nuclear ban prohibition weapons treaty"],
+    ["un_landmine", "Landmine ban (Ottawa Treaty)", "Landmine ban", "the landmine ban treaty", "The 1997 Ottawa Treaty banning anti-personnel landmines. Estonia, Latvia, Lithuania, Finland and Poland left in 2025–26.", "landmines mines ottawa treaty ban"],
+  ].map(([key, label, short, name, info, keywords]) => ({
+    key, type: "bool", group: "UN & treaties", label, short,
+    say: (v) => (v ? `the country has joined ${name}` : `the country has not joined ${name}`),
+    yes: `${short}: joined`, no: `${short}: not joined`,
+    source: "treaties", yearText: "October 2026",
+    info: info + " Counts countries that have ratified or acceded, not those that have only signed.",
+    keywords: keywords + " treaty united nations un",
+  })),
+
+  // ---------------- Military ----------------
+  num("military_spend_pct", "Military", "Military spending", {
+    short: "Military spend", step: 0.1, format: "pct", clip: true, source: "sipri",
+    say: (b) => `military spending is ${b} of GDP`,
+    info: "Spending on the armed forces as a share of the economy (GDP). NATO members aim for at least 2%.",
+    keywords: "military defence defense spending army budget armed forces",
+  }),
+  num("military_spend_usd", "Military", "Military spending (US$)", {
+    short: "Military $", scale: "log", format: "usd", source: "sipri", year: "military_spend_usd_year",
+    say: (b) => `military spending is ${b} a year`,
+    info: "Total spending on the armed forces in a year, in US dollars.",
+    keywords: "military defence defense spending budget dollars",
+  }),
+  num("armed_forces", "Military", "Armed forces", {
+    short: "Armed forces", scale: "log", format: "people", source: "iiss",
+    say: (b) => `there are ${b} people in the armed forces`,
+    info: "Active military personnel, including paramilitary forces where they are trained and equipped like the military.",
+    keywords: "soldiers troops army armed forces military personnel",
+  }),
+  num("armed_forces_pct", "Military", "Armed forces (% of workers)", {
+    short: "Forces % of workers", step: 0.1, format: "pct", clip: true, source: "iiss", year: "armed_forces_pct_year",
+    say: (b) => `${b} of the labour force is in the armed forces`,
+    info: "Armed forces personnel as a share of everyone in work or looking for work.",
+    keywords: "soldiers troops military share workforce militarisation",
+  }),
+  {
+    key: "nuclear_armed", type: "bool", group: "Military",
+    label: "Has nuclear weapons", short: "Nuclear-armed",
+    say: (v) => (v ? "the country has nuclear weapons" : "the country has no nuclear weapons"),
+    yes: "Nuclear-armed", no: "No nuclear weapons",
+    source: "treaties", yearText: "2026",
+    info: "The nine countries known or widely believed to have nuclear weapons. Israel has never confirmed its arsenal.",
+    keywords: "nuclear weapons bomb arsenal warheads",
+  },
+
+  // ---------------- Sport ----------------
+  num("wc_men_titles", "Sport", "Men's World Cup wins", {
+    short: "World Cups (men)", format: "int", bounds: [0, 5], source: "sport", year: null, yearText: "1930–2026",
+    say: (b) => `the men's team has won the World Cup ${b.replace("at least 1", "at least once").replace("at most ", "at most ")} times`.replace("once times", "once"),
+    info: "Men's football World Cup titles, up to Spain's win in 2026. England's 1966 win counts for the United Kingdom, and West Germany's for Germany.",
+    keywords: "football soccer world cup fifa winners champions men",
+  }),
+  num("wc_women_titles", "Sport", "Women's World Cup wins", {
+    short: "World Cups (women)", format: "int", bounds: [0, 4], source: "sport", year: null, yearText: "1991–2023",
+    say: (b) => `the women's team has won the World Cup ${b.replace("at least 1", "at least once")} times`.replace("once times", "once"),
+    info: "Women's football World Cup titles, up to 2023.",
+    keywords: "football soccer world cup fifa winners champions women",
+  }),
+  ...[
+    ["wc_men_host", "Hosted the men's World Cup", "Hosted World Cup", "has hosted the men's football World Cup", "Every host from 1930 to 2026. Joint hosts all count.", "football soccer world cup host fifa"],
+    ["wc_women_host", "Hosted the women's World Cup", "Hosted Women's WC", "has hosted the women's football World Cup", "Every host from 1991 to 2023.", "football soccer women world cup host"],
+    ["olympics_summer_host", "Hosted the Summer Olympics", "Summer Olympics host", "has hosted the Summer Olympics", "Every host from Athens 1896 to Paris 2024. The Soviet Union's 1980 Games count for Russia.", "olympics olympic games summer host"],
+    ["olympics_winter_host", "Hosted the Winter Olympics", "Winter Olympics host", "has hosted the Winter Olympics", "Every host from 1924 to Milan–Cortina 2026. Yugoslavia's 1984 Games in Sarajevo count for Bosnia and Herzegovina.", "olympics olympic winter games host skiing"],
+    ["commonwealth_games_host", "Hosted the Commonwealth Games", "Commonwealth Games host", "has hosted the Commonwealth Games", "Every host from 1930 to Glasgow 2026.", "commonwealth games host"],
+    ["fifa_member", "FIFA member", "FIFA member", "is a member of FIFA", "Member of FIFA, football's world governing body. The UK counts as a member through England, Scotland, Wales and Northern Ireland.", "fifa football soccer member association"],
+  ].map(([key, label, short, phrase, info, keywords]) => ({
+    key, type: "bool", group: "Sport", label, short,
+    say: (v) => (v ? `the country ${phrase}` : `the country ${phrase.replace(/^has /, "has never ").replace(/^is /, "is not ")}`),
+    yes: `${short}: yes`, no: `${short}: no`,
+    source: "sport", info, keywords,
+  })),
+  num("olympic_medals", "Sport", "Olympic medals (Paris 2024)", {
+    short: "Medals 2024", scale: "linear", format: "int", clip: true, source: "olympics", year: null, yearText: "2024",
+    say: (b) => `athletes won ${b} medals at Paris 2024`,
+    info: "Gold, silver and bronze medals won at the Paris 2024 Summer Olympics.",
+    keywords: "olympics medals gold silver bronze paris 2024 sport",
+  }),
+  num("olympic_golds", "Sport", "Olympic gold medals (Paris 2024)", {
+    short: "Golds 2024", format: "int", clip: true, source: "olympics", year: null, yearText: "2024",
+    say: (b) => `athletes won ${b} gold medals at Paris 2024`,
+    info: "Gold medals won at the Paris 2024 Summer Olympics.",
+    keywords: "olympics gold medals paris 2024",
+  }),
+  num("medals_per_million", "Sport", "Olympic medals per million people", {
+    short: "Medals per million", step: 0.1, format: "dec1", clip: true, source: "olympics", year: null, yearText: "2024",
+    say: (b) => `there were ${b} Paris 2024 medals per million people`,
+    info: "Paris 2024 medals divided by population, which shows which small countries punch above their weight.",
+    keywords: "olympics medals per capita population small countries",
+  }),
+
   // ---------------- Geography ----------------
   {
     key: "region", type: "cat", group: "Geography",
@@ -584,6 +731,13 @@ window.SOURCES = {
   driving: { name: "samayo/country-json", url: "https://github.com/samayo/country-json", licence: "MIT" },
   groups: { name: "Official membership lists, compiled for this site", url: "groups.csv", licence: "CC0" },
   geonames: { name: "GeoNames", url: "https://www.geonames.org/", licence: "CC BY 4.0" },
+  unhcr: { name: "UNHCR Refugee Population Statistics", url: "https://www.unhcr.org/refugee-statistics/", licence: "CC BY 4.0" },
+  un: { name: "United Nations Security Council", url: "https://main.un.org/securitycouncil/en/content/current-members", licence: "Public facts, compiled for this site" },
+  treaties: { name: "UN Treaty Collection and treaty bodies, compiled for this site (lists.csv)", url: "https://treaties.un.org/", licence: "Public facts, CC0" },
+  sipri: { name: "SIPRI Military Expenditure Database (via World Bank)", url: "https://www.sipri.org/databases/milex", licence: "SIPRI terms; check before commercial use" },
+  iiss: { name: "IISS Military Balance (via World Bank)", url: "https://data.worldbank.org/indicator/MS.MIL.TOTL.P1", licence: "Check terms before commercial use" },
+  sport: { name: "FIFA, IOC and Commonwealth Games records, compiled for this site (lists.csv, worldcups.csv)", url: "https://www.fifa.com/", licence: "Public facts, CC0" },
+  olympics: { name: "Paris 2024 medal table", url: "https://olympics.com/en/olympic-games/paris-2024/medals", licence: "Public facts" },
   boundaries: { name: "Natural Earth via world-atlas", url: "https://github.com/topojson/world-atlas", licence: "Public domain" },
 };
 

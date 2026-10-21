@@ -1,13 +1,13 @@
 # Which Countries?
 
-An open-source world map for asking questions about the world, built with human geography students in mind. Stack filters on development, population, health, gender, work, globalisation, cities, culture, politics and the environment, and watch the map narrow down to the countries that fit.
+An open-source world map for asking questions about the world, built with human geography students in mind. Stack filters on development, population, health, gender, work, globalisation, refugees, cities, culture, politics, UN treaties, military, sport and the environment, and watch the map narrow down to the countries that fit.
 
 - *Which countries have very high inequality (Gini over 50) outside Africa?*
 - *Which high-income countries still have a fertility rate above 2.1?*
 - *Which cities over 5 million are in lower-middle-income countries?*
 - *In which BRICS countries is the capital not the largest city?*
 
-There are about 60 measures for 194 countries, plus 6,000+ cities. **[DATA.md](DATA.md) lists every measure with its source, year and coverage.**
+There are over 100 measures for 194 countries, plus 6,000+ cities and 1,500 refugee routes. **[DATA.md](DATA.md) lists every measure with its source, year and coverage.**
 
 It's a static website: no server, no database, no accounts. All the data is in a few JSON files that the browser loads once.
 
@@ -20,6 +20,9 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Near misses.** Countries that fail just one filter are listed (grouped by the filter they fail) and, when there are only a few, shaded on the map.
 - **Help with dead ends.** If nothing matches, it tells you which filter to drop and how many countries that would bring back.
 - **Cities.** Add a city filter (population, capital) to show cities as dots sized by population, inside the countries that match your other filters. A Cities tab lists them.
+- **Year slider.** Drag back to 1960, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. [DATA.md](DATA.md) marks which measures have yearly data.
+- **Refugee flows.** Open any country's profile to see where its refugees have gone, or where the refugees it hosts come from, and map either one.
+- **Colour-coded categories.** Each category has its own colour, used in the search menu, the filter chips and the filter panel.
 - **Colour by any number,** e.g. filter to democracies, then colour them by GDP per person.
 - **Country profiles** with every value and its source year.
 - **Shareable links.** The URL holds the current filters, e.g. `?f=official_languages:Portuguese,democracy:1`.
@@ -63,6 +66,12 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `world-50m.json` | Country shapes (Natural Earth, 1:50m, via world-atlas) |
 | `worldbank_latest.csv`, `hdi_median_age.csv`, `cities.csv`, `pop.csv`, `gdp.csv`, `co2.csv`, `vdem_2020_on.csv`, `pew_religion_2010.csv`, `cldr_*.json`, `driving_side.json`, `world_countries.json` | The downloaded source files |
 | `undp_hdr.csv` | UNDP's latest HDI, GII and related figures, extracted from UNDP's composite indices file |
+| `lists.csv` | Yes/no facts, one row per country: UN treaties joined, Security Council seats, nuclear weapons, FIFA membership, World Cup / Olympics / Commonwealth Games hosts. **Edited by hand** |
+| `worldcups.csv`, `olympic_medals.csv` | World Cup titles and the Paris 2024 medal table. **Edited by hand** |
+| `refugees.csv`, `refugee_flows.csv` | UNHCR refugee totals per country, and every origin → host route with 100+ people |
+| `timeseries.csv` | Yearly values since 1960 for the year slider |
+| `timeseries.json` | The yearly values for the website (built by `build_data.py`) |
+| `refugee_flows.json` | The refugee routes for the website (built by `build_data.py`) |
 | `groups.csv` | Membership of the EU, NATO, OECD, G7, G20, BRICS, ASEAN, African Union, Arab League, Commonwealth, Mercosur and OPEC. **Edited by hand**: update it when a country joins or leaves |
 | `fetch_raw.py` | Downloads fresh copies of the source files |
 | `build_data.py` | Joins the source files into `countries.json` and `cities.json` |
@@ -102,6 +111,10 @@ node make_data_table.js
 | Median age | [UN World Population Prospects](https://population.un.org/wpp/) via Gapminder | CC BY 3.0 IGO |
 | Cities | [GeoNames](https://www.geonames.org/) via [geonamescache](https://pypi.org/project/geonamescache/) | CC BY 4.0 |
 | Group memberships | Official membership lists, compiled by hand in `groups.csv` | CC0 |
+| Refugees, asylum seekers, internally displaced people, refugee routes | [UNHCR Refugee Population Statistics](https://www.unhcr.org/refugee-statistics/) via the [refugees](https://github.com/cran/refugees) package | CC BY 4.0 |
+| Military spending | [SIPRI](https://www.sipri.org/databases/milex) via the World Bank | SIPRI terms — check before commercial use |
+| Armed forces personnel | IISS Military Balance via the World Bank | Check terms before commercial use |
+| UN treaties, Security Council, nuclear-armed states, sport | Compiled by hand in `lists.csv`, `worldcups.csv` and `olympic_medals.csv` from the UN Treaty Collection, treaty bodies, FIFA, the IOC and Commonwealth Sport | CC0 |
 | Religion (2010 estimates) | [Pew Research Center](https://www.pewresearch.org/religion/2012/12/18/global-religious-landscape-exec/) via [curran/data](https://github.com/curran/data) | Pew terms of use; attribution required |
 | Regime type, democracy and freedom of expression scores | [V-Dem Institute](https://v-dem.net/) via [vdemdata](https://github.com/vdeminstitute/vdemdata) | CC BY-SA 4.0 |
 | CO₂ per person | [Our World in Data](https://github.com/owid/co2-data) | CC BY 4.0 |
@@ -119,6 +132,10 @@ The compiled `countries.json` inherits the ODbL (share-alike) from the base coun
 - **City populations count the city itself, not its wider urban area.** So Tokyo shows about 10 million rather than 37 million, and Manila is split into several cities (Quezon City is listed as the largest). That also affects "capital is the largest city". The UN's urban agglomeration figures would be better for megacities, if a usable copy can be found.
 - UNDP's figures describe 2023, the latest year in the 2025 report. When a new report comes out, download its composite indices CSV and run `python3 fetch_raw.py --undp <file>`.
 - Income groups are worked out from GNI per person using the World Bank's July 2026 thresholds, plus the World Bank's own classification for countries without published GNI. Venezuela is unclassified.
+- Treaty membership, Security Council seats and sport records are as of October 2026 and compiled by hand, so check `lists.csv` against the UN Treaty Collection now and then. Treaties count countries that have ratified or acceded, not those that have only signed.
+- Refugee figures are for the end of 2025 and cover people under UNHCR's mandate. About 6 million Palestinian refugees cared for by UNRWA are not included.
+- The year slider uses today's borders. For years before 1991, figures for countries that were then part of the Soviet Union, Yugoslavia or Czechoslovakia are estimates for today's territory where the source provides them, and blank otherwise.
+- Armed forces figures are for 2020, the latest the World Bank publishes.
 - Group memberships are as of October 2026. BRICS excludes Saudi Arabia (status unconfirmed); OPEC excludes the UAE (announced exit, May 2026).
 
 ## Ideas for next steps
@@ -126,7 +143,6 @@ The compiled `countries.json` inherits the ODbL (share-alike) from the base coun
 - Swap in Pew's 2020 religion data.
 - A scatter plot view: pick any two measures (e.g. HDI against fertility) to see correlations.
 - Compare two countries side by side; export the map as an image and the results as a spreadsheet.
-- A year slider to show change over time.
 - A "why" note per country for surprising results (e.g. why Equatorial Guinea has Portuguese as an official language).
 - "Countries like mine": pick a country and find the most similar ones.
 - Poster export of the current map.

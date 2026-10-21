@@ -4,15 +4,30 @@
 
   // ---------- Load data ----------
   const loadJSON = (url) => fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
-  const [rows, topo, cityRows] = await Promise.all([
+  const [rows, topo, cityRows, flows, timeseries] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
     window.__WORLD__ || loadJSON("world-50m.json"),
     window.__CITIES__ || loadJSON("cities.json").catch(() => []),
+    window.__FLOWS__ || loadJSON("refugee_flows.json").catch(() => []),
+    window.__TIMESERIES__ || loadJSON("timeseries.json").catch(() => null),
   ]);
   // cities.json rows: [name, iso3, lat, lon, population, capital]
   const cities = cityRows.map(([name, iso3, lat, lon, pop, cap], id) => ({ id, name, iso3, lat, lon, city_population: pop, city_capital: !!cap }));
 
   const FILTERS = window.FILTERS;
+  // ---------- Year slider: which measures have yearly data ----------
+  const TS = timeseries ? timeseries.series : {};
+  const TS_YEARS = timeseries ? timeseries.years : [];
+  const REGIMES = ["Closed autocracy", "Electoral autocracy", "Electoral democracy", "Liberal democracy"];
+  const TIME_KEYS = new Set(Object.keys(TS).concat(TS.regime ? ["democracy"] : []));
+  FILTERS.forEach((f) => { if (TIME_KEYS.has(f.key)) f.time = true; });
+  const timeFrom = (key) => {
+    const s = TS[key === "democracy" ? "regime" : key];
+    if (!s) return null;
+    let first = Infinity;
+    for (const arr of Object.values(s)) { const i = arr.findIndex((v) => v != null); if (i >= 0 && i < first) first = i; }
+    return first === Infinity ? null : TS_YEARS[first];
+  };
   const SITE = window.SITE || {};
   const F = Object.fromEntries(FILTERS.map((f) => [f.key, f]));
   const byIso = new Map(rows.map((r) => [r.iso3, r]));
@@ -20,6 +35,8 @@
   const NAME_FIX = { Kosovo: "UNK", Somaliland: "SOM", "N. Cyprus": "CYP" };
 
   const $ = (s) => document.querySelector(s);
+  // category slug used for colour-coding, e.g. "UN & treaties" -> "un-treaties"
+  const gslug = (g) => g.toLowerCase().replace(/&/g, "").replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   // ---------- Number formatting ----------
@@ -121,7 +138,36 @@
     selected: null,       // iso3 of country in detail view
     starterHidden: false,
     tab: "countries",     // results list: "countries" or "cities"
+    flow: null,           // refugee flow view: { iso, dir: "from" | "to" }
+    year: null,           // year slider: null means the latest data
   };
+
+  // Swap each country's time-enabled values for the chosen year (or back to the latest).
+  function applyYear(year) {
+    const keys = Object.keys(TS);
+    for (const r of rows) {
+      if (!r._latest) {
+        r._latest = {};
+        for (const k of keys.concat(["democracy"])) { r._latest[k] = r[k]; r._latest[k + "_year"] = r[k + "_year"]; }
+      }
+      for (const k of keys.concat(["democracy"])) {
+        delete r[k]; delete r[k + "_year"];
+        if (year == null) {
+          if (r._latest[k] !== undefined) r[k] = r._latest[k];
+          if (r._latest[k + "_year"] !== undefined) r[k + "_year"] = r._latest[k + "_year"];
+        }
+      }
+      if (year == null) continue;
+      const i = year - TS_YEARS[0];
+      for (const k of keys) {
+        const v = TS[k][r.iso3]?.[i];
+        if (v == null) continue;
+        if (k === "regime") { r.regime = REGIMES[v]; r.democracy = v >= 2; r.democracy_year = year; }
+        else r[k] = v;
+        r[k + "_year"] = year;
+      }
+    }
+  }
 
   function makeFilter(key, preset = {}) {
     const f = F[key];
@@ -249,7 +295,10 @@
       if (cityPart) return `Showing ${cityPart}.${clear}`;
       return `Showing all <b>${n} ${noun(n)}</b>. Add a filter to start asking questions.`;
     }
-    return `Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart}` : ""}.${clear}`;
+    const timed = act.some((fl) => F[fl.key].time), untimed = act.some((fl) => !F[fl.key].time);
+    const when = state.year && timed ? `In <b>${state.year}</b>: ` : "";
+    const note = state.year && untimed ? ` <span class="tnote">${timed ? "Filters without yearly data use the latest figures." : `The year slider doesn't change these filters; they use the latest figures.`}</span>` : "";
+    return `${when}Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart}` : ""}.${note}${clear}`;
   }
 
   // ---------- Map ----------
@@ -376,6 +425,11 @@
     drawCities();
     gDots.selectAll("circle").style("fill", (d) => (cs && res.get(d.iso3).match ? cs(d[cs.f.key]) : null));
 
+    gDots.attr("display", state.flow ? "none" : null);
+    gCities.attr("display", state.flow ? "none" : null);
+    if (state.flow) applyFlow(); else $("#flowbar").hidden = true;
+
+    renderTimebar();
     renderChips(act);
     $("#sentence").innerHTML = sentence(matches.length, act);
     const ca = $("#clearAll"); if (ca) ca.onclick = clearAll;
@@ -393,15 +447,101 @@
     for (const fl of state.filters) {
       const el = document.createElement("span");
       el.className = "chip" + (state.open === fl.key ? " open" : "") + (isActive(fl) ? "" : " idle");
-      el.innerHTML = `<button type="button" class="lab">${esc(chipLabel(fl))}</button><button type="button" class="x" aria-label="Remove ${esc(F[fl.key].label)}">×</button>`;
+      el.dataset.g = gslug(F[fl.key].group);
+      const clock = state.year && F[fl.key].time ? `<span class="yr">${state.year}</span>` : "";
+      el.innerHTML = `<button type="button" class="lab">${esc(chipLabel(fl))}${clock}</button><button type="button" class="x" aria-label="Remove ${esc(F[fl.key].label)}">×</button>`;
       el.querySelector(".lab").onclick = () => { state.open = state.open === fl.key ? null : fl.key; render(); };
       el.querySelector(".x").onclick = () => removeFilter(fl.key);
       box.appendChild(el);
     }
   }
 
+  // ---------- Year slider ----------
+  let playing = null;
+  function renderTimebar() {
+    const el = $("#timebar");
+    if (!TS_YEARS.length) { el.hidden = true; return; }
+    el.hidden = !!state.flow;
+    const y0 = TS_YEARS[0], y1 = TS_YEARS[TS_YEARS.length - 1];
+    const cur = state.year ?? y1;
+    if (!el.dataset.built) {
+      el.dataset.built = "1";
+      el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>
+        <div class="tmain"><div class="trow"><span class="tyear num" id="tYear"></span><span class="tnote" id="tNote"></span>
+        <button type="button" class="linkbtn" id="tLatest">Back to latest</button></div>
+        <input type="range" id="tRange" min="${y0}" max="${y1}" step="1" aria-label="Year"></div>`;
+      const range = $("#tRange");
+      range.oninput = () => { stopPlay(); setYear(+range.value); };
+      $("#tLatest").onclick = () => { stopPlay(); setYear(null); };
+      $("#tPlay").onclick = () => (playing ? stopPlay() : startPlay());
+    }
+    $("#tRange").value = cur;
+    $("#tYear").textContent = state.year ? state.year : "Latest";
+    const timeAct = state.filters.filter((fl) => F[fl.key].time).length;
+    $("#tNote").textContent = state.year
+      ? (timeAct ? "Filters with yearly data now show " + state.year + "." : "Add a filter with yearly data, like population, HDI or democracy.")
+      : "Drag to go back to " + y0 + ".";
+    $("#tLatest").hidden = !state.year;
+    $("#tPlay").textContent = playing ? "❚❚" : "▶";
+    $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
+  }
+  function setYear(y) {
+    state.year = y;
+    applyYear(y);
+    render({ keepEditor: !!state.open && document.activeElement?.id === "tRange" });
+    if (state.open && document.activeElement?.id !== "tRange") renderEditor();
+  }
+  function startPlay() {
+    const y0 = TS_YEARS[0], y1 = TS_YEARS[TS_YEARS.length - 1];
+    if (!state.year || state.year >= y1) setYear(y0);
+    playing = setInterval(() => {
+      if (state.year >= y1) return stopPlay();
+      setYear(state.year + 1);
+    }, 550);
+    renderTimebar();
+  }
+  function stopPlay() { if (playing) { clearInterval(playing); playing = null; renderTimebar(); } }
+
+  // ---------- Refugee flow view ----------
+  let flowScale = null;
+  function flowValues() {
+    const { iso, dir } = state.flow;
+    const vals = new Map();
+    for (const [o, h, n] of flows) {
+      if (dir === "from" && o === iso) vals.set(h, n);
+      if (dir === "to" && h === iso) vals.set(o, n);
+    }
+    return vals;
+  }
+  function applyFlow() {
+    const { iso, dir } = state.flow;
+    const src = byIso.get(iso);
+    const vals = flowValues();
+    const ext = d3.extent([...vals.values()]);
+    const css = getComputedStyle(document.documentElement);
+    const lo = css.getPropertyValue("--ramp-lo").trim(), hi = css.getPropertyValue("--ramp-hi").trim();
+    const interp = d3.interpolateRgb(lo, hi);
+    const t = (v) => (ext[0] === ext[1] ? 1 : (Math.log10(v) - Math.log10(ext[0])) / (Math.log10(ext[1]) - Math.log10(ext[0])));
+    flowScale = { vals, ext, lo, hi };
+    paths.attr("class", (d) => (d.rec && d.rec.iso3 === iso ? "flow-src" : ""))
+      .style("fill", (d) => { const v = d.rec && vals.get(d.rec.iso3); return v ? interp(t(v)) : null; });
+    const total = d3.sum([...vals.values()]);
+    const bar = $("#flowbar");
+    bar.hidden = false;
+    bar.innerHTML = `<p>${dir === "from"
+      ? `Where refugees from <b>${esc(src.name)}</b> live: <b>${d3.format(",")(total)}</b> people in ${vals.size} ${vals.size === 1 ? "country" : "countries"}`
+      : `Where refugees in <b>${esc(src.name)}</b> come from: <b>${d3.format(",")(total)}</b> people from ${vals.size} ${vals.size === 1 ? "country" : "countries"}`}</p>
+      <button type="button" class="ghost" id="flowClose">Close</button>`;
+    $("#flowClose").onclick = () => { state.flow = null; render(); };
+  }
+
   function renderLegend(cs, act) {
     const el = $("#legend");
+    if (state.flow && flowScale) {
+      el.hidden = false;
+      el.innerHTML = `<div class="lrow"><span>Refugees (groups of 100 or more)</span></div><div class="lrow"><span class="num">${compact(flowScale.ext[0] || 0)}</span><span class="ramp" style="background:linear-gradient(90deg, ${flowScale.lo}, ${flowScale.hi})"></span><span class="num">${compact(flowScale.ext[1] || 0)}</span></div>`;
+      return;
+    }
     if (!act.length && !showCities()) { el.hidden = true; return; }
     el.hidden = false;
     let h = "";
@@ -437,7 +577,7 @@
   }
   function renderStarter(act) {
     const el = $("#starter");
-    el.hidden = !!state.filters.length || state.starterHidden;
+    el.hidden = !!state.filters.length || state.starterHidden || !!state.flow;
     if (el.hidden) return;
     const pz = todaysPuzzle();
     el.innerHTML = `
@@ -455,7 +595,7 @@
   // ---------- Zero results ----------
   function renderZero(act, matches) {
     const el = $("#zero");
-    if (!act.length || matches.length) { el.hidden = true; return; }
+    if (!act.length || matches.length || state.flow) { el.hidden = true; return; }
     const tries = act.map((fl) => {
       const rest = act.filter((x) => x !== fl);
       return { fl, n: pool().filter((r) => rest.every((x) => passes(r, x))).length };
@@ -477,12 +617,15 @@
     if (!fl) { el.hidden = true; return; }
     const f = F[fl.key];
     const src = window.SOURCES[f.source];
-    const year = yearLabel(f);
+    const year = state.year && f.time ? String(state.year) : yearLabel(f);
+    const timeNote = !f.time ? (state.year ? `<br><b>Not yearly:</b> this filter uses the latest data, whatever year you pick.` : "")
+      : `<br>Has yearly data from ${timeFrom(f.key)}: use the year slider under the map to go back in time.`;
     const keepSearch = el.querySelector(".optsearch")?.value || "";
     const scroll = el.querySelector(".opts")?.scrollTop || 0;
     el.hidden = false;
-    el.innerHTML = `<header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
-      <p class="info">${esc(f.info)} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.</p>
+    el.dataset.g = gslug(f.group);
+    el.innerHTML = `<div class="eyebrow">${esc(f.group)}</div><header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
+      <p class="info">${esc(f.info)} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.${timeNote}</p>
       <div id="edBody"></div>
       <button type="button" class="remove" id="edRemove">Remove this filter</button>`;
     $("#edClose").onclick = () => { state.open = null; render(); };
@@ -711,13 +854,29 @@
     const groups = window.FILTER_GROUPS.map((g) => {
       const fs = FILTERS.filter((f) => f.group === g && !f.target);
       if (!fs.length) return "";
-      return `<h4>${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
+      return `<h4 data-g="${gslug(g)}">${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
     }).join("");
     el.innerHTML = `<div class="detail">
       <button type="button" class="linkbtn back" id="back">← Back to results</button>
       <h2><span>${r.flag || ""}</span>${esc(r.name)}</h2>
       <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
       ${badge}
+      ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; refugee routes and everything else show the latest figures.</p>` : ""}
+      ${(() => {
+        const out = flows.filter((f) => f[0] === r.iso3).sort((a, b) => b[2] - a[2]);
+        const inn = flows.filter((f) => f[1] === r.iso3).sort((a, b) => b[2] - a[2]);
+        if (!out.length && !inn.length) return "";
+        const nm = (i) => esc(byIso.get(i)?.name || i);
+        const flowYear = r._latest?.refugees_hosted_year ?? r.refugees_hosted_year ?? 2025;
+        const list = (fs, col) => `<dl>${fs.slice(0, 5).map((f) => `<dt>${nm(f[col])}</dt><dd>${d3.format(",")(f[2])}</dd>`).join("")}</dl>`;
+        return `<h4 data-g="refugees">Refugees</h4>
+          ${inn.length ? `<p class="sub">In ${flowYear} it hosted <b>${d3.format(",")(r._latest?.refugees_hosted ?? r.refugees_hosted ?? 0)}</b> refugees. Largest groups come from:</p>${list(inn, 0)}` : ""}
+          ${out.length ? `<p class="sub">${d3.format(",")(r._latest?.refugees_from ?? r.refugees_from ?? 0)} refugees had fled ${esc(r.name)} by ${flowYear}. Largest numbers live in:</p>${list(out, 1)}` : ""}
+          <div class="flowbtns">
+            ${inn.length ? `<button type="button" data-dir="to">Map where its refugees come from</button>` : ""}
+            ${out.length ? `<button type="button" data-dir="from">Map where its refugees have gone</button>` : ""}
+          </div>`;
+      })()}
       ${(() => {
         const cs = cities.filter((c) => c.iso3 === r.iso3).slice(0, 6);
         return cs.length ? `<h4>Largest cities</h4><dl>${cs.map((c) => `<dt>${esc(c.name)}${c.city_capital ? " (capital)" : ""}</dt><dd>${d3.format(",")(c.city_population)}</dd>`).join("")}</dl>` : "";
@@ -725,12 +884,22 @@
       ${groups}
     </div>`;
     $("#back").onclick = () => { state.selected = null; render(); };
+    el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir }; render(); }));
   }
 
   // ---------- Tooltip ----------
   const tip = $("#tooltip");
   function showTip(evt, r) {
     if (!r) { tip.hidden = true; return; }
+    if (state.flow && flowScale) {
+      const src = byIso.get(state.flow.iso);
+      const v = flowScale.vals.get(r.iso3);
+      const txt = r.iso3 === src.iso3 ? (state.flow.dir === "from" ? "Country of origin" : "Host country")
+        : v ? (state.flow.dir === "from" ? `${d3.format(",")(v)} refugees from ${src.name}` : `${d3.format(",")(v)} of the refugees in ${src.name}`)
+        : "Fewer than 100, or none";
+      tip.innerHTML = `<strong>${r.flag || ""} ${esc(r.name)}</strong><span class="st">${esc(txt)}</span>`;
+      return placeTip(evt);
+    }
     const e = lastEval.res.get(r.iso3);
     const act = lastEval.act;
     let st = "";
@@ -786,50 +955,60 @@
     if (f.label.toLowerCase().includes(q)) return 2;
     return q.split(/\s+/).every((w) => hay.includes(w)) ? 1 : 0;
   }
+  let menuCat = null; // category picked in the menu, or null for all
   function openMenu() {
     const q = input.value.trim().toLowerCase();
     const used = new Set(state.filters.map((x) => x.key));
+    const inCat = (f) => !menuCat || f.group === menuCat;
     items = [];
-    let html = "";
+    // one menu row: coloured by category; filters already added are marked
+    const item = (f, label, valueOf) => {
+      items.push({ key: f.key, value: valueOf ? label : undefined });
+      const added = used.has(f.key) && !valueOf;
+      let right = "";
+      if (added) right = `<span class="added-tag">✓ Added</span>`;
+      else if (valueOf) right = `<span class="gtag">${esc(f.label)}</span>`;
+      else if (q) right = `<span class="gtag">${esc(f.group)}</span>`;
+      if (f.time && !added && !valueOf) right = `<span class="ytag" title="Has yearly data for the year slider">yearly</span>` + right;
+      return `<button type="button" role="option" class="item${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"><span>${esc(label)}</span>${right}</button>`;
+    };
+    let html = `<div class="cats" role="group" aria-label="Categories">
+      <button type="button" class="${menuCat ? "" : "on"}" data-cat="">All</button>
+      ${window.FILTER_GROUPS.map((g) => `<button type="button" data-cat="${esc(g)}" data-g="${gslug(g)}" class="${menuCat === g ? "on" : ""}">${esc(g)}</button>`).join("")}</div>`;
     if (!q) {
-      html = `<div class="browse">${window.FILTER_GROUPS.map((g) => {
+      const groups = menuCat ? [menuCat] : window.FILTER_GROUPS;
+      html += `<div class="${menuCat ? "" : "browse"}">${groups.map((g) => {
         const fs = FILTERS.filter((f) => f.group === g);
-        return `<section><h4>${g}</h4>${fs.map((f) => { items.push({ key: f.key }); return itemHTML(items.length - 1, f.label, used.has(f.key) ? "added" : ""); }).join("")}</section>`;
+        return `<section>${menuCat ? "" : `<h4 data-g="${gslug(g)}">${esc(g)}</h4>`}${fs.map((f) => item(f, f.label)).join("")}</section>`;
       }).join("")}</div>`;
     } else {
-      const fs = FILTERS.map((f) => ({ f, s: score(f, q) })).filter((x) => x.s).sort((a, b) => b.s - a.s);
+      const fs = FILTERS.filter(inCat).map((f) => ({ f, s: score(f, q) })).filter((x) => x.s).sort((a, b) => b.s - a.s);
       const vals = [];
       if (q.length >= 2) {
-        for (const f of FILTERS) {
+        for (const f of FILTERS.filter(inCat)) {
           if (!f.options) continue;
           for (const o of f.options) if (o.toLowerCase().includes(q)) vals.push({ f, o, s: o.toLowerCase().startsWith(q) ? 2 : 1 });
         }
         vals.sort((a, b) => b.s - a.s || a.o.length - b.o.length);
       }
-      if (vals.length) {
-        html += `<h4>Values</h4>` + vals.slice(0, 6).map((v) => { items.push({ key: v.f.key, value: v.o }); return itemHTML(items.length - 1, `${v.o}`, v.f.label); }).join("");
-      }
-      if (fs.length) {
-        html += `<h4>Filters</h4>` + fs.slice(0, 10).map(({ f }) => { items.push({ key: f.key }); return itemHTML(items.length - 1, f.label, used.has(f.key) ? "added" : f.group); }).join("");
-      }
-      if (!items.length) html = `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”. Try a broader word, like “religion” or “money”.</p>`;
+      if (fs.length) html += `<h4>Filters</h4>` + fs.slice(0, 12).map(({ f }) => item(f, f.label)).join("");
+      if (vals.length) html += `<h4>Values</h4>` + vals.slice(0, 6).map((v) => item(v.f, v.o, true)).join("");
+      if (!fs.length && !vals.length) html += `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”${menuCat ? ` in ${esc(menuCat)}` : ""}. Try a broader word, like “religion” or “money”.</p>`;
     }
     cursor = 0;
     menu.innerHTML = html;
     menu.hidden = false;
     input.setAttribute("aria-expanded", "true");
     markCursor();
-    menu.querySelectorAll("button").forEach((b) => {
-      b.onmousedown = (e) => e.preventDefault();
-      b.onclick = () => choose(items[+b.dataset.i]);
-    });
-  }
-  function itemHTML(i, label, note) {
-    return `<button type="button" role="option" data-i="${i}"><span>${esc(label)}</span><small>${esc(note || "")}</small></button>`;
+    menu.querySelectorAll("button").forEach((b) => (b.onmousedown = (e) => e.preventDefault()));
+    const onCat = menu.querySelector(".cats button.on"), cats = menu.querySelector(".cats");
+    if (onCat && cats) cats.scrollLeft = Math.max(0, onCat.offsetLeft - cats.offsetLeft - 40);
+    menu.querySelectorAll(".cats button").forEach((b) => (b.onclick = () => { menuCat = b.dataset.cat || null; openMenu(); input.focus(); }));
+    menu.querySelectorAll("button.item").forEach((b) => (b.onclick = () => choose(items[+b.dataset.i])));
   }
   function markCursor() {
-    menu.querySelectorAll("button").forEach((b) => b.classList.toggle("on", +b.dataset.i === cursor));
-    menu.querySelector("button.on")?.scrollIntoView({ block: "nearest" });
+    menu.querySelectorAll("button.item").forEach((b) => b.classList.toggle("on", +b.dataset.i === cursor));
+    menu.querySelector("button.item.on")?.scrollIntoView({ block: "nearest" });
   }
   function closeMenu() { menu.hidden = true; input.setAttribute("aria-expanded", "false"); }
   function choose(it) {
@@ -853,6 +1032,7 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && state.open) { state.open = null; render(); }
+    else if (e.key === "Escape" && state.flow) { state.flow = null; render(); }
     if (e.key === "Escape" && !$("#about").hidden) $("#about").hidden = true;
   });
 
@@ -863,7 +1043,7 @@
     if (!showCities()) state.tab = "countries";
     render();
   }
-  function clearAll() { state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; state.tab = "countries"; render(); }
+  function clearAll() { state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; state.tab = "countries"; stopPlay(); if (state.year) { state.year = null; applyYear(null); } render(); }
 
   // ---------- About ----------
   function openAbout() {
@@ -897,6 +1077,7 @@
     if (parts.length) p.set("f", parts.join(","));
     if (state.territories) p.set("t", "1");
     if (state.colourBy) p.set("c", state.colourBy);
+    if (state.year) p.set("y", state.year);
     return p.toString();
   }
   function decodeState(qs) {
@@ -913,6 +1094,8 @@
     if (out.some(isCity) && !out.some((fl) => !isCity(fl))) state.tab = "cities";
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";
+    const y = +p.get("y");
+    if (y && TS_YEARS.includes(y)) { state.year = y; applyYear(y); }
   }
   function saveURL() {
     try {

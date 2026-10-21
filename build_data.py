@@ -54,7 +54,7 @@ for c in base:
         "region": c.get("region") or "",
         "subregion": c.get("subregion") or "",
         "sovereign": bool(c.get("independent")),
-        "un_member": bool(c.get("unMember")),
+        "un_member": bool(c.get("unMember")) and c["cca3"] != "VAT",  # the Holy See is an observer
         "official_languages": sorted(set((c.get("languages") or {}).values())),
         "currencies": sorted({v["name"] for v in (c.get("currencies") or {}).values()}),
         "landlocked": bool(c.get("landlocked")),
@@ -269,6 +269,10 @@ WB = {
     "adolescent_births": ("sp_ado_tfrt", 1),
     "women_parliament": ("sg_gen_parl_zs", 1),
     "female_labour": ("sl_tlf_cact_fe_zs", 1),
+    "military_spend_pct": ("ms_mil_xpnd_gd_zs", 2),
+    "military_spend_usd": ("ms_mil_xpnd_cd", 0),
+    "armed_forces": ("ms_mil_totl_p1", 0),
+    "armed_forces_pct": ("ms_mil_totl_tf_zs", 2),
 }
 wb = {}
 for row in csv.DictReader(open(raw("worldbank_latest.csv"), encoding="utf-8")):
@@ -361,6 +365,97 @@ for rec in countries.values():
     if big:
         rec["largest_city"] = big[0]
         rec["capital_is_largest"] = bool(cap) and cap[0] == big[0]
+
+# --- 12. Yes/no lists: treaties, Security Council, nuclear weapons, sport (lists.csv, edited by hand) ---
+LISTS = {}
+for line in open(raw("lists.csv"), encoding="utf-8"):
+    if line.startswith("#") or line.startswith("list,") or not line.strip():
+        continue
+    name, iso = line.strip().split(",")
+    LISTS.setdefault(name, set()).add(iso)
+for name, members in LISTS.items():
+    for iso, rec in countries.items():
+        if iso in members:
+            rec[name] = True
+        elif rec["sovereign"]:
+            rec[name] = False
+for rec in countries.values():
+    if rec.get("unsc_permanent"):
+        rec["security_council"] = "Permanent member"
+    elif rec.get("unsc_elected"):
+        rec["security_council"] = "Elected member (2026)"
+    elif rec["sovereign"]:
+        rec["security_council"] = "Not on the council"
+    rec.pop("unsc_permanent", None)
+    rec.pop("unsc_elected", None)
+
+# Football World Cup titles (worldcups.csv) and Paris 2024 Olympic medals (olympic_medals.csv)
+wc = {r["iso3"]: r for r in csv.DictReader(l for l in open(raw("worldcups.csv"), encoding="utf-8") if not l.startswith("#"))}
+medals = {r["iso3"]: r for r in csv.DictReader(l for l in open(raw("olympic_medals.csv"), encoding="utf-8") if not l.startswith("#"))}
+for iso, rec in countries.items():
+    if not rec["sovereign"] and iso not in wc and iso not in medals:
+        continue
+    rec["wc_men_titles"] = int(wc[iso]["men"]) if iso in wc else 0
+    rec["wc_women_titles"] = int(wc[iso]["women"]) if iso in wc else 0
+    m = medals.get(iso)
+    rec["olympic_medals"] = int(m["total"]) if m else 0
+    rec["olympic_golds"] = int(m["gold"]) if m else 0
+    if rec.get("population"):
+        rec["medals_per_million"] = round(rec["olympic_medals"] / rec["population"] * 1e6, 2)
+
+# --- 13. Refugees (UNHCR Refugee Population Statistics, CC BY 4.0) ---
+for row in csv.DictReader(open(raw("refugees.csv"), encoding="utf-8")):
+    rec = countries.get(row["iso3"])
+    if not rec:
+        continue
+    y = int(row["year"])
+    for f in ("refugees_hosted", "asylum_seekers_hosted", "refugees_from", "idps"):
+        rec[f] = int(row[f])
+        rec[f + "_year"] = y
+    if rec.get("population"):
+        rec["refugees_hosted_per1000"] = round(1000 * rec["refugees_hosted"] / rec["population"], 1)
+        rec["refugees_from_per1000"] = round(1000 * rec["refugees_from"] / rec["population"], 1)
+        rec["refugees_hosted_per1000_year"] = rec["refugees_from_per1000_year"] = y
+for rec in countries.values():
+    if rec["sovereign"] and "refugees_hosted" not in rec:
+        rec["refugees_hosted"] = rec["refugees_from"] = 0
+flows = [[r["origin"], r["host"], int(r["refugees"])] for r in csv.DictReader(open(raw("refugee_flows.csv"), encoding="utf-8"))
+         if r["origin"] in countries and r["host"] in countries]
+with open(os.path.join(ROOT, "refugee_flows.json"), "w", encoding="utf-8") as f:
+    json.dump(flows, f, separators=(",", ":"))
+print(f"Wrote {len(flows)} refugee flows")
+
+# --- 14. Time series for the year slider (timeseries.csv + pop/gdp/co2 files) -> timeseries.json ---
+YEARS = list(range(1960, 2026))
+TS_CODES = {  # field on the site: indicator in timeseries.csv
+    "fertility": "sp_dyn_tfrt_in", "life_expectancy": "sp_dyn_le00_in", "urban_pct": "sp_urb_totl_in_zs",
+    "infant_mortality": "sp_dyn_imrt_in", "pct_over65": "sp_pop_65up_to_zs", "birth_rate": "sp_dyn_cbrt_in",
+    "death_rate": "sp_dyn_cdrt_in", "pop_growth": "sp_pop_grow", "hdi": "hdi", "median_age": "median_age",
+    "libdem": "v2x_libdem", "regime": "v2x_regime", "refugees_hosted": "refugees_hosted", "refugees_from": "refugees_from",
+}
+series = {k: {} for k in list(TS_CODES) + ["population", "gdp_per_capita", "co2_per_capita"]}
+def put(field, iso, year, value):
+    if iso in countries and 1960 <= year <= 2025:
+        series[field].setdefault(iso, [None] * len(YEARS))[year - 1960] = value
+code_to_field = {v: k for k, v in TS_CODES.items()}
+for row in csv.DictReader(open(raw("timeseries.csv"), encoding="utf-8")):
+    f = code_to_field.get(row["indicator"])
+    if f:
+        v = float(row["value"])
+        put(f, row["iso3"], int(row["year"]), int(v) if f in ("regime", "refugees_hosted", "refugees_from") else v)
+for (iso, y), v in pop_year.items():
+    put("population", iso, y, round(v))
+for row in csv.DictReader(open(raw("gdp.csv"), encoding="utf-8")):
+    iso = WB_FIX.get(row["Country Code"], row["Country Code"]); y = int(row["Year"])
+    if row["Value"] and (iso, y) in pop_year and pop_year[(iso, y)] > 0:
+        put("gdp_per_capita", iso, y, round(float(row["Value"]) / pop_year[(iso, y)]))
+for row in csv.DictReader(open(raw("co2.csv"), encoding="utf-8")):
+    if row["iso_code"] and row["co2_per_capita"]:
+        put("co2_per_capita", row["iso_code"], int(row["year"]), round(float(row["co2_per_capita"]), 2))
+# refugee counts: a country with no row in a year it reports nothing for is left blank, not zero
+with open(os.path.join(ROOT, "timeseries.json"), "w", encoding="utf-8") as f:
+    json.dump({"years": YEARS, "series": series}, f, separators=(",", ":"))
+print("Wrote timeseries.json:", {k: len(v) for k, v in series.items()})
 
 # --- Write ---
 out = sorted(countries.values(), key=lambda r: r["name"])
