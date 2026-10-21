@@ -23,6 +23,7 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Cities.** Add a city filter (population, capital) to show cities as dots sized by population, inside the countries that match your other filters. A Cities tab lists them.
 - **Year slider.** Drag back in time, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. The slider only covers years the active filters have data for (HDI from 1990, for example). [DATA.md](DATA.md) marks which measures have yearly data.
 - **Zoom in for detail.** Country names, then capitals and cities, seas, lakes, rivers, mountain ranges, deserts and peaks appear as you zoom in. The **Aa** button turns them on and off.
+- **Country factfiles.** The 📄 Factfile button (or the button on any country profile) makes a printable summary of every measure for one country, with an outline map, a locator map and key facts. Each measure shows the country's value, its world rank, and the medians for its continent and for the world, with a small chart of where it sits. Print it, save it as a PDF from the print window, or download it as a Word file. (Printing and downloads don't work inside the claude.ai preview, only on the real website.)
 - **Neighbours.** Every country profile lists its neighbours and the approximate length of each land border.
 - **Sorting.** A–Z and ↑/↓ buttons sort the results, like a spreadsheet. The red **Clear all** button on the map resets everything.
 - **Refugee flows.** Open any country's profile to see where its refugees have gone, or where the refugees it hosts come from, and map either one.
@@ -86,6 +87,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `features.json` | Rivers, lakes and named seas, mountain ranges, deserts and peaks for the zoom labels (built by `make_features.mjs`) |
 | `borders.csv` | Every land border and its length (built by `make_borders.mjs`) |
 | `make_features.mjs`, `make_borders.mjs`, `package.json` | Node tools for the two files above: run `npm install`, then `npm run features` or `npm run borders` |
+| `factfile.js` | Country factfiles: the printable page and the Word download (uses the [docx](https://github.com/dolanmiu/docx) library, loaded only when someone downloads a Word file) |
 | `fetch_raw.py` | Downloads fresh copies of the source files |
 | `build_data.py` | Joins the source files into `countries.json` and `cities.json` |
 | `make_data_table.cjs` | Writes `DATA.md` from the filter list |

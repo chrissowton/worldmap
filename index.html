@@ -17,6 +17,7 @@
     <h1>Which Countries<span>?</span></h1>
   </div>
   <nav id="themes" class="themes" aria-label="Browse filters by theme"></nav>
+  <button id="ffBtn" class="ffbtn" type="button" title="Print or download a country factfile">📄 Factfile</button>
   <div class="add">
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     <input id="addInput" type="search" autocomplete="off" placeholder="Search filters: try “religion”, “coast” or “HDI”" aria-label="Add a filter" aria-controls="addMenu" aria-expanded="false">
@@ -25,6 +26,7 @@
   <div id="tpanel" class="tpanel" role="dialog" aria-label="Filters" hidden></div>
 </header>
 <div id="fcard" class="fcard" role="tooltip" hidden></div>
+<div id="factfile" class="ff-overlay" role="dialog" aria-label="Country factfile" hidden></div>
 
 <section class="bar" aria-label="Active filters">
   <div id="chips" class="chips"></div>
@@ -60,5 +62,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="filters.js"></script>
 <script src="app.js"></script>
+<script src="factfile.js"></script>
 </body>
 </html>

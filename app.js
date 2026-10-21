@@ -1096,6 +1096,7 @@
     el.innerHTML = `<div class="detail">
       <button type="button" class="linkbtn back" id="back">← Back to results</button>
       <h2><span>${r.flag || ""}</span>${esc(r.name)}</h2>
+      <button type="button" class="ffopen" id="ffOpen">📄 Country factfile <span>print or download</span></button>
       <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
       ${badge}
       ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; refugee routes and everything else show the latest figures.</p>` : ""}
@@ -1128,6 +1129,7 @@
       ${groups}
     </div>`;
     $("#back").onclick = () => { state.selected = null; render(); };
+    $("#ffOpen").onclick = () => window.openFactfile?.(r.iso3);
     el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.selected = b.dataset.iso; render(); }));
     el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir }; render(); }));
   }
@@ -1481,6 +1483,17 @@
     } catch (e) { /* sandboxed frames may refuse */ }
   }
   try { decodeState(location.search); } catch (e) { /* ignore */ }
+
+  // ---------- Shared with factfile.js ----------
+  window.WC = {
+    F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
+    applyYear, CLOCK, latest: (r, key) => (r._latest && key in r._latest ? r._latest[key] : r[key]),
+    latestYear: (r, f) => {
+      if (typeof f.year === "string") return r._latest && f.year in r._latest ? r._latest[f.year] : r[f.year];
+      return f.yearText || f.year || "";
+    },
+  };
+  $("#ffBtn")?.addEventListener("click", () => window.openFactfile?.(state.selected));
 
   // ---------- Go ----------
   new ResizeObserver(() => layout()).observe($("#mapwrap"));
