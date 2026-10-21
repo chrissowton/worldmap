@@ -37,8 +37,9 @@ window.SITE = {
 };
 
 window.FILTER_GROUPS = [
-  "Development", "Population", "Health", "Gender", "Work & money", "Global links", "Refugees",
-  "Cities", "Culture", "Politics", "UN & treaties", "Military", "Sport", "Geography", "Environment",
+  "Development", "Population", "Health", "Gender", "Work & money", "Trade", "Global links", "Refugees",
+  "Cities", "Culture", "Tourism", "Technology", "Politics", "UN & treaties", "Military", "Sport",
+  "Geography", "Climate", "Energy & resources", "Environment",
 ];
 
 // Helper for number filters. `say` gets a phrase like "at least 50%".
@@ -124,7 +125,7 @@ window.FILTERS = [
     info: "Share of people aged 15 and over who can read and write. Many richer countries don't report this.",
     keywords: "literacy reading education school",
   }),
-  num("internet", "Development", "Internet users", {
+  num("internet", "Technology", "Internet users", {
     short: "Internet", format: "pct", bounds: [0, 100],
     say: (b) => `${b} of people use the internet`,
     info: "Share of people who used the internet in the last three months.",
@@ -332,26 +333,28 @@ window.FILTERS = [
   {
     key: "groups", type: "multi", group: "Global links",
     label: "Member of", short: "Member of",
-    order: ["European Union", "NATO", "OECD", "G7", "G20", "BRICS", "ASEAN", "African Union", "Arab League", "Commonwealth", "Mercosur", "OPEC"],
+    order: ["European Union", "NATO", "OECD", "G7", "G20", "BRICS", "ASEAN", "African Union", "Arab League", "Commonwealth", "Mercosur", "OPEC", "World Trade Organization"],
+    modes: true,
     say: (v) => `the country belongs to ${v}`,
-    article: { "European Union": "the European Union", OECD: "the OECD", G7: "the G7", G20: "the G20", "African Union": "the African Union", "Arab League": "the Arab League", Commonwealth: "the Commonwealth" },
+    sayNot: (v) => `the country does not belong to ${v}`,
+    article: { "World Trade Organization": "the WTO", "European Union": "the European Union", OECD: "the OECD", G7: "the G7", G20: "the G20", "African Union": "the African Union", "Arab League": "the Arab League", Commonwealth: "the Commonwealth" },
     source: "groups", yearText: "October 2026",
-    info: "Membership of international groups and alliances. Full members only.",
+    info: "Membership of international groups, alliances and the World Trade Organization (WTO). Full members only.",
     keywords: "eu nato oecd g7 g20 brics asean african union commonwealth mercosur opec arab league alliance bloc trade group membership",
   },
-  num("trade_pct", "Global links", "Trade", {
+  num("trade_pct", "Trade", "Trade (exports + imports)", {
     short: "Trade", scale: "log", format: "pct",
     say: (b) => `imports plus exports are ${b} of GDP`,
     info: "Imports and exports added together, as a share of the economy (GDP). High values mean an economy that is very open to the rest of the world.",
     keywords: "trade imports exports globalisation globalization open economy",
   }),
-  num("fdi_pct", "Global links", "Foreign investment", {
+  num("fdi_pct", "Trade", "Foreign investment", {
     short: "FDI", step: 0.5, format: "pct", clip: true,
     say: (b) => `foreign investment coming in is ${b} of GDP`,
     info: "Money invested in the country by foreign companies in a year (net FDI inflows), as a share of GDP. Can be negative when investors pull money out.",
     keywords: "fdi foreign direct investment tnc multinational globalisation",
   }),
-  num("tourists", "Global links", "Tourist arrivals", {
+  num("tourists", "Tourism", "Tourist arrivals", {
     short: "Tourists", scale: "log", format: "people",
     say: (b) => `${b} tourists arrive a year`,
     info: "International tourists arriving in a year, from the last year before COVID-19 (usually 2019).",
@@ -450,14 +453,18 @@ window.FILTERS = [
   {
     key: "official_languages", type: "multi", group: "Culture",
     label: "Official language", short: "Official",
-    say: (v) => `${v} is an official language`,
+    modes: true,
+    say: (v, plural) => `${v} ${plural ? "are official languages" : "is an official language"}`,
+    sayNot: (v) => `${v} is not an official language`,
     source: "countries", info: "Languages with official or national status.",
     keywords: "language speak spoken tongue official national",
   },
   {
     key: "spoken_languages", type: "multi", group: "Culture",
     label: "Language spoken by 10%+", short: "Spoken",
+    modes: true,
     say: (v) => `at least 10% of people speak ${v}`,
+    sayNot: (v) => `fewer than 10% of people speak ${v}`,
     source: "cldr", info: "Languages spoken by at least 1 in 10 people, including as a second language.",
     keywords: "language speak spoken second english french spanish",
   },
@@ -559,13 +566,26 @@ window.FILTERS = [
     ["un_tpnw", "Nuclear weapons ban", "Nuclear ban", "the nuclear weapons ban treaty", "The Treaty on the Prohibition of Nuclear Weapons (2017), which bans nuclear weapons outright. No nuclear-armed state has joined.", "tpnw nuclear ban prohibition weapons treaty"],
     ["un_landmine", "Landmine ban (Ottawa Treaty)", "Landmine ban", "the landmine ban treaty", "The 1997 Ottawa Treaty banning anti-personnel landmines. Estonia, Latvia, Lithuania, Finland and Poland left in 2025–26.", "landmines mines ottawa treaty ban"],
   ].map(([key, label, short, name, info, keywords]) => ({
-    key, type: "bool", group: "UN & treaties", label, short,
+    key, type: "bool", group: "UN & treaties", label, short, hidden: true,
     say: (v) => (v ? `the country has joined ${name}` : `the country has not joined ${name}`),
     yes: `${short}: joined`, no: `${short}: not joined`,
     source: "treaties", yearText: "October 2026",
     info: info + " Counts countries that have ratified or acceded, not those that have only signed.",
     keywords: keywords + " treaty united nations un",
   })),
+
+  {
+    key: "treaties_joined", type: "multi", group: "UN & treaties",
+    label: "Treaties joined", short: "Treaties",
+    order: ["Children's rights (UNCRC)", "International Criminal Court", "Paris Agreement", "Refugee Convention", "Women's rights (CEDAW)", "Disability rights (CRPD)", "Non-Proliferation Treaty (NPT)", "Nuclear weapons ban", "Landmine ban"],
+    modes: true,
+    say: (v) => `the country has joined ${v}`,
+    sayNot: (v) => `the country has not joined ${v}`,
+    article: { "Children's rights (UNCRC)": "the children's rights convention (UNCRC)", "International Criminal Court": "the International Criminal Court", "Paris Agreement": "the Paris Agreement", "Refugee Convention": "the Refugee Convention", "Women's rights (CEDAW)": "the women's rights convention (CEDAW)", "Disability rights (CRPD)": "the disability rights convention (CRPD)", "Non-Proliferation Treaty (NPT)": "the Non-Proliferation Treaty", "Nuclear weapons ban": "the nuclear weapons ban", "Landmine ban": "the landmine ban" },
+    source: "treaties", yearText: "October 2026",
+    info: "Major UN treaties the country has joined (ratified or acceded, not just signed). Choose “None of these” to find countries that have not joined, such as the United States and the children's rights convention.",
+    keywords: "treaty treaties convention uncrc crc icc international criminal court paris agreement refugee convention cedaw crpd npt nuclear ban landmine ottawa ratified",
+  },
 
   // ---------------- Military ----------------
   num("military_spend_pct", "Military", "Military spending", {
@@ -623,11 +643,23 @@ window.FILTERS = [
     ["commonwealth_games_host", "Hosted the Commonwealth Games", "Commonwealth Games host", "has hosted the Commonwealth Games", "Every host from 1930 to Glasgow 2026.", "commonwealth games host"],
     ["fifa_member", "FIFA member", "FIFA member", "is a member of FIFA", "Member of FIFA, football's world governing body. The UK counts as a member through England, Scotland, Wales and Northern Ireland.", "fifa football soccer member association"],
   ].map(([key, label, short, phrase, info, keywords]) => ({
-    key, type: "bool", group: "Sport", label, short,
+    key, type: "bool", group: "Sport", label, short, hidden: key !== "fifa_member",
     say: (v) => (v ? `the country ${phrase}` : `the country ${phrase.replace(/^has /, "has never ").replace(/^is /, "is not ")}`),
     yes: `${short}: yes`, no: `${short}: no`,
     source: "sport", info, keywords,
   })),
+  {
+    key: "events_hosted", type: "multi", group: "Sport",
+    label: "Has hosted", short: "Hosted",
+    order: ["Men's World Cup", "Women's World Cup", "Summer Olympics", "Winter Olympics", "Commonwealth Games"],
+    modes: true,
+    say: (v) => `the country has hosted ${v}`,
+    sayNot: (v) => `the country has never hosted ${v}`,
+    article: { "Men's World Cup": "the men's football World Cup", "Women's World Cup": "the women's football World Cup", "Summer Olympics": "the Summer Olympics", "Winter Olympics": "the Winter Olympics", "Commonwealth Games": "the Commonwealth Games" },
+    source: "sport", yearText: "to 2026",
+    info: "Big sporting events the country has hosted: football World Cups (to 2026), Summer Olympics (to Paris 2024), Winter Olympics (to Milan–Cortina 2026) and Commonwealth Games (to Glasgow 2026). Joint hosts all count.",
+    keywords: "host hosted olympics world cup commonwealth games football events",
+  },
   num("olympic_medals", "Sport", "Olympic medals (Paris 2024)", {
     short: "Medals 2024", scale: "linear", format: "int", clip: true, source: "olympics", year: null, yearText: "2024",
     say: (b) => `athletes won ${b} medals at Paris 2024`,
@@ -698,17 +730,302 @@ window.FILTERS = [
     keywords: "size big small area large",
   }),
 
+  // ---------------- Trade ----------------
+  num("exports_pct", "Trade", "Exports", {
+    short: "Exports", scale: "log", format: "pct", clip: true,
+    say: (b) => `exports are ${b} of GDP`,
+    info: "Goods and services sold to other countries, as a share of the economy (GDP).",
+    keywords: "exports export selling trade",
+  }),
+  num("imports_pct", "Trade", "Imports", {
+    short: "Imports", scale: "log", format: "pct", clip: true,
+    say: (b) => `imports are ${b} of GDP`,
+    info: "Goods and services bought from other countries, as a share of the economy (GDP).",
+    keywords: "imports import buying trade",
+  }),
+  num("trade_balance_pct", "Trade", "Trade balance", {
+    short: "Trade balance", step: 0.5, format: "pct", clip: true,
+    say: (b) => `the trade balance is ${b} of GDP`,
+    info: "Exports minus imports of goods and services, as a share of GDP. Positive means a trade surplus (selling more than buying); negative means a deficit.",
+    keywords: "trade balance surplus deficit",
+  }),
+  num("exports_usd", "Trade", "Exports (US$)", {
+    short: "Exports $", scale: "log", format: "usd",
+    say: (b) => `exports are worth ${b} a year`,
+    info: "Total value of goods and services exported in a year, in US dollars.",
+    keywords: "exports value dollars trade size",
+  }),
+  ...[
+    ["exp_fuel_pct", "Fuel exports", "Fuel", "fuels (oil, gas, coal)"],
+    ["exp_metals_pct", "Ore and metal exports", "Ores & metals", "ores and metals"],
+    ["exp_food_pct", "Food exports", "Food", "food"],
+    ["exp_agri_raw_pct", "Agricultural raw material exports", "Farm raw materials", "agricultural raw materials such as timber, cotton and rubber"],
+    ["exp_manuf_pct", "Manufactured exports", "Manufactures", "manufactured goods"],
+  ].map(([key, label, short, what]) => num(key, "Trade", label, {
+    short, format: "pct", bounds: [0, 100],
+    say: (b) => `${b} of goods exported are ${what}`,
+    info: `Share of all goods exported (merchandise exports) that are ${what}. Shows what an economy sells to the world.`,
+    keywords: "exports trade primary commodities dependence " + label.toLowerCase(),
+  })),
+  num("tariff_pct", "Trade", "Average tariff", {
+    short: "Tariff", step: 0.5, format: "pct", clip: true,
+    say: (b) => `the average tariff is ${b}`,
+    info: "Average tax charged on imported goods, weighted by how much of each product is imported.",
+    keywords: "tariff tax import duty protectionism free trade",
+  }),
+  {
+    key: "wto_member", type: "bool", group: "Trade", hidden: true,
+    label: "WTO member", short: "WTO",
+    say: (v) => (v ? "the country is a member of the World Trade Organization" : "the country is not a member of the World Trade Organization"),
+    yes: "WTO: member", no: "WTO: not a member",
+    source: "treaties", yearText: "October 2026",
+    info: "Member of the World Trade Organization, which sets the rules for trade between countries. Hong Kong, Macao and Taiwan are members in their own right.",
+    keywords: "wto world trade organization member free trade",
+  },
+
+  // ---------------- Tourism ----------------
+  num("tourists_per100", "Tourism", "Tourists per 100 residents", {
+    short: "Tourists per 100", scale: "log", format: "per100", source: "worldbank", year: null, yearText: "2019",
+    say: (b) => `tourist arrivals number ${b}`,
+    info: "International tourist arrivals in 2019 for every 100 people living in the country. Shows how much tourism there is compared with the country's size.",
+    keywords: "tourism tourists per capita intensity visitors",
+  }),
+  num("tourism_receipts_usd", "Tourism", "Money spent by tourists", {
+    short: "Tourism income", scale: "log", format: "usd",
+    say: (b) => `tourists spend ${b} a year`,
+    info: "Money spent by international visitors in the country, in US dollars, in the last year before COVID-19 (usually 2019).",
+    keywords: "tourism receipts income spending revenue",
+  }),
+  num("tourism_receipts_pct", "Tourism", "Tourism share of exports", {
+    short: "Tourism % exports", scale: "log", format: "pct", clip: true,
+    say: (b) => `tourism earns ${b} of export income`,
+    info: "Money from international tourists as a share of all export earnings, before COVID-19 (usually 2019). High values mean an economy that depends on tourism.",
+    keywords: "tourism dependence economy exports receipts",
+  }),
+  num("tourist_departures", "Tourism", "Trips abroad by residents", {
+    short: "Trips abroad", scale: "log", format: "people",
+    say: (b) => `residents make ${b} trips abroad a year`,
+    info: "Trips abroad made by people living in the country, before COVID-19. Many countries don't report this.",
+    keywords: "outbound tourism departures travel abroad holidays",
+  }),
+  num("world_heritage_sites", "Tourism", "UNESCO World Heritage sites", {
+    short: "World Heritage", format: "count", clip: true, source: "whc", year: null, yearText: "2025",
+    say: (b) => `the country has ${b} World Heritage sites`,
+    info: "Places on UNESCO's World Heritage List for their cultural or natural importance, to the 2025 session. Sites shared between countries count for each of them. Sites added in 2026 are not yet included.",
+    keywords: "unesco world heritage sites culture nature monuments",
+  }),
+
+  // ---------------- Technology ----------------
+  num("ai_users_pct", "Technology", "People using AI", {
+    short: "AI users", format: "pct", bounds: [0, 80], source: "msai", year: null, yearText: "early 2026",
+    say: (b) => `${b} of working-age people use generative AI`,
+    info: "Estimated share of people aged 15 to 64 who used a generative AI tool such as ChatGPT, Copilot, Gemini or Claude in early 2026. Estimated by Microsoft from anonymised usage data. Some countries, especially in Africa, share a regional estimate, so treat small differences with care.",
+    keywords: "ai artificial intelligence chatgpt generative adoption technology",
+  }),
+  num("mobile_per100", "Technology", "Mobile phone subscriptions", {
+    short: "Mobiles", format: "per100", clip: true,
+    say: (b) => `mobile subscriptions number ${b}`,
+    info: "Mobile phone subscriptions per 100 people. Can be over 100 because many people have more than one.",
+    keywords: "mobile phones cell smartphones subscriptions",
+  }),
+  num("broadband_per100", "Technology", "Home broadband", {
+    short: "Broadband", step: 0.5, format: "per100", clip: true,
+    say: (b) => `fixed broadband connections number ${b}`,
+    info: "Fixed (wired) high-speed internet subscriptions per 100 people.",
+    keywords: "broadband internet fixed fibre connection",
+  }),
+  num("secure_servers_per_million", "Technology", "Secure internet servers", {
+    short: "Servers", scale: "log", format: "permillion",
+    say: (b) => `secure internet servers number ${b}`,
+    info: "Secure web servers (using encryption) per million people. A rough measure of how much of the internet is hosted in the country.",
+    keywords: "servers data centres internet hosting digital infrastructure",
+  }),
+  num("rnd_pct", "Technology", "Research & development spending", {
+    short: "R&D", step: 0.1, format: "pct", clip: true,
+    say: (b) => `research and development spending is ${b} of GDP`,
+    info: "Spending on research and development by governments, businesses and universities, as a share of GDP.",
+    keywords: "research development r&d innovation science spending",
+  }),
+  num("researchers_per_million", "Technology", "Researchers", {
+    short: "Researchers", scale: "log", format: "permillion",
+    say: (b) => `researchers number ${b}`,
+    info: "People working in research and development per million people.",
+    keywords: "researchers scientists science research",
+  }),
+  num("patents_per_million", "Technology", "Patent applications", {
+    short: "Patents", scale: "log", format: "permillion",
+    say: (b) => `patent applications by residents number ${b}`,
+    info: "Patent applications by residents per million people. A measure of new inventions.",
+    keywords: "patents inventions innovation intellectual property",
+  }),
+  num("articles_per_million", "Technology", "Scientific articles", {
+    short: "Science articles", scale: "log", format: "permillion",
+    say: (b) => `scientific articles published number ${b}`,
+    info: "Scientific and technical journal articles per million people.",
+    keywords: "science research articles publications universities",
+  }),
+  num("hightech_exports_pct", "Technology", "High-tech exports", {
+    short: "High-tech exports", format: "pct", bounds: [0, 70],
+    say: (b) => `${b} of manufactured exports are high-tech`,
+    info: "Share of manufactured exports that are high-tech products such as computers, aircraft, medicines and scientific instruments.",
+    keywords: "high tech exports technology electronics manufacturing",
+  }),
+  num("ict_services_exports_pct", "Technology", "Digital service exports", {
+    short: "Digital services", format: "pct", bounds: [0, 80],
+    say: (b) => `${b} of service exports are computer and communication services`,
+    info: "Computer, communications and information services as a share of all services exported, such as software and IT outsourcing.",
+    keywords: "ict software it services digital exports outsourcing",
+  }),
+
+  // ---------------- Climate ----------------
+  {
+    key: "main_climate", type: "cat", group: "Climate",
+    label: "Main climate type", short: "Climate",
+    order: ["Tropical", "Dry", "Temperate", "Continental", "Polar"],
+    say: (v) => `the main climate type is ${v.toLowerCase()}`,
+    source: "koppen", yearText: "1976–2000 climate",
+    info: "The Köppen climate group covering most of the country's land: tropical (hot and wet), dry (desert and semi-arid), temperate (mild), continental (cold winters) or polar.",
+    keywords: "climate koppen zone tropical dry desert temperate continental polar biome",
+  },
+  {
+    key: "climate_zones", type: "multi", group: "Climate",
+    label: "Has climate zone", short: "Climate zone",
+    order: ["Tropical rainforest", "Tropical monsoon", "Tropical savanna", "Hot desert", "Cold desert", "Hot semi-arid", "Cold semi-arid", "Mediterranean", "Humid subtropical", "Subtropical highland or monsoon", "Oceanic", "Continental", "Subarctic", "Tundra", "Ice cap"],
+    modes: true,
+    say: (v) => `at least 10% of the land has a ${v.toLowerCase()} climate`,
+    sayNot: (v) => `little or no land has a ${v.toLowerCase()} climate`,
+    source: "koppen", yearText: "1976–2000 climate",
+    info: "Köppen climate zones covering at least 10% of the country's land. Open a country's profile to see the share of each. Worked out on a half-degree grid, so very small countries take the zone nearest their centre.",
+    keywords: "climate zone koppen rainforest savanna desert mediterranean monsoon tundra oceanic",
+  },
+  num("dry_climate_pct", "Climate", "Land with a dry climate", {
+    short: "Dry land", format: "pct", bounds: [0, 100], source: "koppen", year: null, yearText: "1976–2000 climate",
+    say: (b) => `${b} of the land has a desert or semi-arid climate`,
+    info: "Share of the country's land with a desert or semi-arid (Köppen dry) climate.",
+    keywords: "desert arid semi-arid drylands dry climate",
+  }),
+  num("avg_temp", "Climate", "Average temperature", {
+    short: "Avg temp", step: 0.5, format: "temp", source: "temperature", year: null, yearText: "1961–1990",
+    say: (b) => `the average temperature is ${b}`,
+    info: "Average yearly temperature across the country, 1961–1990. Today's temperatures are generally around 1°C higher.",
+    keywords: "temperature hot cold warm climate average",
+  }),
+  num("rainfall_mm", "Climate", "Average rainfall", {
+    short: "Rainfall", scale: "log", format: "mm",
+    say: (b) => `average rainfall is ${b} a year`,
+    info: "Long-term average precipitation (rain and snow) in millimetres per year.",
+    keywords: "rainfall precipitation rain wet dry climate",
+  }),
+  num("co2_mt", "Climate", "CO₂ emissions (total)", {
+    short: "CO₂ total", scale: "log", format: "mt", source: "owid", year: "co2_mt_year",
+    say: (b) => `CO₂ emissions are ${b} a year`,
+    info: "Carbon dioxide from fossil fuels and industry, in millions of tonnes a year.",
+    keywords: "co2 emissions carbon total climate change",
+  }),
+  num("co2_world_share", "Climate", "Share of world CO₂ emissions", {
+    short: "% world CO₂", scale: "log", format: "pct", source: "owid", year: "co2_world_share_year",
+    say: (b) => `the country emits ${b} of the world's CO₂`,
+    info: "The country's share of the world's carbon dioxide emissions from fossil fuels and industry this year.",
+    keywords: "co2 share global emissions polluters climate",
+  }),
+  num("co2_cumulative_share", "Climate", "Share of all CO₂ since 1750", {
+    short: "Historical CO₂", scale: "log", format: "pct", source: "owid", year: "co2_cumulative_share_year",
+    say: (b) => `the country has emitted ${b} of all CO₂ since 1750`,
+    info: "The country's share of all carbon dioxide emitted from fossil fuels and industry since 1750: its historical responsibility for climate change.",
+    keywords: "historical cumulative emissions responsibility climate justice co2",
+  }),
+  num("warming_share", "Climate", "Share of global warming caused", {
+    short: "% of warming", scale: "log", format: "pct", source: "owid", year: "warming_share_year",
+    say: (b) => `the country has caused ${b} of global warming so far`,
+    info: "The country's share of the rise in global temperature caused by greenhouse gases (CO₂, methane and nitrous oxide, including from land use and farming).",
+    keywords: "warming temperature responsibility climate change contribution",
+  }),
+  num("ghg_per_capita", "Climate", "Greenhouse gases per person", {
+    short: "GHG per person", scale: "log", format: "tonnes", source: "owid", year: "ghg_per_capita_year",
+    say: (b) => `greenhouse gas emissions are ${b} per person`,
+    info: "All greenhouse gases (carbon dioxide, methane, nitrous oxide), including from land use and farming, in tonnes of CO₂-equivalent per person each year.",
+    keywords: "greenhouse gases methane emissions per capita climate",
+  }),
+  num("co2_consumption_per_capita", "Climate", "CO₂ from what people buy", {
+    short: "Consumption CO₂", scale: "log", format: "tonnes", source: "owid", year: "co2_consumption_per_capita_year",
+    say: (b) => `consumption-based CO₂ is ${b} per person`,
+    info: "CO₂ per person counting emissions where goods are used, not where they are made: imported goods add to the total and exports are taken off.",
+    keywords: "consumption based emissions imported carbon footprint",
+  }),
+
+  // ---------------- Energy & resources ----------------
+  num("energy_per_capita", "Energy & resources", "Energy use per person", {
+    short: "Energy use", scale: "log", format: "kwh", source: "owidenergy",
+    say: (b) => `energy use is ${b}`,
+    info: "All energy used (for electricity, transport, heating and industry) per person each year, in kilowatt-hours.",
+    keywords: "energy consumption use per capita",
+  }),
+  ...[
+    ["renewables_elec_pct", "Electricity from renewables", "Renewable electricity", "renewable sources (hydro, wind, solar and others)"],
+    ["low_carbon_elec_pct", "Electricity from low-carbon sources", "Low-carbon electricity", "low-carbon sources (renewables and nuclear)"],
+    ["fossil_elec_pct", "Electricity from fossil fuels", "Fossil electricity", "fossil fuels (coal, oil and gas)"],
+    ["coal_elec_pct", "Electricity from coal", "Coal power", "coal"],
+    ["nuclear_elec_pct", "Electricity from nuclear", "Nuclear power", "nuclear power"],
+    ["hydro_elec_pct", "Electricity from hydropower", "Hydropower", "hydropower"],
+    ["wind_elec_pct", "Electricity from wind", "Wind power", "wind"],
+    ["solar_elec_pct", "Electricity from solar", "Solar power", "solar"],
+  ].map(([key, label, short, what]) => num(key, "Energy & resources", label, {
+    short, format: "pct", bounds: [0, 100], source: "owidenergy",
+    say: (b) => `${b} of electricity comes from ${what}`,
+    info: `Share of the country's electricity generated from ${what}.`,
+    keywords: "electricity power generation energy mix " + label.toLowerCase(),
+  })),
+  ...[
+    ["oil_twh", "Oil production", "Oil", "oil"],
+    ["gas_twh", "Natural gas production", "Gas", "natural gas"],
+    ["coal_twh", "Coal production", "Coal", "coal"],
+  ].map(([key, label, short, what]) => num(key, "Energy & resources", label, {
+    short, scale: "log", format: "twh", source: "owidenergy",
+    say: (b) => `${what} production is ${b} a year`,
+    info: `Energy content of the ${what} produced each year, in terawatt-hours (TWh). Zero means none is produced.`,
+    keywords: `${what} production fossil fuel resources producer`,
+  })),
+  {
+    key: "major_producer", type: "multi", group: "Energy & resources",
+    label: "Major mineral producer", short: "Major producer",
+    order: ["Lithium", "Cobalt", "Copper", "Nickel", "Rare earths", "Graphite", "Iron ore", "Bauxite", "Manganese", "Tin", "Gold", "Silver", "Platinum"],
+    modes: true,
+    say: (v) => `the country mines at least 5% of the world's ${v.toLowerCase()}`,
+    sayNot: (v) => `the country mines less than 5% of the world's ${v.toLowerCase()}`,
+    source: "usgs", yearText: "2025",
+    info: "Countries that mine at least 5% of the world's supply of each mineral (2025 estimates). Lithium, cobalt, nickel, graphite and rare earths are key for batteries and electronics. Open a country's profile to see its share of each.",
+    keywords: "minerals mining lithium cobalt copper rare earths critical minerals gold iron ore bauxite resources",
+  },
+  num("resource_rents_pct", "Energy & resources", "Natural resource income", {
+    short: "Resource income", step: 0.5, format: "pct", clip: true,
+    say: (b) => `natural resources earn ${b} of GDP`,
+    info: "Profit from oil, gas, coal, minerals and forests, as a share of GDP. High values mean an economy that depends on natural resources.",
+    keywords: "resource rents dependence resource curse oil minerals",
+  }),
+  num("oil_rents_pct", "Energy & resources", "Oil income", {
+    short: "Oil income", step: 0.5, format: "pct", clip: true,
+    say: (b) => `oil earns ${b} of GDP`,
+    info: "Profit from oil production as a share of GDP.",
+    keywords: "oil rents petroleum dependence",
+  }),
+  num("mineral_rents_pct", "Energy & resources", "Mining income", {
+    short: "Mining income", step: 0.5, format: "pct", clip: true,
+    say: (b) => `mining earns ${b} of GDP`,
+    info: "Profit from mining metals and minerals as a share of GDP.",
+    keywords: "mineral rents mining dependence",
+  }),
+
   // ---------------- Environment ----------------
-  num("co2_per_capita", "Environment", "CO₂ per person", {
+  num("co2_per_capita", "Climate", "CO₂ per person", {
     short: "CO₂", scale: "log", format: "tonnes", source: "owid", year: "co2_year",
     say: (b) => `CO₂ emissions per person are ${b}`,
     info: "Carbon dioxide from fossil fuels and industry each year, in tonnes per person.",
     keywords: "carbon emissions climate pollution co2 environment",
   }),
-  num("renewables_pct", "Environment", "Renewable energy", {
+  num("renewables_pct", "Energy & resources", "Renewable share of all energy", {
     short: "Renewables", format: "pct", bounds: [0, 100],
     say: (b) => `${b} of energy used is renewable`,
-    info: "Share of all energy used that comes from renewable sources, including hydro, wind, solar and wood.",
+    info: "Share of all energy used (not just electricity) that comes from renewable sources, including hydro, wind, solar and wood. Wood burnt for cooking makes this high in many low-income countries.",
     keywords: "renewable energy solar wind hydro green",
   }),
   num("forest_pct", "Environment", "Forest cover", {
@@ -744,6 +1061,12 @@ window.SOURCES = {
   iiss: { name: "IISS Military Balance (via World Bank)", url: "https://data.worldbank.org/indicator/MS.MIL.TOTL.P1", licence: "Check terms before commercial use" },
   sport: { name: "FIFA, IOC and Commonwealth Games records, compiled for this site (lists.csv, worldcups.csv)", url: "https://www.fifa.com/", licence: "Public facts, CC0" },
   olympics: { name: "Paris 2024 medal table", url: "https://olympics.com/en/olympic-games/paris-2024/medals", licence: "Public facts" },
+  koppen: { name: "Köppen–Geiger climate zones (Kottek, Rubel et al.), via the kgc package", url: "https://github.com/cran/kgc", licence: "BSD 2-clause" },
+  temperature: { name: "samayo/country-json (Wikipedia 1961–1990 averages)", url: "https://github.com/samayo/country-json", licence: "MIT" },
+  owidenergy: { name: "Our World in Data, energy dataset", url: "https://github.com/owid/energy-data", licence: "CC BY 4.0" },
+  usgs: { name: "USGS Mineral Commodity Summaries 2026", url: "https://pubs.usgs.gov/publication/mcs2026", licence: "Public domain" },
+  whc: { name: "UNESCO World Heritage List (via worldheritagesite.org)", url: "https://whc.unesco.org/en/list/", licence: "Public facts" },
+  msai: { name: "Microsoft AI Diffusion Report 2026 Q1", url: "https://www.microsoft.com/en-us/corporate-responsibility/topics/AI-Economy-Institute/", licence: "Microsoft terms of use; check before commercial use" },
   boundaries: { name: "Natural Earth via world-atlas", url: "https://github.com/topojson/world-atlas", licence: "Public domain" },
 };
 
@@ -776,3 +1099,104 @@ window.PUZZLES = [
   { q: "Which countries are in the top 20 for human development but not the top 20 for gender equality?", filters: [{ key: "hdi_rank", max: 20 }, { key: "gii_rank", min: 21 }] },
   { q: "Find a country with high human development where inequality cuts its HDI by more than 20%.", filters: [{ key: "hdi_group", values: ["High", "Very high"] }, { key: "hdi_loss", min: 20 }] },
 ];
+
+/*
+ * Families: related measures shown as ONE item in the filter menu. When added,
+ * the filter panel has a picker to switch between them. Every measure keeps its
+ * own entry above, so country profiles, sorting and old links are unchanged.
+ *   id        family name (used only in code)
+ *   label     full name, shown on hover / tap
+ *   short     name on the menu chip
+ *   info      one-line definition for the hover card
+ *   variants  [key, picker label] pairs; the first is chosen when added
+ */
+window.FAMILIES = [
+  { id: "hdi", label: "Human Development Index", short: "HDI", info: "A score from 0 to 1 combining life expectancy, schooling and income. Choose the score, world rank, or how much inequality lowers it.",
+    variants: [["hdi", "Score"], ["hdi_rank", "World rank"], ["ihdi", "Adjusted for inequality"], ["hdi_loss", "Lost to inequality"]] },
+  { id: "education", label: "Education", short: "Education", info: "Literacy, years in school and government spending on education.",
+    variants: [["literacy", "Adult literacy"], ["mean_schooling", "Years in school (adults)"], ["expected_schooling", "Expected years (children)"], ["education_spend", "Spending, % GDP"]] },
+  { id: "access", label: "Access to electricity and water", short: "Electricity & water", info: "Share of people with electricity, or with safe drinking water, at home.",
+    variants: [["electricity", "Electricity"], ["safe_water", "Safe water"]] },
+  { id: "births", label: "Birth and death rates", short: "Birth & death rates", info: "Births or deaths each year per 1,000 people: the key numbers in the demographic transition model.",
+    variants: [["birth_rate", "Birth rate"], ["death_rate", "Death rate"]] },
+  { id: "age", label: "Age structure", short: "Age", info: "How old the population is: median age, share of children, share of older people, and the dependency ratio.",
+    variants: [["median_age", "Median age"], ["pct_under15", "% under 15"], ["pct_over65", "% 65 and over"], ["dependency", "Dependency ratio"]] },
+  { id: "childdeaths", label: "Child deaths", short: "Child deaths", info: "Babies who die before age 1, or children before age 5, per 1,000 born.",
+    variants: [["infant_mortality", "Under 1"], ["under5_mortality", "Under 5"]] },
+  { id: "gii", label: "Gender Inequality Index", short: "GII", info: "UNDP's measure of inequality between women and men, from 0 (equal) to 1. Choose the score or the world rank.",
+    variants: [["gii", "Score"], ["gii_rank", "World rank"]] },
+  { id: "women", label: "Women's lives", short: "Women's lives", info: "The four measures behind the Gender Inequality Index: women in parliament, women in work, maternal deaths and teenage births.",
+    variants: [["women_parliament", "In parliament"], ["female_labour", "In work"], ["maternal_mortality", "Maternal deaths"], ["adolescent_births", "Teenage births"]] },
+  { id: "jobs", label: "Jobs by sector", short: "Jobs by sector", info: "Share of workers in farming (primary), industry (secondary) or services (tertiary): the Clark–Fisher model.",
+    variants: [["emp_agriculture", "Farming"], ["emp_industry", "Industry"], ["emp_services", "Services"]] },
+  { id: "tradesize", label: "Trade", short: "Trade", info: "How much a country trades: exports, imports, both together, the trade balance, or total exports in dollars.",
+    variants: [["trade_pct", "Exports + imports"], ["exports_pct", "Exports"], ["imports_pct", "Imports"], ["trade_balance_pct", "Balance"], ["exports_usd", "Exports (US$)"]] },
+  { id: "exportmix", label: "What exports are made of", short: "Export types", info: "Share of goods exported that are fuels, ores and metals, food, farm raw materials or manufactured goods.",
+    variants: [["exp_fuel_pct", "Fuel"], ["exp_metals_pct", "Ores & metals"], ["exp_food_pct", "Food"], ["exp_agri_raw_pct", "Farm materials"], ["exp_manuf_pct", "Manufactures"]] },
+  { id: "migration", label: "Migration", short: "Migration", info: "People born abroad, net migration, and money sent home by migrants.",
+    variants: [["migrants_pct", "Born abroad"], ["net_migration", "Net migration"], ["remittances_pct", "Money sent home"]] },
+  { id: "refugees", label: "Refugees and displaced people", short: "Refugees", info: "Refugees a country hosts, refugees who have fled it, people displaced inside it, and asylum seekers waiting for a decision.",
+    variants: [["refugees_hosted", "Hosted"], ["refugees_hosted_per1000", "Hosted per 1,000"], ["refugees_from", "Fled"], ["refugees_from_per1000", "Fled per 1,000"], ["idps", "Displaced at home"], ["asylum_seekers_hosted", "Asylum seekers"]] },
+  { id: "language", label: "Language", short: "Language", info: "Official languages, or languages spoken by at least 1 in 10 people.",
+    variants: [["official_languages", "Official"], ["spoken_languages", "Spoken by 10%+"]] },
+  { id: "religion", label: "Religion (% of people)", short: "Religion %", info: "Share of people who follow each religion, or who have no religion (Pew Research Center, 2010).",
+    variants: [["pct_muslim", "Muslim"], ["pct_christian", "Christian"], ["pct_unaffiliated", "No religion"], ["pct_hindu", "Hindu"], ["pct_buddhist", "Buddhist"], ["pct_jewish", "Jewish"], ["pct_folk", "Folk"]] },
+  { id: "touristnumbers", label: "Tourist numbers", short: "Tourists", info: "International tourist arrivals, arrivals per 100 residents, and trips abroad by residents (2019).",
+    variants: [["tourists", "Arrivals"], ["tourists_per100", "Per 100 residents"], ["tourist_departures", "Trips abroad"]] },
+  { id: "tourismmoney", label: "Tourism income", short: "Tourism income", info: "Money spent by international tourists, in dollars or as a share of export earnings (2019).",
+    variants: [["tourism_receipts_usd", "US$"], ["tourism_receipts_pct", "% of exports"]] },
+  { id: "connectivity", label: "Internet and phones", short: "Internet & phones", info: "Internet users, mobile phone subscriptions, home broadband and secure internet servers.",
+    variants: [["internet", "Internet users"], ["mobile_per100", "Mobiles"], ["broadband_per100", "Broadband"], ["secure_servers_per_million", "Servers"]] },
+  { id: "research", label: "Research and innovation", short: "Research", info: "Spending on research and development, researchers, patent applications and scientific articles.",
+    variants: [["rnd_pct", "R&D spending"], ["researchers_per_million", "Researchers"], ["patents_per_million", "Patents"], ["articles_per_million", "Science articles"]] },
+  { id: "techexports", label: "Technology exports", short: "Tech exports", info: "High-tech goods as a share of manufactured exports, or digital services as a share of service exports.",
+    variants: [["hightech_exports_pct", "High-tech goods"], ["ict_services_exports_pct", "Digital services"]] },
+  { id: "democracyscores", label: "Democracy scores", short: "Democracy scores", info: "V-Dem scores from 0 to 1 for liberal democracy and for freedom of expression.",
+    variants: [["libdem", "Liberal democracy"], ["free_expression", "Free expression"]] },
+  { id: "milspend", label: "Military spending", short: "Military spending", info: "Spending on the armed forces, as a share of GDP or in US dollars.",
+    variants: [["military_spend_pct", "% of GDP"], ["military_spend_usd", "US$"]] },
+  { id: "forces", label: "Armed forces", short: "Armed forces", info: "Number of active military personnel, or their share of all workers.",
+    variants: [["armed_forces", "Number"], ["armed_forces_pct", "% of workers"]] },
+  { id: "worldcups", label: "World Cup wins", short: "World Cup wins", info: "Men's or women's football World Cup titles.",
+    variants: [["wc_men_titles", "Men's"], ["wc_women_titles", "Women's"]] },
+  { id: "medals", label: "Olympic medals (Paris 2024)", short: "Olympic medals", info: "Medals or gold medals won at Paris 2024, or medals per million people.",
+    variants: [["olympic_medals", "All medals"], ["olympic_golds", "Golds"], ["medals_per_million", "Per million people"]] },
+  { id: "borders", label: "Borders", short: "Borders", info: "Number of neighbouring countries, or total length of land borders.",
+    variants: [["neighbours", "Neighbours"], ["border_km", "Length"]] },
+  { id: "weather", label: "Temperature and rainfall", short: "Temp & rainfall", info: "Average yearly temperature (1961–1990) and average rainfall.",
+    variants: [["avg_temp", "Temperature"], ["rainfall_mm", "Rainfall"]] },
+  { id: "emissions", label: "Emissions", short: "Emissions", info: "CO₂ per person or in total, all greenhouse gases per person, or CO₂ counted where goods are used.",
+    variants: [["co2_per_capita", "CO₂ per person"], ["co2_mt", "CO₂ total"], ["ghg_per_capita", "All gases per person"], ["co2_consumption_per_capita", "From what people buy"]] },
+  { id: "responsibility", label: "Responsibility for climate change", short: "Climate responsibility", info: "Share of the world's CO₂ emitted now, share of all CO₂ since 1750, and share of global warming caused.",
+    variants: [["co2_world_share", "% of world CO₂ now"], ["co2_cumulative_share", "% of all CO₂ since 1750"], ["warming_share", "% of warming"]] },
+  { id: "energyuse", label: "Energy use", short: "Energy use", info: "Energy used per person, and the share of all energy that is renewable.",
+    variants: [["energy_per_capita", "Per person"], ["renewables_pct", "Renewable share"]] },
+  { id: "electricity", label: "Where electricity comes from", short: "Electricity sources", info: "Share of electricity generated from renewables, low-carbon sources, fossil fuels, coal, nuclear, hydro, wind or solar.",
+    variants: [["renewables_elec_pct", "Renewables"], ["low_carbon_elec_pct", "Low-carbon"], ["fossil_elec_pct", "Fossil fuels"], ["coal_elec_pct", "Coal"], ["nuclear_elec_pct", "Nuclear"], ["hydro_elec_pct", "Hydro"], ["wind_elec_pct", "Wind"], ["solar_elec_pct", "Solar"]] },
+  { id: "fossilprod", label: "Fossil fuel production", short: "Oil, gas & coal", info: "Energy content of the oil, natural gas or coal a country produces each year.",
+    variants: [["oil_twh", "Oil"], ["gas_twh", "Gas"], ["coal_twh", "Coal"]] },
+  { id: "resourceincome", label: "Income from natural resources", short: "Resource income", info: "Profit from all natural resources, from oil, or from mining, as a share of GDP.",
+    variants: [["resource_rents_pct", "All resources"], ["oil_rents_pct", "Oil"], ["mineral_rents_pct", "Mining"]] },
+];
+
+/* Themes along the top of the page; each opens a panel with these categories. */
+window.THEMES = [
+  { id: "people", label: "People", groups: ["Population", "Health", "Gender", "Culture", "Sport"] },
+  { id: "wealth", label: "Wealth & work", groups: ["Development", "Work & money", "Trade", "Tourism", "Technology"] },
+  { id: "world", label: "Politics & the world", groups: ["Politics", "UN & treaties", "Global links", "Refugees", "Military"] },
+  { id: "places", label: "Places", groups: ["Geography", "Cities"] },
+  { id: "planet", label: "Planet", groups: ["Climate", "Energy & resources", "Environment"] },
+];
+
+/* Shorter names for some filters on the menu chips (the full name shows on hover or tap). */
+window.MENU_LABELS = {
+  income_group: "Income group", hdi_group: "HDI group", gni_ppp: "Income per person", gini: "Inequality (Gini)",
+  extreme_poverty: "Extreme poverty", ai_users_pct: "AI use", world_heritage_sites: "World Heritage sites",
+  no_land_borders: "Island", capital_is_largest: "Capital is largest city", dry_climate_pct: "Dry land",
+  city_population: "City size", city_capital: "Capital cities", cities_1m: "Million-plus cities",
+  gdp_per_capita: "GDP per person", urban_pct: "Urban population", pop_growth: "Population growth",
+  health_spend: "Health spending", nuclear_armed: "Nuclear weapons", main_climate: "Main climate",
+  climate_zones: "Climate zones", major_producer: "Major mineral producer", gdi: "GDI", gdi_group: "GDI group",
+  security_council: "UN Security Council", regime: "Type of government", treaties_joined: "Treaties joined",
+  events_hosted: "Has hosted", density: "Population density", area_km2: "Area", subregion: "Region of the world",
+};

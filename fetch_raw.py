@@ -8,7 +8,10 @@ Download the latest raw source files into this folder.
 
 The repository already contains a copy of every raw file, so you only need
 this when you want to refresh the data. groups.csv (membership of the EU,
-NATO, BRICS and so on) is edited by hand and is not downloaded.
+NATO, BRICS and so on) is edited by hand and is not downloaded, and so are
+lists.csv, worldcups.csv, olympic_medals.csv, minerals.csv (USGS Mineral
+Commodity Summaries), world_heritage.csv and ai_diffusion.csv (Microsoft AI
+Diffusion Report). Climate zones come from make_climate_zones.py.
 
 UNHCR refugee data comes from UNHCR's own "refugees" package. Run
 `python3 fetch_raw.py --unhcr` to refresh refugees.csv and refugee_flows.csv
@@ -44,8 +47,43 @@ FILES = {
     "cldr_territoryInfo.json": GH + "unicode-org/cldr-json/main/cldr-json/cldr-core/supplemental/territoryInfo.json",
     "cldr_languages_en.json": GH + "unicode-org/cldr-json/main/cldr-json/cldr-localenames-full/main/en/languages.json",
     "world_countries.json": GH + "mledoze/countries/master/countries.json",
+    "avg_temperature.json": GH + "samayo/country-json/master/src/country-by-yearly-average-temperature.json",
 }
 CO2_URL = GH + "owid/co2-data/master/owid-co2-data.csv"
+ENERGY_URL = GH + "owid/energy-data/master/owid-energy-data.csv"
+CO2_COLS = ["co2", "share_global_co2", "share_global_cumulative_co2", "ghg_per_capita", "consumption_co2_per_capita",
+            "temperature_change_from_ghg", "share_of_temperature_change_from_ghg"]
+ENERGY_COLS = ["energy_per_capita", "renewables_share_elec", "low_carbon_share_elec", "fossil_share_elec", "coal_share_elec",
+               "nuclear_share_elec", "solar_share_elec", "wind_share_elec", "hydro_share_elec",
+               "oil_production", "gas_production", "coal_production"]
+
+
+def latest_columns(rows, cols, out_name):
+    """Latest value since 2010 of each column per country, as iso3,indicator,year,value."""
+    best = {}
+    for r in rows:
+        iso = r.get("iso_code", "")
+        if not iso or iso.startswith("OWID"):
+            continue
+        y = int(r["year"])
+        if y < 2010:
+            continue
+        for c in cols:
+            if r.get(c):
+                if (iso, c) not in best or y > best[(iso, c)][0]:
+                    best[(iso, c)] = (y, r[c])
+    with open(os.path.join(RAW, out_name), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["iso3", "indicator", "year", "value"])
+        for (iso, c), (y, v) in sorted(best.items()):
+            w.writerow([iso, c, y, v])
+
+
+def fetch_energy_climate():
+    co2 = read_csv(CO2_URL)
+    latest_columns(co2, CO2_COLS, "co2_climate.csv")
+    latest_columns(read_csv(ENERGY_URL), ENERGY_COLS, "energy_latest.csv")
+    return co2
 VDEM_URL = GH + "vdeminstitute/vdemdata/master/data/vdem.RData"
 
 # World Bank World Development Indicators, mirrored on GitHub by Gapminder's open-numbers project
@@ -59,6 +97,14 @@ WDI_CODES = [
     "sl_srv_empl_zs", "ne_trd_gnfs_zs", "bx_klt_dinv_wd_gd_zs", "st_int_arvl", "ag_lnd_frst_zs",
     "eg_fec_rnew_zs", "er_h2o_fwst_zs", "sp_ado_tfrt", "sg_gen_parl_zs", "sl_tlf_cact_fe_zs", "sl_tlf_cact_ma_zs",
     "ms_mil_xpnd_gd_zs", "ms_mil_xpnd_cd", "ms_mil_totl_p1", "ms_mil_totl_tf_zs",
+    # climate, trade, resources, tourism, technology
+    "ag_lnd_prcp_mm", "ne_exp_gnfs_zs", "ne_imp_gnfs_zs", "ne_rsb_gnfs_zs", "ne_exp_gnfs_cd",
+    "tx_val_fuel_zs_un", "tx_val_mmtl_zs_un", "tx_val_food_zs_un", "tx_val_agri_zs_un", "tx_val_manf_zs_un",
+    "tx_val_tech_mf_zs", "tm_tax_mrch_wm_ar_zs", "tx_val_ictg_zs_un", "bx_gsr_ccis_zs",
+    "ny_gdp_totl_rt_zs", "ny_gdp_petr_rt_zs", "ny_gdp_ngas_rt_zs", "ny_gdp_minr_rt_zs", "ny_gdp_coal_rt_zs",
+    "st_int_rcpt_cd", "st_int_rcpt_xp_zs", "st_int_dprt",
+    "it_cel_sets_p2", "it_net_bbnd_p2", "it_net_secr_p6", "gb_xpd_rsdv_gd_zs", "sp_pop_scie_rd_p6",
+    "ip_pat_resd", "ip_jrn_artc_sc",
 ]
 # HDI (UNDP) and median age (UN WPP), mirrored by Gapminder
 GM_URL = GH + "open-numbers/ddf--gapminder--systema_globalis/master/countries-etc-datapoints/ddf--datapoints--{}--by--geo--time.csv"
@@ -85,7 +131,7 @@ def fetch_worldbank():
             y = int(r["time"])
             if y < 2010:  # older figures are too out of date to compare
                 continue
-            if code == "st_int_arvl" and y > 2019:
+            if code.startswith("st_int_") and y > 2019:  # tourism: last year before COVID
                 continue
             k = (r["geo"].upper(), code)
             if k not in best or y > best[k][0]:
@@ -205,7 +251,12 @@ def fetch_timeseries():
                 out.append([iso, "refugees_from", int(y), int(v)])
     finally:
         shutil.rmtree(tmp)
-    write_timeseries(out, set(TS_WDI) | {"median_age", "v2x_regime", "v2x_libdem", "refugees_hosted", "refugees_from"})
+    for name, url, col in (("renewables_share_elec", ENERGY_URL, "renewables_share_elec"), ("co2", CO2_URL, "co2")):
+        for r in read_csv(url):
+            if r["iso_code"] in valid and r[col] and int(r["year"]) >= 1960:
+                out.append([r["iso_code"], name, int(r["year"]), f"{float(r[col]):.4g}"])
+    write_timeseries(out, set(TS_WDI) | {"median_age", "v2x_regime", "v2x_libdem", "refugees_hosted", "refugees_from",
+                                         "renewables_share_elec", "co2"})
 
 
 def extract_undp(path):
@@ -274,11 +325,12 @@ def main():
     for name, url in FILES.items():
         open(os.path.join(RAW, name), "wb").write(get(url))
 
-    # CO2: keep only the columns and years the site uses
+    co2_rows = fetch_energy_climate()
+    # CO2 per person history: keep only the columns and years the site uses
     with open(os.path.join(RAW, "co2.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["country", "year", "iso_code", "co2_per_capita"])
-        for r in read_csv(CO2_URL):
+        for r in co2_rows:
             if r["iso_code"] and r["co2_per_capita"] and int(r["year"]) >= 1960:
                 w.writerow([r["country"], r["year"], r["iso_code"], r["co2_per_capita"]])
 

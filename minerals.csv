@@ -1,0 +1,161 @@
+# World mine production, 2025 estimates, from USGS Mineral Commodity Summaries 2026 (public domain).
+# Countries USGS lists individually; "other countries" are not included. United States values withheld by USGS (W) are left out.
+mineral,iso3,production_2025,world_total_2025,unit
+lithium,ARG,23000,290000,metric tons of lithium
+lithium,AUS,92000,290000,metric tons of lithium
+lithium,BRA,12000,290000,metric tons of lithium
+lithium,CAN,5600,290000,metric tons of lithium
+lithium,CHL,56000,290000,metric tons of lithium
+lithium,CHN,62000,290000,metric tons of lithium
+lithium,MLI,9400,290000,metric tons of lithium
+lithium,PRT,380,290000,metric tons of lithium
+lithium,ZWE,28000,290000,metric tons of lithium
+cobalt,USA,300,310000,metric tons of cobalt
+cobalt,AUS,3700,310000,metric tons of cobalt
+cobalt,CAN,3500,310000,metric tons of cobalt
+cobalt,CHN,2000,310000,metric tons of cobalt
+cobalt,COD,230000,310000,metric tons of cobalt
+cobalt,CUB,2000,310000,metric tons of cobalt
+cobalt,IDN,44000,310000,metric tons of cobalt
+cobalt,MDG,3900,310000,metric tons of cobalt
+cobalt,PNG,2800,310000,metric tons of cobalt
+cobalt,PHL,3700,310000,metric tons of cobalt
+cobalt,RUS,7700,310000,metric tons of cobalt
+cobalt,TUR,1900,310000,metric tons of cobalt
+copper,USA,1000,23000,thousand metric tons of copper
+copper,AUS,730,23000,thousand metric tons of copper
+copper,CAN,500,23000,thousand metric tons of copper
+copper,CHL,5300,23000,thousand metric tons of copper
+copper,CHN,1800,23000,thousand metric tons of copper
+copper,COD,3200,23000,thousand metric tons of copper
+copper,IND,23,23000,thousand metric tons of copper
+copper,IDN,710,23000,thousand metric tons of copper
+copper,KAZ,710,23000,thousand metric tons of copper
+copper,MEX,690,23000,thousand metric tons of copper
+copper,PER,2700,23000,thousand metric tons of copper
+copper,POL,410,23000,thousand metric tons of copper
+copper,RUS,1300,23000,thousand metric tons of copper
+copper,ZMB,940,23000,thousand metric tons of copper
+nickel,USA,10000,3900000,metric tons of nickel
+nickel,AUS,45000,3900000,metric tons of nickel
+nickel,BRA,70000,3900000,metric tons of nickel
+nickel,CAN,140000,3900000,metric tons of nickel
+nickel,CHN,120000,3900000,metric tons of nickel
+nickel,IDN,2600000,3900000,metric tons of nickel
+nickel,NCL,140000,3900000,metric tons of nickel
+nickel,PHL,270000,3900000,metric tons of nickel
+nickel,RUS,200000,3900000,metric tons of nickel
+rare earths,USA,51000,390000,metric tons of rare-earth oxide
+rare earths,AUS,29000,390000,metric tons of rare-earth oxide
+rare earths,BRA,2000,390000,metric tons of rare-earth oxide
+rare earths,MMR,22000,390000,metric tons of rare-earth oxide
+rare earths,CHN,270000,390000,metric tons of rare-earth oxide
+rare earths,IND,2900,390000,metric tons of rare-earth oxide
+rare earths,MDG,2700,390000,metric tons of rare-earth oxide
+rare earths,MYS,110,390000,metric tons of rare-earth oxide
+rare earths,NGA,1500,390000,metric tons of rare-earth oxide
+rare earths,RUS,2600,390000,metric tons of rare-earth oxide
+rare earths,THA,4800,390000,metric tons of rare-earth oxide
+rare earths,VNM,150,390000,metric tons of rare-earth oxide
+graphite,AUT,200,1800000,metric tons
+graphite,BRA,65000,1800000,metric tons
+graphite,CAN,8000,1800000,metric tons
+graphite,CHN,1400000,1800000,metric tons
+graphite,DEU,140,1800000,metric tons
+graphite,IND,17000,1800000,metric tons
+graphite,PRK,8000,1800000,metric tons
+graphite,KOR,500,1800000,metric tons
+graphite,MDG,80000,1800000,metric tons
+graphite,MEX,740,1800000,metric tons
+graphite,MOZ,60000,1800000,metric tons
+graphite,NOR,6600,1800000,metric tons
+graphite,RUS,25000,1800000,metric tons
+graphite,LKA,3200,1800000,metric tons
+graphite,TZA,75000,1800000,metric tons
+graphite,TUR,2200,1800000,metric tons
+graphite,UKR,800,1800000,metric tons
+graphite,VNM,500,1800000,metric tons
+gold,USA,160,3300,metric tons
+gold,AUS,280,3300,metric tons
+gold,BRA,80,3300,metric tons
+gold,CAN,200,3300,metric tons
+gold,CHN,380,3300,metric tons
+gold,GHA,150,3300,metric tons
+gold,IDN,90,3300,metric tons
+gold,KAZ,130,3300,metric tons
+gold,MEX,140,3300,metric tons
+gold,PER,110,3300,metric tons
+gold,RUS,310,3300,metric tons
+gold,ZAF,90,3300,metric tons
+gold,UZB,130,3300,metric tons
+iron ore,USA,38000,2600000,thousand metric tons (usable ore)
+iron ore,AUS,980000,2600000,thousand metric tons (usable ore)
+iron ore,BRA,420000,2600000,thousand metric tons (usable ore)
+iron ore,CAN,69000,2600000,thousand metric tons (usable ore)
+iron ore,CHL,19000,2600000,thousand metric tons (usable ore)
+iron ore,CHN,290000,2600000,thousand metric tons (usable ore)
+iron ore,IND,310000,2600000,thousand metric tons (usable ore)
+iron ore,IRN,93000,2600000,thousand metric tons (usable ore)
+iron ore,KAZ,35000,2600000,thousand metric tons (usable ore)
+iron ore,MRT,15000,2600000,thousand metric tons (usable ore)
+iron ore,MEX,7700,2600000,thousand metric tons (usable ore)
+iron ore,PER,21000,2600000,thousand metric tons (usable ore)
+iron ore,RUS,86000,2600000,thousand metric tons (usable ore)
+iron ore,ZAF,66000,2600000,thousand metric tons (usable ore)
+iron ore,SWE,26000,2600000,thousand metric tons (usable ore)
+iron ore,TUR,18000,2600000,thousand metric tons (usable ore)
+iron ore,UKR,52000,2600000,thousand metric tons (usable ore)
+bauxite,AUS,97000,440000,thousand metric tons
+bauxite,BRA,33000,440000,thousand metric tons
+bauxite,CHN,87000,440000,thousand metric tons
+bauxite,GRC,960,440000,thousand metric tons
+bauxite,GIN,150000,440000,thousand metric tons
+bauxite,IND,25000,440000,thousand metric tons
+bauxite,IDN,10000,440000,thousand metric tons
+bauxite,JAM,6200,440000,thousand metric tons
+bauxite,KAZ,4800,440000,thousand metric tons
+bauxite,RUS,5700,440000,thousand metric tons
+bauxite,SAU,5700,440000,thousand metric tons
+bauxite,TUR,3800,440000,thousand metric tons
+bauxite,VNM,3800,440000,thousand metric tons
+platinum,USA,1800,170000,kilograms
+platinum,CAN,5000,170000,kilograms
+platinum,RUS,20000,170000,kilograms
+platinum,ZAF,120000,170000,kilograms
+platinum,ZWE,18000,170000,kilograms
+tin,AUS,12000,290000,metric tons
+tin,BOL,15000,290000,metric tons
+tin,BRA,28000,290000,metric tons
+tin,MMR,12000,290000,metric tons
+tin,CHN,71000,290000,metric tons
+tin,COD,27000,290000,metric tons
+tin,IDN,61000,290000,metric tons
+tin,LAO,1800,290000,metric tons
+tin,MYS,5000,290000,metric tons
+tin,NGA,3500,290000,metric tons
+tin,PER,33000,290000,metric tons
+tin,RUS,4500,290000,metric tons
+tin,RWA,4600,290000,metric tons
+tin,VNM,11000,290000,metric tons
+manganese,AUS,1600,20000,thousand metric tons of manganese
+manganese,BRA,800,20000,thousand metric tons of manganese
+manganese,CHN,700,20000,thousand metric tons of manganese
+manganese,CIV,350,20000,thousand metric tons of manganese
+manganese,GAB,5000,20000,thousand metric tons of manganese
+manganese,GHA,2000,20000,thousand metric tons of manganese
+manganese,IND,790,20000,thousand metric tons of manganese
+manganese,ZAF,7600,20000,thousand metric tons of manganese
+silver,USA,1100,26000,metric tons
+silver,ARG,800,26000,metric tons
+silver,AUS,1000,26000,metric tons
+silver,BOL,1500,26000,metric tons
+silver,CAN,400,26000,metric tons
+silver,CHL,1400,26000,metric tons
+silver,CHN,3400,26000,metric tons
+silver,IND,800,26000,metric tons
+silver,KAZ,630,26000,metric tons
+silver,MEX,6300,26000,metric tons
+silver,PER,3600,26000,metric tons
+silver,POL,1300,26000,metric tons
+silver,RUS,1200,26000,metric tons
+silver,SWE,400,26000,metric tons

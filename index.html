@@ -15,14 +15,16 @@
 <header class="top">
   <div class="brand">
     <h1>Which Countries<span>?</span></h1>
-    <p>Stack filters and watch the world narrow down.</p>
   </div>
+  <nav id="themes" class="themes" aria-label="Browse filters by theme"></nav>
   <div class="add">
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    <input id="addInput" type="search" autocomplete="off" placeholder="Add a filter: try “religion”, “coast” or “Portuguese”" aria-label="Add a filter" aria-controls="addMenu" aria-expanded="false">
+    <input id="addInput" type="search" autocomplete="off" placeholder="Search filters: try “religion”, “coast” or “HDI”" aria-label="Add a filter" aria-controls="addMenu" aria-expanded="false">
     <div id="addMenu" class="menu" role="listbox" hidden></div>
   </div>
+  <div id="tpanel" class="tpanel" role="dialog" aria-label="Filters" hidden></div>
 </header>
+<div id="fcard" class="fcard" role="tooltip" hidden></div>
 
 <section class="bar" aria-label="Active filters">
   <div id="chips" class="chips"></div>

@@ -1,19 +1,20 @@
 # Which Countries?
 
-An open-source world map for asking questions about the world, built with human geography students in mind. Stack filters on development, population, health, gender, work, globalisation, refugees, cities, culture, politics, UN treaties, military, sport and the environment, and watch the map narrow down to the countries that fit.
+An open-source world map for asking questions about the world, built with human geography students in mind. Stack filters on development, population, health, gender, work, trade, globalisation, refugees, cities, culture, tourism, technology (including AI), politics, UN treaties, military, sport, climate, energy and mineral resources, and the environment, and watch the map narrow down to the countries that fit.
 
 - *Which countries have very high inequality (Gini over 50) outside Africa?*
 - *Which high-income countries still have a fertility rate above 2.1?*
 - *Which cities over 5 million are in lower-middle-income countries?*
 - *In which BRICS countries is the capital not the largest city?*
 
-There are over 100 measures for 194 countries, plus 6,000+ cities and 1,500 refugee routes. **[DATA.md](DATA.md) lists every measure with its source, year and coverage.**
+There are over 160 measures for 194 countries, plus 6,000+ cities and 1,500 refugee routes. **[DATA.md](DATA.md) lists every measure with its source, year and coverage.**
 
 It's a static website: no server, no database, no accounts. All the data is in a few JSON files that the browser loads once.
 
 ## Features
 
-- **Search to add a filter.** Type "religion", "coast" or "Portuguese" and pick from filters or specific values. Or browse every filter by category.
+- **Five themes along the top** (People, Wealth & work, Politics & the world, Places, Planet). Each opens its categories as small colour-coded chips. Hover over a chip (or tap it on a phone) for a plain-English definition, then click (or tap **Add filter**) to add it. A clock marks measures with yearly data. You can also search by name.
+- **Related measures are grouped.** For example, one "Religion %" filter lets you switch between Muslim, Christian, Hindu and so on; "Electricity sources" switches between coal, nuclear, wind and the rest. List filters such as "Treaties joined" or "Member of" can match **any**, **all** or **none** of the ticked options.
 - **Filters as chips.** Each active filter is a chip; click it to adjust, × to remove.
 - **Smart controls.** Range sliders show a histogram of where countries sit. Option lists show how many countries each choice would give, and grey out choices that would give none.
 - **Plain-English summary.** "Showing 4 countries where at least 50% of people are Muslim and the country is a democracy."
@@ -62,7 +63,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 |---|---|
 | `index.html` | Page structure |
 | `style.css` | All styling, including the dark theme |
-| `filters.js` | **The list of filters.** The interface is generated from this, plus starter questions, puzzles and source credits |
+| `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
 | `app.js` | Map, filtering logic, results list, URL state |
 | `countries.json` | One record per country (built by `build_data.py`) |
 | `cities.json` | Cities with 100,000+ people, plus every capital (built by `build_data.py`) |
@@ -76,6 +77,12 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `timeseries.json` | The yearly values for the website (built by `build_data.py`) |
 | `refugee_flows.json` | The refugee routes for the website (built by `build_data.py`) |
 | `groups.csv` | Membership of the EU, NATO, OECD, G7, G20, BRICS, ASEAN, African Union, Arab League, Commonwealth, Mercosur and OPEC. **Edited by hand**: update it when a country joins or leaves |
+| `climate_zones.csv` | Each country's Köppen climate zones and their share of its land (built by `make_climate_zones.py`) |
+| `co2_climate.csv`, `energy_latest.csv` | Latest climate and energy figures from Our World in Data |
+| `avg_temperature.json` | Average temperature, 1961–1990 |
+| `minerals.csv` | Mine production of 13 minerals by country, from USGS. **Edited by hand** |
+| `world_heritage.csv`, `ai_diffusion.csv` | World Heritage site counts and AI use. **Edited by hand** |
+| `make_climate_zones.py` | Works out climate zones from a world climate grid |
 | `features.json` | Rivers, lakes and named seas, mountain ranges, deserts and peaks for the zoom labels (built by `make_features.mjs`) |
 | `borders.csv` | Every land border and its length (built by `make_borders.mjs`) |
 | `make_features.mjs`, `make_borders.mjs`, `package.json` | Node tools for the two files above: run `npm install`, then `npm run features` or `npm run borders` |
@@ -125,6 +132,14 @@ node make_data_table.cjs
 | Regime type, democracy and freedom of expression scores | [V-Dem Institute](https://v-dem.net/) via [vdemdata](https://github.com/vdeminstitute/vdemdata) | CC BY-SA 4.0 |
 | CO₂ per person | [Our World in Data](https://github.com/owid/co2-data) | CC BY 4.0 |
 | Driving side | [samayo/country-json](https://github.com/samayo/country-json), with corrections | MIT |
+| Climate zones | Köppen–Geiger 0.5° grid (Kottek, Rubel et al., 1976–2000) via the [kgc](https://github.com/cran/kgc) package | BSD 2-clause |
+| Average temperature | [samayo/country-json](https://github.com/samayo/country-json) (Wikipedia, 1961–1990) | MIT |
+| CO₂ totals, shares and historical emissions, greenhouse gases, share of warming | [Our World in Data CO₂ data](https://github.com/owid/co2-data) | CC BY 4.0 |
+| Energy use, electricity mix, oil/gas/coal production | [Our World in Data energy data](https://github.com/owid/energy-data) | CC BY 4.0 |
+| Exports, imports, export make-up, tariffs, resource income, tourism spending, mobile, broadband, servers, R&D, researchers, patents, science articles, high-tech and digital exports, rainfall | World Bank World Development Indicators | CC BY 4.0 |
+| Mineral production | [USGS Mineral Commodity Summaries 2026](https://pubs.usgs.gov/publication/mcs2026) | Public domain |
+| World Heritage sites | UNESCO, counted via [worldheritagesite.org](https://www.worldheritagesite.org/) plus 2025 inscriptions | Public facts |
+| People using AI | [Microsoft AI Diffusion Report 2026 Q1](https://www.microsoft.com/en-us/corporate-responsibility/topics/AI-Economy-Institute/) | Microsoft terms of use — check before commercial use |
 | Rivers, lakes, seas, mountain ranges, deserts, peaks, border lengths | [Natural Earth](https://www.naturalearthdata.com/) via [natural-earth-vector](https://github.com/nvkelso/natural-earth-vector) | Public domain |
 | Country shapes | [Natural Earth](https://www.naturalearthdata.com/) via [world-atlas](https://github.com/topojson/world-atlas) | Public domain |
 
@@ -142,6 +157,12 @@ The compiled `countries.json` inherits the ODbL (share-alike) from the base coun
 - Treaty membership, Security Council seats and sport records are as of October 2026 and compiled by hand, so check `lists.csv` against the UN Treaty Collection now and then. Treaties count countries that have ratified or acceded, not those that have only signed.
 - Refugee figures are for the end of 2025 and cover people under UNHCR's mandate. About 6 million Palestinian refugees cared for by UNRWA are not included.
 - The year slider uses today's borders. For years before 1991, figures for countries that were then part of the Soviet Union, Yugoslavia or Czechoslovakia are estimates for today's territory where the source provides them, and blank otherwise.
+- **AI use** is Microsoft's estimate from its own usage data, for 147 countries. Several countries, mostly in Africa, share a regional estimate. Microsoft's data is not openly licensed, so check its terms before using it commercially.
+- **World Heritage counts** run to the 2025 session; sites added in July 2026 are not yet included.
+- **Climate zones** describe 1976–2000 climate on a half-degree grid. Very small countries take the zone nearest their centre, which can be slightly off (Monaco shows warm-summer rather than hot-summer Mediterranean).
+- **Average temperature** is for 1961–1990; most places are now around 1°C warmer.
+- **Tourism spending** and trips abroad are for 2019, the last year before COVID-19, matching tourist arrivals.
+- **Mineral production** counts only countries USGS lists by name; small producers fall under "other countries" and are left out. "Major producer" means at least 5% of world mine production.
 - Border lengths are measured on Natural Earth's 1:10m map, which smooths out bends, so they come out shorter than official figures (often by 10–25%). Compare countries with each other rather than quoting the exact kilometres.
 - Armed forces figures are for 2020, the latest the World Bank publishes.
 - Group memberships are as of October 2026. BRICS excludes Saudi Arabia (status unconfirmed); OPEC excludes the UAE (announced exit, May 2026).

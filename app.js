@@ -46,6 +46,11 @@
   }
   const SITE = window.SITE || {};
   const F = Object.fromEntries(FILTERS.map((f) => [f.key, f]));
+  // Families: related measures shown as one menu item with a picker inside
+  const FAMILIES = window.FAMILIES || [];
+  const famOf = {};
+  FAMILIES.forEach((fam) => fam.variants.forEach(([k, lab]) => { if (F[k]) { famOf[k] = fam; F[k].variantLabel = lab; } }));
+  FAMILIES.forEach((fam) => { fam.group = F[fam.variants[0][0]].group; fam.time = fam.variants.some(([k]) => F[k]?.time); });
   const byIso = new Map(rows.map((r) => [r.iso3, r]));
   const byNum = new Map(rows.filter((r) => r.num).map((r) => [String(+r.num), r]));
   const NAME_FIX = { Kosovo: "UNK", Somaliland: "SOM", "N. Cyprus": "CYP" };
@@ -72,6 +77,7 @@
   const UNITS = {
     per1000: " per 1,000 people", per1000birth: " per 1,000 births", per1000women: " per 1,000 teenage girls",
     per100k: " per 100,000 births", density: " people per km²", years: " years",
+    permillion: " per million people", per100: " per 100 people", twh: " TWh", kwh: " kWh per person",
   };
   // Full form, used in sentences and profiles: "20 per 1,000 people"
   function fmt(f, v) {
@@ -96,6 +102,14 @@
       case "per1000": case "per1000birth": case "per1000women": return String(a < 10 ? +v.toFixed(1) : Math.round(v));
       case "density": return compact(v);
       case "per100k": case "years": return String(Math.round(v));
+      case "kmlen": return d3.format(",")(Math.round(v)) + " km";
+      case "temp": return (+v.toFixed(1)) + "°C";
+      case "mm": return d3.format(",")(Math.round(v)) + " mm";
+      case "mt": return (a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v))) + " Mt";
+      case "degc": return v.toFixed(3) + "°C";
+      case "twh": case "kwh": return compact(v);
+      case "permillion": case "per100": return String(a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v)));
+      case "count": return d3.format(",")(Math.round(v));
       default: return String(Math.round(v));
     }
   }
@@ -133,7 +147,7 @@
       if (f.bounds) [f.dmin, f.dmax] = f.bounds;
       else if (f.clip) { f.dmin = d3.quantileSorted(nums, 0.02); f.dmax = d3.quantileSorted(nums, 0.98); }
       else { f.dmin = nums[0]; f.dmax = nums[nums.length - 1]; }
-      if (f.clip && f.step) { f.dmin = Math.floor(f.dmin / f.step) * f.step; f.dmax = Math.ceil(f.dmax / f.step) * f.step; }
+      if (f.clip && f.step && f.scale !== "log") { f.dmin = Math.floor(f.dmin / f.step) * f.step; f.dmax = Math.ceil(f.dmax / f.step) * f.step; }
       f.toT = f.scale === "log" ? (v) => Math.log10(Math.max(v, f.dmin)) : (v) => v;
       f.fromT = f.scale === "log" ? (t) => Math.pow(10, t) : (t) => t;
       f.round = f.scale === "log" ? (v) => sig(v, 2) : (v) => Math.round(v / f.step) * f.step;
@@ -194,7 +208,7 @@
       return { key, min: preset.min ?? init.min ?? f.dmin, max: preset.max ?? init.max ?? f.dmax };
     }
     if (f.type === "bool") return { key, value: preset.value ?? true };
-    return { key, values: preset.values ? [...preset.values] : [] };
+    return { key, values: preset.values ? [...preset.values] : [], mode: preset.mode || "any" };
   }
 
   // Does a filter currently restrict anything?
@@ -216,7 +230,12 @@
     }
     if (f.type === "bool") return v === fl.value;
     if (!fl.values.length) return true;
-    if (f.type === "multi") return Array.isArray(v) && v.some((x) => fl.values.includes(x));
+    if (f.type === "multi") {
+      if (!Array.isArray(v)) return false;
+      if (fl.mode === "all") return fl.values.every((x) => v.includes(x));
+      if (fl.mode === "none") return !v.some((x) => fl.values.includes(x));
+      return v.some((x) => fl.values.includes(x));
+    }
     return fl.values.includes(v);
   }
 
@@ -280,7 +299,10 @@
     if (f.type === "range") return isLimited(fl) ? f.say(bound(fl)) : `there is data on ${f.label}`;
     if (f.type === "bool") return f.say(fl.value);
     // optional per-value wording, e.g. "the Commonwealth", "a liberal democracy"
-    return f.say(joinOr(fl.values.map((v) => (f.article && f.article[v]) || v)));
+    const vals = fl.values.map((v) => (f.article && f.article[v]) || v);
+    if (fl.mode === "none") return (f.sayNot || f.say)(joinOr(vals));
+    if (fl.mode === "all") return f.say(andList(vals), vals.length > 1);
+    return f.say(joinOr(vals));
   }
   function chipLabel(fl) {
     const f = F[fl.key];
@@ -294,8 +316,9 @@
       return lo ? `${name} ≥ ${fmtShort(f, fl.min)}` : `${name} ≤ ${fmtShort(f, fl.max)}`;
     }
     if (!fl.values.length) return `${name}: choose…`;
-    const v = fl.values.length > 2 ? `${fl.values.slice(0, 2).join(", ")} +${fl.values.length - 2}` : fl.values.join(", ");
-    return `${name}: ${v}`;
+    const sep = fl.mode === "all" ? " + " : ", ";
+    const v = fl.values.length > 2 ? `${fl.values.slice(0, 2).join(sep)} +${fl.values.length - 2}` : fl.values.join(sep);
+    return `${name}: ${fl.mode === "none" ? "not " : ""}${v}`;
   }
   function andList(ps) {
     return ps.length === 1 ? ps[0] : ps.slice(0, -1).join(", ") + " and " + ps[ps.length - 1];
@@ -501,7 +524,12 @@
   }
 
   // ---------- Colour by ----------
-  const numericFilters = FILTERS.filter((f) => f.type === "range" && !f.target);
+  const numericFilters = FILTERS.filter((f) => f.type === "range" && !f.target && !f.hidden);
+  // <option>s grouped by category, for the Sort and Shade by menus
+  const groupedOptions = (selected) => window.FILTER_GROUPS.map((g) => {
+    const fs = numericFilters.filter((f) => f.group === g);
+    return fs.length ? `<optgroup label="${esc(g)}">${fs.map((f) => `<option value="${f.key}" ${selected === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}</optgroup>` : "";
+  }).join("");
   // Which number to shade matching countries by: the user's choice, else the last number filter added
   function colourKey() {
     if (state.colourBy === "none") return null;
@@ -563,6 +591,7 @@
     if (state.flow) applyFlow(); else $("#flowbar").hidden = true;
 
     renderTimebar();
+    if (openTheme && typeof showTheme === "function") showTheme(openTheme);
     $("#mapClear").hidden = !(state.filters.length || state.flow || state.year || state.selected);
     renderChips(act);
     $("#sentence").innerHTML = sentence(matches.length, act);
@@ -727,7 +756,7 @@
     el.innerHTML = `
       <button class="iconbtn hide" type="button" aria-label="Hide">×</button>
       <h2>Ask the map a question</h2>
-      <p>Search for a characteristic above, or start from one of these.</p>
+      <p>Browse the themes or search above, or start from one of these.</p>
       <div class="presets">${window.STARTERS.map((s, i) => `<button type="button" data-i="${i}">${esc(s.title)}</button>`).join("")}</div>
       ${pz ? `<div class="qotd"><div class="eyebrow">Question of the day</div><p>${esc(pz.q)}</p>
         <button class="linkbtn" type="button" id="reveal">Show the filters that answer it</button></div>` : ""}`;
@@ -768,16 +797,42 @@
     const scroll = el.querySelector(".opts")?.scrollTop || 0;
     el.hidden = false;
     el.dataset.g = gslug(f.group);
-    el.innerHTML = `<div class="eyebrow">${esc(f.group)}</div><header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
+    const fam = famOf[fl.key];
+    el.innerHTML = `<div class="eyebrow">${esc(f.group)}${fam ? ` · ${esc(fam.label)}` : ""}</div><header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
       <p class="info">${esc(f.info)} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.${timeNote}</p>
+      ${famPicker(fl)}
+      ${f.modes ? `<div class="seg modes" role="group" aria-label="Match">
+        ${[["any", "Any of these"], ["all", "All of these"], ["none", "None of these"]].map(([m, t]) => `<button type="button" data-mode="${m}" class="${(fl.mode || "any") === m ? "on" : ""}">${t}</button>`).join("")}</div>` : ""}
       <div id="edBody"></div>
       <button type="button" class="remove" id="edRemove">Remove this filter</button>`;
+    el.querySelectorAll(".modes button").forEach((b) => (b.onclick = () => { fl.mode = b.dataset.mode; render(); }));
+    el.querySelectorAll(".fampick button").forEach((b) => (b.onclick = () => switchVariant(fl, b.dataset.key)));
     $("#edClose").onclick = () => { state.open = null; render(); };
     $("#edRemove").onclick = () => removeFilter(fl.key);
     const body = $("#edBody");
     if (f.type === "range") rangeEditor(body, f, fl);
     else if (f.type === "bool") boolEditor(body, f, fl);
     else optionEditor(body, f, fl, keepSearch, scroll);
+  }
+
+  // Picker for switching between the measures in a family
+  function famPicker(fl) {
+    const fam = famOf[fl.key];
+    if (!fam || fam.variants.length < 2) return "";
+    const taken = new Set(state.filters.map((x) => x.key));
+    return `<div class="fampick" role="group" aria-label="Choose a measure">${fam.variants.map(([k, lab]) =>
+      `<button type="button" data-key="${k}" class="${k === fl.key ? "on" : ""}" ${k !== fl.key && taken.has(k) ? "disabled title=\"Already added\"" : ""}>${F[k].time ? CLOCK : ""}${esc(lab)}</button>`).join("")}</div>`;
+  }
+  function switchVariant(fl, key) {
+    if (key === fl.key || state.filters.some((x) => x.key === key)) return;
+    const f = F[key], old = F[fl.key];
+    const nf = makeFilter(key, f.type === "multi" ? { values: fl.values.filter((v) => f.options.includes(v)), mode: fl.mode } : {});
+    state.filters[state.filters.indexOf(fl)] = nf;
+    if (state.colourBy === fl.key) state.colourBy = "";
+    if (state.sort === fl.key) state.sort = "";
+    state.open = key;
+    void old;
+    render();
   }
 
   function rangeEditor(body, f, fl) {
@@ -979,9 +1034,9 @@
           <span class="sortctl"><label for="sortSel">Sort</label>
             ${sortButtons(!!sf, dir)}
             <select id="sortSel" aria-label="Sort by"><option value="__name">Name</option>
-            ${numericFilters.map((f) => `<option value="${f.key}" ${sortKey === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}</select></span>
+            ${groupedOptions(sortKey)}</select></span>
           <label>Shade by <select id="colSel"><option value="">Automatic</option><option value="none" ${state.colourBy === "none" ? "selected" : ""}>Single colour</option>
-            ${numericFilters.map((f) => `<option value="${f.key}" ${state.colourBy === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}</select></label>
+            ${groupedOptions(state.colourBy)}</select></label>
         </div>
       </div>
       <div class="rlist">
@@ -1034,7 +1089,7 @@
       return v ?? "no data";
     };
     const groups = window.FILTER_GROUPS.map((g) => {
-      const fs = FILTERS.filter((f) => f.group === g && !f.target);
+      const fs = FILTERS.filter((f) => f.group === g && !f.target && !f.hidden);
       if (!fs.length) return "";
       return `<h4 data-g="${gslug(g)}">${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
     }).join("");
@@ -1064,7 +1119,11 @@
         const nb = (r.borders_list || []);
         const nbHTML = nb.length ? `<h4 data-g="geography">Neighbours (${nb.length})</h4><p class="sub">Land borders: about ${d3.format(",")(r.border_km)} km in total.</p><dl class="nbrs">${nb.map(([iso, km]) => `<dt><button type="button" class="linkbtn goto" data-iso="${iso}">${byIso.get(iso)?.flag || ""} ${esc(byIso.get(iso)?.name || iso)}</button></dt><dd>${d3.format(",")(km)} km</dd>`).join("")}</dl>`
           : `<h4 data-g="geography">Neighbours</h4><p class="sub">No land borders.</p>`;
-        return nbHTML + (cs.length ? `<h4>Largest cities</h4><dl>${cs.map((c) => `<dt>${esc(c.name)}${c.city_capital ? " (capital)" : ""}</dt><dd>${d3.format(",")(c.city_population)}</dd>`).join("")}</dl>` : "");
+        const cl = r.climate_list || [];
+        const climHTML = cl.length ? `<h4 data-g="climate">Climate zones</h4><dl>${cl.slice(0, 6).map(([n, p]) => `<dt>${esc(n)}</dt><dd>${p}% of land</dd>`).join("")}</dl>` : "";
+        const ml = r.minerals_list || [];
+        const minHTML = ml.length ? `<h4 data-g="energy-resources">Mining (share of world production, 2025)</h4><dl>${ml.map(([m, p]) => `<dt>${esc(m.charAt(0).toUpperCase() + m.slice(1))}</dt><dd>${p < 1 ? "under 1" : Math.round(p)}%</dd>`).join("")}</dl>` : "";
+        return nbHTML + climHTML + minHTML + (cs.length ? `<h4>Largest cities</h4><dl>${cs.map((c) => `<dt>${esc(c.name)}${c.city_capital ? " (capital)" : ""}</dt><dd>${d3.format(",")(c.city_population)}</dd>`).join("")}</dl>` : "");
       })()}
       ${groups}
     </div>`;
@@ -1141,57 +1200,45 @@
     if (f.label.toLowerCase().includes(q)) return 2;
     return q.split(/\s+/).every((w) => hay.includes(w)) ? 1 : 0;
   }
-  let menuCat = null; // category picked in the menu, or null for all
   function openMenu() {
     const q = input.value.trim().toLowerCase();
+    if (!q) { closeMenu(); return; }
+    if (openTheme) closeThemes();
     const used = new Set(state.filters.map((x) => x.key));
-    const inCat = (f) => !menuCat || f.group === menuCat;
     items = [];
-    // Browsing: each filter is a small chip, coloured by category. Added ones are filled in.
-    const chip = (f) => {
-      items.push({ key: f.key });
-      const added = used.has(f.key);
-      return `<button type="button" role="option" class="item fchip${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"
-        title="${esc(f.label)}${f.time ? " · has yearly data" : ""}${added ? " · added" : ""}">${f.time ? CLOCK : ""}<span>${esc(f.label)}</span>${added ? `<span class="tick" aria-label="added">✓</span>` : ""}</button>`;
-    };
-    // Searching: a row per result, with its category
     const row = (f, label, isValue) => {
       items.push({ key: f.key, value: isValue ? label : undefined });
       const added = used.has(f.key) && !isValue;
-      const right = added ? `<span class="added-tag">✓ Added</span>` : `<span class="gtag">${esc(isValue ? f.label : f.group)}</span>`;
+      const fam = famOf[f.key];
+      const where = isValue ? (MENU_LABELS[f.key] || f.label) : fam ? `${fam.short} · ${f.group}` : f.group;
+      const right = added ? `<span class="added-tag">✓ Added</span>` : `<span class="gtag">${esc(where)}</span>`;
       return `<button type="button" role="option" class="item${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"><span>${!isValue && f.time ? CLOCK : ""}${esc(label)}</span>${right}</button>`;
     };
-    let html = `<div class="cats" role="group" aria-label="Categories">
-      <button type="button" class="${menuCat ? "" : "on"}" data-cat="">All</button>
-      ${window.FILTER_GROUPS.map((g) => `<button type="button" data-cat="${esc(g)}" data-g="${gslug(g)}" class="${menuCat === g ? "on" : ""}">${esc(g)}</button>`).join("")}</div>`;
-    if (!q) {
-      const groups = menuCat ? [menuCat] : window.FILTER_GROUPS;
-      html += `<div class="browse${menuCat ? " one" : ""}">${groups.map((g) => {
-        const fs = FILTERS.filter((f) => f.group === g);
-        return `<section class="gsec" data-g="${gslug(g)}"><h4>${esc(g)}</h4><div class="fchips">${fs.map(chip).join("")}</div></section>`;
-      }).join("")}</div>`;
-    } else {
-      const fs = FILTERS.filter(inCat).map((f) => ({ f, s: score(f, q) })).filter((x) => x.s).sort((a, b) => b.s - a.s);
-      const vals = [];
-      if (q.length >= 2) {
-        for (const f of FILTERS.filter(inCat)) {
-          if (!f.options) continue;
-          for (const o of f.options) if (o.toLowerCase().includes(q)) vals.push({ f, o, s: o.toLowerCase().startsWith(q) ? 2 : 1 });
-        }
-        vals.sort((a, b) => b.s - a.s || a.o.length - b.o.length);
+    const visible = FILTERS.filter((f) => !f.hidden);
+    const fs = visible.map((f) => {
+      const fam = famOf[f.key];
+      // a family name also finds its measures, e.g. "HDI" finds HDI rank
+      const s2 = fam ? Math.max(score(f, q), score({ label: fam.label + " " + fam.short, keywords: "", group: "" }, q) ? 1 : 0) : score(f, q);
+      return { f, s: s2 };
+    }).filter((x) => x.s).sort((a, b) => b.s - a.s);
+    const vals = [];
+    if (q.length >= 2) {
+      for (const f of visible) {
+        if (!f.options) continue;
+        for (const o of f.options) if (o.toLowerCase().includes(q)) vals.push({ f, o, s: o.toLowerCase().startsWith(q) ? 2 : 1 });
       }
-      if (fs.length) html += `<h4 class="rh">Filters</h4>` + fs.slice(0, 12).map(({ f }) => row(f, f.label)).join("");
-      if (vals.length) html += `<h4 class="rh">Values</h4>` + vals.slice(0, 6).map((v) => row(v.f, v.o, true)).join("");
-      if (!fs.length && !vals.length) html += `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”${menuCat ? ` in ${esc(menuCat)}` : ""}. Try a broader word, like “religion” or “money”.</p>`;
+      vals.sort((a, b) => b.s - a.s || a.o.length - b.o.length);
     }
-    html += `<p class="mkey">${CLOCK}<span>Has data for past years. Add one of these, then use the year slider under the map to go back in time.</span> <span class="mtick">✓</span><span>Already added</span></p>`;
+    let html = "";
+    if (fs.length) html += `<h4 class="rh">Filters</h4>` + fs.slice(0, 12).map(({ f }) => row(f, f.label)).join("");
+    if (vals.length) html += `<h4 class="rh">Values</h4>` + vals.slice(0, 6).map((v) => row(v.f, v.o, true)).join("");
+    if (!fs.length && !vals.length) html = `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”. Try a broader word, like “religion” or “money”, or browse the themes.</p>`;
     cursor = 0;
     menu.innerHTML = html;
     menu.hidden = false;
     input.setAttribute("aria-expanded", "true");
     markCursor();
     menu.querySelectorAll("button").forEach((b) => (b.onmousedown = (e) => e.preventDefault()));
-    menu.querySelectorAll(".cats button").forEach((b) => (b.onclick = () => { menuCat = b.dataset.cat || null; openMenu(); input.focus(); }));
     menu.querySelectorAll("button.item").forEach((b) => (b.onclick = () => choose(items[+b.dataset.i])));
   }
   function markCursor() {
@@ -1199,6 +1246,129 @@
     menu.querySelector("button.item.on")?.scrollIntoView({ block: "nearest" });
   }
   function closeMenu() { menu.hidden = true; input.setAttribute("aria-expanded", "false"); }
+  // ---------- Browse filters: theme bar, panels, definition cards ----------
+  const THEMES = window.THEMES || [];
+  const MENU_LABELS = window.MENU_LABELS || {};
+  const SHOW_FIRST = 6; // filters shown per category before "More…"
+  const touch = window.matchMedia("(hover: none)");
+  const expanded = new Set();
+  let openTheme = null;
+  // One menu entry per family, or per filter that isn't in a family
+  function entriesFor(group) {
+    const out = [], seenFam = new Set();
+    for (const f of FILTERS) {
+      if (f.group !== group || f.hidden) continue;
+      const fam = famOf[f.key];
+      if (fam) { if (!seenFam.has(fam.id)) { seenFam.add(fam.id); out.push({ fam, id: "fam:" + fam.id }); } }
+      else out.push({ f, id: f.key });
+    }
+    return out;
+  }
+  const entryById = (id) => (id.startsWith("fam:") ? { fam: FAMILIES.find((x) => "fam:" + x.id === id), id } : { f: F[id], id });
+  const entryLabel = (e) => (e.fam ? e.fam.short : MENU_LABELS[e.f.key] || e.f.label);
+  const entryTime = (e) => (e.fam ? e.fam.time : e.f.time);
+  const entryAdded = (e) => (e.fam ? e.fam.variants.some(([k]) => state.filters.some((x) => x.key === k)) : state.filters.some((x) => x.key === e.f.key));
+  function addEntry(e) {
+    let key = e.f?.key;
+    if (e.fam) {
+      const free = e.fam.variants.find(([k]) => !state.filters.some((x) => x.key === k));
+      key = (free || e.fam.variants[0])[0];
+    }
+    closeThemes();
+    choose({ key });
+  }
+  function renderThemeBar() {
+    const nav = $("#themes");
+    nav.innerHTML = `<button type="button" class="browse-btn" data-theme="${THEMES[0].id}" aria-haspopup="dialog">Browse filters</button>` +
+      THEMES.map((t) => `<button type="button" class="theme-btn${openTheme === t.id ? " on" : ""}" data-theme="${t.id}" aria-expanded="${openTheme === t.id}">${esc(t.label)}<span class="caret" aria-hidden="true">▾</span></button>`).join("");
+    nav.querySelectorAll("button").forEach((b) => (b.onclick = (ev) => {
+      ev.stopPropagation();
+      if (openTheme === b.dataset.theme && b.classList.contains("theme-btn")) closeThemes(); else showTheme(b.dataset.theme);
+    }));
+  }
+  function showTheme(id) {
+    openTheme = id;
+    closeMenu();
+    hideCard();
+    const t = THEMES.find((x) => x.id === id);
+    const panel = $("#tpanel");
+    panel.hidden = false;
+    panel.innerHTML = `<div class="tp-head"><div class="tp-tabs" role="tablist">${THEMES.map((x) => `<button type="button" role="tab" data-theme="${x.id}" aria-selected="${x.id === id}" class="${x.id === id ? "on" : ""}">${esc(x.label)}</button>`).join("")}</div>
+        <button type="button" class="iconbtn tp-close" aria-label="Close">×</button></div>
+      <div class="tp-body">${t.groups.map((g) => {
+        const es = entriesFor(g);
+        const open = expanded.has(g);
+        const shown = open ? es : es.slice(0, SHOW_FIRST);
+        return `<section class="gsec" data-g="${gslug(g)}"><h4>${esc(g)}</h4><div class="fchips">${shown.map((e) => {
+          const added = entryAdded(e);
+          return `<button type="button" class="fchip${added ? " added" : ""}" data-id="${esc(e.id)}" data-g="${gslug(g)}">${entryTime(e) ? CLOCK : ""}<span>${esc(entryLabel(e))}</span>${added ? `<span class="tick" aria-label="added">✓</span>` : ""}</button>`;
+        }).join("")}${es.length > SHOW_FIRST ? `<button type="button" class="more-btn" data-g="${esc(g)}">${open ? "Fewer" : `${es.length - SHOW_FIRST} more…`}</button>` : ""}</div></section>`;
+      }).join("")}</div>
+      <p class="mkey">${CLOCK}<span>Has data for past years: use the year slider under the map.</span> <span class="mtick">✓</span><span>Added</span> <span class="mhint">${touch.matches ? "Tap a filter to see what it means." : "Hover over a filter to see what it means."}</span></p>`;
+    renderThemeBar();
+    panel.querySelectorAll(".tp-tabs button").forEach((b) => (b.onclick = () => showTheme(b.dataset.theme)));
+    panel.querySelector(".tp-tabs button.on")?.scrollIntoView({ block: "nearest", inline: "center" });
+    panel.querySelector(".tp-close").onclick = closeThemes;
+    panel.querySelectorAll(".more-btn").forEach((b) => (b.onclick = () => { const g = b.dataset.g; expanded.has(g) ? expanded.delete(g) : expanded.add(g); showTheme(id); }));
+    panel.querySelectorAll(".fchip").forEach((b) => {
+      const e = entryById(b.dataset.id);
+      b.onclick = () => {
+        if (touch.matches && cardFor !== e.id) return showCard(e, b);  // first tap: explain
+        addEntry(e);
+      };
+      b.onmouseenter = () => { if (!touch.matches) { clearTimeout(cardTimer); cardTimer = setTimeout(() => showCard(e, b), 280); } };
+      b.onmouseleave = () => { clearTimeout(cardTimer); if (!touch.matches) cardTimer = setTimeout(hideCard, 120); };
+      b.onfocus = () => { if (!touch.matches) showCard(e, b); };
+      b.onblur = () => { if (!touch.matches) hideCard(); };
+    });
+  }
+  function closeThemes() {
+    openTheme = null;
+    $("#tpanel").hidden = true;
+    hideCard();
+    renderThemeBar();
+  }
+  // Definition card: hover on desktop; first tap on phones and tablets, with an Add button
+  let cardFor = null, cardTimer = 0;
+  function showCard(e, anchor) {
+    const card = $("#fcard");
+    cardFor = e.id;
+    const f = e.f, fam = e.fam;
+    const g = fam ? fam.group : f.group;
+    const title = fam ? fam.label : f.label;
+    const info = fam ? fam.info : f.info;
+    const timeKeys = fam ? fam.variants.filter(([k]) => F[k].time) : f.time ? [[f.key, f.label]] : [];
+    const timeNote = timeKeys.length ? `<p class="fc-time">${CLOCK}<span>Yearly data from ${Math.min(...timeKeys.map(([k]) => timeFrom(k) || 9999))}${fam && timeKeys.length < fam.variants.length ? ` for ${timeKeys.map(([, l]) => l).join(", ")}` : ""}</span></p>` : "";
+    card.dataset.g = gslug(g);
+    card.innerHTML = `<div class="fc-eyebrow">${esc(g)}</div><h5>${esc(title)}</h5><p>${esc(info)}</p>
+      ${fam ? `<p class="fc-vars">Choose from: ${fam.variants.map(([, l]) => esc(l)).join(" · ")}</p>` : ""}
+      ${timeNote}
+      ${touch.matches ? `<div class="fc-actions"><button type="button" class="fc-add">${entryAdded(e) ? "Add again" : "Add filter"}</button><button type="button" class="linkbtn fc-close">Close</button></div>` : ""}`;
+    card.hidden = false;
+    if (touch.matches) {
+      card.querySelector(".fc-add").onclick = () => addEntry(e);
+      card.querySelector(".fc-close").onclick = hideCard;
+      card.classList.add("sheet");
+    } else {
+      card.classList.remove("sheet");
+      const r = anchor.getBoundingClientRect(), cw = card.offsetWidth, ch = card.offsetHeight;
+      let x = r.left, y = r.bottom + 8;
+      if (x + cw > window.innerWidth - 12) x = window.innerWidth - cw - 12;
+      if (y + ch > window.innerHeight - 12) y = r.top - ch - 8;
+      card.style.left = Math.max(12, x) + "px"; card.style.top = Math.max(12, y) + "px";
+    }
+  }
+  function hideCard() { cardFor = null; $("#fcard").hidden = true; }
+  $("#fcard").onmouseenter = () => clearTimeout(cardTimer);
+  $("#fcard").onmouseleave = () => { if (!touch.matches) hideCard(); };
+  document.addEventListener("click", (ev) => {
+    if (!openTheme) return;
+    if (!ev.target.isConnected) return; // the panel was just redrawn under the click
+    if (ev.target.closest("#tpanel, #themes, #fcard")) return;
+    closeThemes();
+  });
+  renderThemeBar();
+
   function choose(it) {
     if (!it) return;
     let fl = state.filters.find((x) => x.key === it.key);
@@ -1219,6 +1389,7 @@
     else if (e.key === "Escape") { closeMenu(); input.blur(); }
   });
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && openTheme) { closeThemes(); return; }
     if (e.key === "Escape" && state.open) { state.open = null; render(); }
     else if (e.key === "Escape" && state.flow) { state.flow = null; render(); }
     if (e.key === "Escape" && !$("#about").hidden) $("#about").hidden = true;
@@ -1266,7 +1437,7 @@
       const f = F[fl.key];
       if (f.type === "range") return `${fl.key}:${fl.min}~${fl.max}`;
       if (f.type === "bool") return `${fl.key}:${fl.value ? 1 : 0}`;
-      return `${fl.key}:${fl.values.map(encodeURIComponent).join("|")}`;
+      return `${fl.key}:${fl.values.map(encodeURIComponent).join("|")}${fl.mode && fl.mode !== "any" ? "~" + fl.mode : ""}`;
     });
     const p = new URLSearchParams();
     if (parts.length) p.set("f", parts.join(","));
@@ -1283,9 +1454,20 @@
       const f = F[key]; if (!f) return;
       if (f.type === "range") { const [a, b] = v.split("~").map(Number); out.push(makeFilter(key, { min: a, max: b })); }
       else if (f.type === "bool") out.push(makeFilter(key, { value: v === "1" }));
-      else out.push(makeFilter(key, { values: v.split("|").filter(Boolean).map(decodeURIComponent).filter((x) => f.options.includes(x)) }));
+      else {
+        const [vs, mode] = v.split("~");
+        out.push(makeFilter(key, { values: vs.split("|").filter(Boolean).map(decodeURIComponent).filter((x) => f.options.includes(x)), mode: mode === "all" || mode === "none" ? mode : "any" }));
+      }
     });
-    state.filters = out;
+    const OLD = { un_crc: "Children's rights (UNCRC)", un_icc: "International Criminal Court", un_paris: "Paris Agreement", un_refugee: "Refugee Convention",
+      un_cedaw: "Women's rights (CEDAW)", un_crpd: "Disability rights (CRPD)", un_npt: "Non-Proliferation Treaty (NPT)", un_tpnw: "Nuclear weapons ban", un_landmine: "Landmine ban",
+      wc_men_host: "Men's World Cup", wc_women_host: "Women's World Cup", olympics_summer_host: "Summer Olympics", olympics_winter_host: "Winter Olympics", commonwealth_games_host: "Commonwealth Games",
+      wto_member: "World Trade Organization" };
+    state.filters = out.map((fl) => {
+      if (!OLD[fl.key]) return fl;
+      const key = fl.key === "wto_member" ? "groups" : fl.key.startsWith("un_") ? "treaties_joined" : "events_hosted";
+      return makeFilter(key, { values: [OLD[fl.key]], mode: fl.value ? "any" : "none" });
+    });
     if (out.some(isCity) && !out.some((fl) => !isCity(fl))) state.tab = "cities";
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";

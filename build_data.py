@@ -273,6 +273,23 @@ WB = {
     "military_spend_usd": ("ms_mil_xpnd_cd", 0),
     "armed_forces": ("ms_mil_totl_p1", 0),
     "armed_forces_pct": ("ms_mil_totl_tf_zs", 2),
+    # climate
+    "rainfall_mm": ("ag_lnd_prcp_mm", 0),
+    # trade
+    "exports_pct": ("ne_exp_gnfs_zs", 1), "imports_pct": ("ne_imp_gnfs_zs", 1), "trade_balance_pct": ("ne_rsb_gnfs_zs", 1),
+    "exports_usd": ("ne_exp_gnfs_cd", 0), "exp_fuel_pct": ("tx_val_fuel_zs_un", 1), "exp_metals_pct": ("tx_val_mmtl_zs_un", 1),
+    "exp_food_pct": ("tx_val_food_zs_un", 1), "exp_agri_raw_pct": ("tx_val_agri_zs_un", 1), "exp_manuf_pct": ("tx_val_manf_zs_un", 1),
+    "hightech_exports_pct": ("tx_val_tech_mf_zs", 1), "tariff_pct": ("tm_tax_mrch_wm_ar_zs", 1),
+    "ict_goods_exports_pct": ("tx_val_ictg_zs_un", 1), "ict_services_exports_pct": ("bx_gsr_ccis_zs", 1),
+    # natural resources
+    "resource_rents_pct": ("ny_gdp_totl_rt_zs", 1), "oil_rents_pct": ("ny_gdp_petr_rt_zs", 1), "gas_rents_pct": ("ny_gdp_ngas_rt_zs", 1),
+    "mineral_rents_pct": ("ny_gdp_minr_rt_zs", 1), "coal_rents_pct": ("ny_gdp_coal_rt_zs", 2),
+    # tourism (2019, the last year before COVID)
+    "tourism_receipts_usd": ("st_int_rcpt_cd", 0), "tourism_receipts_pct": ("st_int_rcpt_xp_zs", 1), "tourist_departures": ("st_int_dprt", 0),
+    # technology
+    "mobile_per100": ("it_cel_sets_p2", 0), "broadband_per100": ("it_net_bbnd_p2", 1), "secure_servers_per_million": ("it_net_secr_p6", 0),
+    "rnd_pct": ("gb_xpd_rsdv_gd_zs", 2), "researchers_per_million": ("sp_pop_scie_rd_p6", 0),
+    "patents": ("ip_pat_resd", 0), "science_articles": ("ip_jrn_artc_sc", 0),
 }
 wb = {}
 for row in csv.DictReader(open(raw("worldbank_latest.csv"), encoding="utf-8")):
@@ -379,6 +396,20 @@ for name, members in LISTS.items():
             rec[name] = True
         elif rec["sovereign"]:
             rec[name] = False
+# One list per country of the treaties it has joined and the events it has hosted
+TREATIES = [("un_crc", "Children's rights (UNCRC)"), ("un_icc", "International Criminal Court"), ("un_paris", "Paris Agreement"),
+            ("un_refugee", "Refugee Convention"), ("un_cedaw", "Women's rights (CEDAW)"), ("un_crpd", "Disability rights (CRPD)"),
+            ("un_npt", "Non-Proliferation Treaty (NPT)"), ("un_tpnw", "Nuclear weapons ban"), ("un_landmine", "Landmine ban")]
+EVENTS = [("wc_men_host", "Men's World Cup"), ("wc_women_host", "Women's World Cup"), ("olympics_summer_host", "Summer Olympics"),
+          ("olympics_winter_host", "Winter Olympics"), ("commonwealth_games_host", "Commonwealth Games")]
+for rec in countries.values():
+    if rec["sovereign"] or any(rec.get(k) for k, _ in TREATIES):
+        rec["treaties_joined"] = [n for k, n in TREATIES if rec.get(k)]
+    if rec["sovereign"] or any(rec.get(k) for k, _ in EVENTS):
+        rec["events_hosted"] = [n for k, n in EVENTS if rec.get(k)]
+    if rec.get("wto_member"):
+        rec.setdefault("groups", []).append("World Trade Organization")
+        rec["groups"] = sorted(set(rec["groups"]))
 for rec in countries.values():
     if rec.get("unsc_permanent"):
         rec["security_council"] = "Permanent member"
@@ -425,6 +456,95 @@ with open(os.path.join(ROOT, "refugee_flows.json"), "w", encoding="utf-8") as f:
     json.dump(flows, f, separators=(",", ":"))
 print(f"Wrote {len(flows)} refugee flows")
 
+# --- 13a. Climate, energy, minerals, tourism and technology ---
+def latest_file(name, fields, dp=1):
+    for row in csv.DictReader(open(raw(name), encoding="utf-8")):
+        rec = countries.get({"OWID_KOS": "UNK"}.get(row["iso3"], row["iso3"]))
+        if rec and row["indicator"] in fields:
+            f = fields[row["indicator"]]
+            v = float(row["value"])
+            rec[f] = round(v, dp) if abs(v) < 1e6 else round(v)
+            rec[f + "_year"] = int(row["year"])
+latest_file("co2_climate.csv", {"co2": "co2_mt", "share_global_co2": "co2_world_share", "share_global_cumulative_co2": "co2_cumulative_share",
+    "ghg_per_capita": "ghg_per_capita", "consumption_co2_per_capita": "co2_consumption_per_capita",
+    "share_of_temperature_change_from_ghg": "warming_share"}, 2)
+latest_file("energy_latest.csv", {"energy_per_capita": "energy_per_capita", "renewables_share_elec": "renewables_elec_pct",
+    "low_carbon_share_elec": "low_carbon_elec_pct", "fossil_share_elec": "fossil_elec_pct", "coal_share_elec": "coal_elec_pct",
+    "nuclear_share_elec": "nuclear_elec_pct", "solar_share_elec": "solar_elec_pct", "wind_share_elec": "wind_elec_pct",
+    "hydro_share_elec": "hydro_elec_pct", "oil_production": "oil_twh", "gas_production": "gas_twh", "coal_production": "coal_twh"}, 1)
+for rec in countries.values():  # producing nothing is a real zero, not missing data
+    for f in ("oil_twh", "gas_twh", "coal_twh"):
+        if f not in rec and rec.get("energy_per_capita") is not None:
+            rec[f] = 0
+            rec[f + "_year"] = rec.get("energy_per_capita_year")
+
+# Average temperature (samayo/country-json, from Wikipedia's 1961–1990 averages)
+for row in json.load(open(raw("avg_temperature.json"), encoding="utf-8")):
+    iso = find(row["country"])
+    if iso in countries and row.get("temperature") is not None:
+        countries[iso]["avg_temp"] = round(float(row["temperature"]), 1)
+
+# Köppen–Geiger climate zones (climate_zones.csv, from make_climate_zones.py)
+KOPPEN = {
+    "Af": "Tropical rainforest", "Am": "Tropical monsoon", "Aw": "Tropical savanna", "As": "Tropical savanna",
+    "BWh": "Hot desert", "BWk": "Cold desert", "BSh": "Hot semi-arid", "BSk": "Cold semi-arid",
+    "Csa": "Mediterranean", "Csb": "Mediterranean", "Csc": "Mediterranean",
+    "Cwa": "Subtropical highland or monsoon", "Cwb": "Subtropical highland or monsoon", "Cwc": "Subtropical highland or monsoon",
+    "Cfa": "Humid subtropical", "Cfb": "Oceanic", "Cfc": "Oceanic",
+    "Dsa": "Continental", "Dsb": "Continental", "Dwa": "Continental", "Dwb": "Continental", "Dfa": "Continental", "Dfb": "Continental",
+    "Dsc": "Subarctic", "Dsd": "Subarctic", "Dwc": "Subarctic", "Dwd": "Subarctic", "Dfc": "Subarctic", "Dfd": "Subarctic",
+    "ET": "Tundra", "EF": "Ice cap",
+}
+MAIN = {"A": "Tropical", "B": "Dry", "C": "Temperate", "D": "Continental", "E": "Polar"}
+zones = {}
+for row in csv.DictReader(open(raw("climate_zones.csv"), encoding="utf-8")):
+    zones.setdefault(row["iso3"], []).append((row["zone"], float(row["share_pct"])))
+for iso, zs in zones.items():
+    if iso not in countries:
+        continue
+    rec = countries[iso]
+    main, named = {}, {}
+    for code, pct in zs:
+        main[MAIN[code[0]]] = main.get(MAIN[code[0]], 0) + pct
+        named[KOPPEN.get(code, code)] = named.get(KOPPEN.get(code, code), 0) + pct
+    rec["main_climate"] = max(main, key=main.get)
+    rec["climate_zones"] = sorted(n for n, p in named.items() if p >= 10)
+    rec["dry_climate_pct"] = round(main.get("Dry", 0), 1)
+    rec["climate_list"] = sorted(([n, round(p)] for n, p in named.items() if p >= 1), key=lambda x: -x[1])
+
+# Minerals: major producer = at least 5% of world mine production (USGS, 2025 estimates)
+for row in csv.DictReader(l for l in open(raw("minerals.csv"), encoding="utf-8") if not l.startswith("#")):
+    rec = countries.get(row["iso3"])
+    if not rec:
+        continue
+    share = 100 * float(row["production_2025"]) / float(row["world_total_2025"])
+    rec.setdefault("minerals_list", []).append([row["mineral"], round(share, 1)])
+for rec in countries.values():
+    ml = sorted(rec.get("minerals_list", []), key=lambda x: -x[1])
+    rec["minerals_list"] = ml
+    rec["major_producer"] = sorted(m.capitalize() for m, sh in ml if sh >= 5)
+    rec["minerals_count"] = len(rec["major_producer"])
+
+# AI use (Microsoft AI Diffusion Report, Q1 2026) and World Heritage sites
+for name, field, conv in (("ai_diffusion.csv", "ai_users_pct", float), ("world_heritage.csv", "world_heritage_sites", int)):
+    for row in csv.DictReader(l for l in open(raw(name), encoding="utf-8") if not l.startswith("#")):
+        if row["iso3"] in countries:
+            countries[row["iso3"]][field] = conv(list(row.values())[1])
+
+# Per-person versions
+for rec in countries.values():
+    p = rec.get("population")
+    if not p:
+        continue
+    if rec.get("tourists") is not None:
+        rec["tourists_per100"] = round(100 * rec["tourists"] / p, 1)
+    if rec.get("patents") is not None:
+        rec["patents_per_million"] = round(rec["patents"] / p * 1e6, 1)
+        rec["patents_per_million_year"] = rec.get("patents_year")
+    if rec.get("science_articles") is not None:
+        rec["articles_per_million"] = round(rec["science_articles"] / p * 1e6)
+        rec["articles_per_million_year"] = rec.get("science_articles_year")
+
 # --- 13b. Land borders: each neighbour and the shared border length (borders.csv, from make_borders.mjs) ---
 for rec in countries.values():
     rec.pop("borders_list", None)
@@ -449,6 +569,7 @@ TS_CODES = {  # field on the site: indicator in timeseries.csv
     "infant_mortality": "sp_dyn_imrt_in", "pct_over65": "sp_pop_65up_to_zs", "birth_rate": "sp_dyn_cbrt_in",
     "death_rate": "sp_dyn_cdrt_in", "pop_growth": "sp_pop_grow", "hdi": "hdi", "median_age": "median_age",
     "libdem": "v2x_libdem", "regime": "v2x_regime", "refugees_hosted": "refugees_hosted", "refugees_from": "refugees_from",
+    "renewables_elec_pct": "renewables_share_elec", "co2_mt": "co2",
 }
 series = {k: {} for k in list(TS_CODES) + ["population", "gdp_per_capita", "co2_per_capita"]}
 def put(field, iso, year, value):
