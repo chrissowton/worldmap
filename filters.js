@@ -34,6 +34,7 @@
 window.SITE = {
   github: "",   // e.g. "https://github.com/your-name/worldmap"
   donate: "",   // e.g. "https://opencollective.com/which-countries" or a Ko-fi page
+  url: "https://chrissowton.github.io/worldmap/",  // the site's address, used in share links and on downloaded images
 };
 
 window.FILTER_GROUPS = [
@@ -187,6 +188,23 @@ window.FILTERS = [
     info: "Deaths each year per 1,000 people.",
     keywords: "death rate deaths mortality demographic transition",
   }),
+  num("natural_increase", "Population", "Natural increase", {
+    short: "Natural increase", step: 0.5, format: "per1000", bounds: [-10, 40],
+    say: (b) => `births minus deaths is ${b}`,
+    info: "Birth rate minus death rate: how fast the population grows (or shrinks) before migration. Below zero, more people die than are born.",
+    keywords: "natural increase decrease growth births deaths demographic transition",
+  }),
+  {
+    key: "dtm_stage", type: "cat", group: "Population",
+    label: "Demographic transition stage", short: "DTM stage",
+    order: ["Stage 1 · High birth and death rates", "Stage 2 · Death rate falling, birth rate high", "Stage 3 · Birth rate falling",
+      "Stage 4 · Low birth and death rates", "Stage 5 · Deaths outnumber births"],
+    say: (v) => `it is at ${v.split(" · ")[0].toLowerCase()} of the demographic transition model`,
+    sayNot: (v) => `it is not at ${v.split(" · ")[0].toLowerCase()} of the demographic transition model`,
+    source: "worldbank", year: "dtm_stage_year",
+    info: "A simple guide worked out on this site from birth and death rates per 1,000 people. Stage 1: births 35+ and deaths 20+. Stage 2: births 28+. Stage 3: births 15–28. Stage 4: births under 15 but above deaths. Stage 5: deaths above births. Real countries don't always fit neatly.",
+    keywords: "demographic transition model dtm stage birth death population",
+  },
   num("median_age", "Population", "Median age", {
     short: "Median age", format: "years", source: "unwpp",
     say: (b) => `the median age is ${b}`,
@@ -1118,7 +1136,7 @@ window.FAMILIES = [
   { id: "access", label: "Access to electricity and water", short: "Electricity & water", info: "Share of people with electricity, or with safe drinking water, at home.",
     variants: [["electricity", "Electricity"], ["safe_water", "Safe water"]] },
   { id: "births", label: "Birth and death rates", short: "Birth & death rates", info: "Births or deaths each year per 1,000 people: the key numbers in the demographic transition model.",
-    variants: [["birth_rate", "Birth rate"], ["death_rate", "Death rate"]] },
+    variants: [["birth_rate", "Birth rate"], ["death_rate", "Death rate"], ["natural_increase", "Natural increase"]] },
   { id: "age", label: "Age structure", short: "Age", info: "How old the population is: median age, share of children, share of older people, and the dependency ratio.",
     variants: [["median_age", "Median age"], ["pct_under15", "% under 15"], ["pct_over65", "% 65 and over"], ["dependency", "Dependency ratio"]] },
   { id: "childdeaths", label: "Child deaths", short: "Child deaths", info: "Babies who die before age 1, or children before age 5, per 1,000 born.",

@@ -570,7 +570,14 @@ TS_CODES = {  # field on the site: indicator in timeseries.csv
     "death_rate": "sp_dyn_cdrt_in", "pop_growth": "sp_pop_grow", "hdi": "hdi", "median_age": "median_age",
     "libdem": "v2x_libdem", "regime": "v2x_regime", "refugees_hosted": "refugees_hosted", "refugees_from": "refugees_from",
     "renewables_elec_pct": "renewables_share_elec", "co2_mt": "co2",
+    "gii": "gii", "mean_schooling": "undp_mys", "expected_schooling": "undp_eys", "ihdi": "ihdi",
 }
+# every World Bank measure with yearly history (see TS_WB_HISTORY in fetch_raw.py)
+TS_CODES.update({f: WB[f][0] for f in ["gni_ppp", "gini", "extreme_poverty", "under5_mortality", "maternal_mortality", "literacy",
+    "electricity", "safe_water", "internet", "health_spend", "education_spend", "density", "pct_under15", "dependency",
+    "migrants_pct", "remittances_pct", "emp_agriculture", "emp_industry", "emp_services", "trade_pct", "fdi_pct", "tourists",
+    "forest_pct", "renewables_pct", "adolescent_births", "women_parliament", "female_labour", "military_spend_pct",
+    "armed_forces_pct", "exports_pct", "imports_pct", "mobile_per100", "broadband_per100", "rnd_pct", "resource_rents_pct"]})
 series = {k: {} for k in list(TS_CODES) + ["population", "gdp_per_capita", "co2_per_capita"]}
 def put(field, iso, year, value):
     if iso in countries and 1960 <= year <= 2025:
@@ -590,10 +597,54 @@ for row in csv.DictReader(open(raw("gdp.csv"), encoding="utf-8")):
 for row in csv.DictReader(open(raw("co2.csv"), encoding="utf-8")):
     if row["iso_code"] and row["co2_per_capita"]:
         put("co2_per_capita", row["iso_code"], int(row["year"]), round(float(row["co2_per_capita"]), 2))
+# Demographic transition model stage and natural increase, from the birth and death rates of each year
+DTM_STAGES = ["Stage 1 · High birth and death rates", "Stage 2 · Death rate falling, birth rate high",
+              "Stage 3 · Birth rate falling", "Stage 4 · Low birth and death rates", "Stage 5 · Deaths outnumber births"]
+def dtm_stage(br, dr):
+    if br >= 35 and dr >= 20: return 0
+    if br >= 28: return 1
+    if br >= 15: return 2
+    if br > dr: return 3
+    return 4
+series["dtm_stage"], series["natural_increase"] = {}, {}
+for iso, brs in series["birth_rate"].items():
+    drs = series["death_rate"].get(iso)
+    if not drs:
+        continue
+    st = [dtm_stage(b, d) if b is not None and d is not None else None for b, d in zip(brs, drs)]
+    ni = [round(b - d, 1) if b is not None and d is not None else None for b, d in zip(brs, drs)]
+    series["dtm_stage"][iso], series["natural_increase"][iso] = st, ni
+for iso, rec in countries.items():
+    if rec.get("birth_rate") is not None and rec.get("death_rate") is not None:
+        rec["dtm_stage"] = DTM_STAGES[dtm_stage(rec["birth_rate"], rec["death_rate"])]
+        rec["natural_increase"] = round(rec["birth_rate"] - rec["death_rate"], 1)
+        rec["dtm_stage_year"] = rec["natural_increase_year"] = min(rec.get("birth_rate_year") or 0, rec.get("death_rate_year") or 0) or None
 # refugee counts: a country with no row in a year it reports nothing for is left blank, not zero
 with open(os.path.join(ROOT, "timeseries.json"), "w", encoding="utf-8") as f:
     json.dump({"years": YEARS, "series": series}, f, separators=(",", ":"))
 print("Wrote timeseries.json:", {k: len(v) for k, v in series.items()})
+
+# --- 14b. Population pyramids (World Bank / UN WPP): % of the whole population in each 5-year age group ---
+# pyramids.json: {"ages": [...], "data": {iso3: {year: [male 0-4 .. 80+, female 0-4 .. 80+]}}}, every 5 years plus the latest
+pyr = {}
+if os.path.exists(raw("pyramids.csv")):
+    prow = list(csv.DictReader(open(raw("pyramids.csv"), encoding="utf-8")))
+    latest_y = {}
+    for r in prow:
+        latest_y[r["iso3"]] = max(latest_y.get(r["iso3"], 0), int(r["year"]))
+    for r in prow:
+        iso, y = r["iso3"], int(r["year"])
+        if iso not in countries or not (y % 5 == 0 or y == latest_y[iso]):
+            continue
+        fs = float(r["female_pct"])
+        ages = [k[1:] for k in r if k.startswith("m")]
+        m = [round(float(r["m" + a]) * (100 - fs) / 100, 2) for a in ages]
+        fe = [round(float(r["f" + a]) * fs / 100, 2) for a in ages]
+        pyr.setdefault(iso, {})[y] = m + fe
+    with open(os.path.join(ROOT, "pyramids.json"), "w", encoding="utf-8") as f:
+        json.dump({"ages": ["0–4", "5–9", "10–14", "15–19", "20–24", "25–29", "30–34", "35–39", "40–44", "45–49", "50–54",
+                            "55–59", "60–64", "65–69", "70–74", "75–79", "80+"], "data": pyr}, f, separators=(",", ":"))
+    print(f"Wrote pyramids.json for {len(pyr)} countries")
 
 # --- Write ---
 out = sorted(countries.values(), key=lambda r: r["name"])

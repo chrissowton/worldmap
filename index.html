@@ -28,9 +28,20 @@
 <div id="fcard" class="fcard" role="tooltip" hidden></div>
 <div id="factfile" class="ff-overlay" role="dialog" aria-label="Country factfile" hidden></div>
 
+<div id="task" class="task" hidden></div>
 <section class="bar" aria-label="Active filters">
   <div id="chips" class="chips"></div>
   <p id="sentence" class="sentence" aria-live="polite"></p>
+  <div class="viewtools">
+    <div id="views" class="views" role="tablist" aria-label="How to show the results">
+      <button type="button" role="tab" data-v="map" aria-selected="true"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M1.8 8h12.4M8 1.7c-2.2 2.4-2.2 10.2 0 12.6M8 1.7c2.2 2.4 2.2 10.2 0 12.6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Map</button>
+      <button type="button" role="tab" data-v="compare" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 1.5v12.5h12.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="9.5" r="1.8" fill="currentColor"/><circle cx="10.5" cy="5.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12.5" cy="10.5" r="1.2" fill="currentColor"/></svg>Compare</button>
+      <button type="button" role="tab" data-v="rank" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 3h12M2 6.5h9M2 10h6M2 13.5h3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rankings</button>
+      <button type="button" role="tab" data-v="trends" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 12.5l4-4.5 3 2.5 5.5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M1.5 14.5h13" stroke="currentColor" stroke-width="1.2"/></svg>Trends</button>
+    </div>
+    <button type="button" id="sbsBtn" class="ghost sm" title="Compare two or three countries side by side">⇄ Side by side</button>
+    <button type="button" id="shareBtn" class="ghost sm" title="Share this view, or set a task for students">🔗 Share</button>
+  </div>
 </section>
 
 <main class="main">
@@ -40,6 +51,8 @@
     <div id="zero" class="card zero" hidden></div>
     <div id="flowbar" class="card flowbar" hidden></div>
     <button id="mapClear" class="mapclear" type="button" hidden>✕ Clear all</button>
+    <button id="mmBtn" class="mmbtn" type="button" aria-expanded="false" aria-controls="mmCard">🎨 Map style</button>
+    <div id="mmCard" class="card mmcard" hidden></div>
     <div id="editor" class="card editor" hidden></div>
     <div id="legend" class="legend"></div>
     <div id="timebar" class="timebar"></div>
@@ -52,15 +65,20 @@
     <div id="tooltip" class="tooltip" hidden></div>
   </div>
 
+  <div id="viewwrap" class="viewwrap" hidden></div>
+
   <aside id="results" class="results" aria-label="Results"></aside>
 </main>
 
 <div id="about" class="overlay" hidden></div>
+<div id="sbs" class="ff-overlay sbs-overlay" role="dialog" aria-label="Countries side by side" hidden></div>
+<div id="share" class="overlay" hidden></div>
 <!--/APP-->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="filters.js"></script>
+<script src="views.js"></script>
 <script src="app.js"></script>
 <script src="factfile.js"></script>
 </body>

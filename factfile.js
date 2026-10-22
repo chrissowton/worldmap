@@ -249,6 +249,56 @@
     return out;
   }
 
+  // ---------- Changes over time and population structure (charts drawn by views.js) ----------
+  const TREND_KEYS = ["population", "life_expectancy", "fertility", "gdp_per_capita", "hdi", "urban_pct", "co2_per_capita", "internet"];
+  const LINE_COLOURS = { ink: INK, muted: MUTED, line: LINE, accent: ACCENT, region: "#8a4b00" };
+  const PYR_COLOURS = { ink: INK, muted: MUTED, line: LINE, male: "#2a78d6", female: "#eb6834" };
+  function trendCards(r) {
+    const { F, TS, TS_YEARS, fmtShort } = window.WC;
+    if (!window.WV) return [];
+    return TREND_KEYS.map((k) => {
+      const f = F[k], s = TS[k]?.[r.iso3];
+      if (!f || !s) return null;
+      const svg = window.WV.lineChartSVG(r.iso3, k, { w: 240, h: 118, colours: LINE_COLOURS, fs: 9, l: 38 });
+      if (!svg) return null;
+      const idx = s.map((v, i) => (v != null ? i : -1)).filter((i) => i >= 0);
+      const a = idx[0], b = idx[idx.length - 1];
+      return { f, svg, from: `${TS_YEARS[a]}: ${fmtShort(f, s[a])}`, to: `${TS_YEARS[b]}: ${fmtShort(f, s[b])}` };
+    }).filter(Boolean);
+  }
+  function pyramidInfo(r) {
+    const P = window.WV?.pyramids;
+    const d = P?.data?.[r.iso3];
+    if (!d) return null;
+    const yrs = Object.keys(d).map(Number).sort((x, y) => x - y);
+    const latest = yrs[yrs.length - 1];
+    const base = yrs.includes(1990) && latest - 1990 >= 15 ? 1990 : yrs[0];
+    return { latest, base, svg: window.WV.pyramidSVG(d[latest], P.ages, { w: 300, h: 220, compare: base !== latest ? d[base] : null, colours: PYR_COLOURS }) };
+  }
+  function popFacts(r) {
+    const { F, fmt, latest } = window.WC;
+    const out = [];
+    const dtm = latest(r, "dtm_stage");
+    if (dtm) out.push(["Demographic transition", dtm]);
+    ["birth_rate", "death_rate", "natural_increase", "median_age", "pct_under15", "pct_over65"].forEach((k) => {
+      const v = latest(r, k);
+      if (typeof v === "number" && F[k]) out.push([F[k].label, fmt(F[k], v)]);
+    });
+    return out;
+  }
+  function changesHTML(r) {
+    const { esc } = window.WC;
+    const cards = trendCards(r), pyr = pyramidInfo(r), pf = popFacts(r);
+    if (!cards.length && !pyr) return "";
+    let h = `<h2 class="ff-theme">Changes over time</h2>`;
+    if (cards.length) h += `<section class="ff-trends"><div class="ff-tgrid">${cards.map((c) => `<figure><figcaption><b>${esc(c.f.label)}</b><span>${esc(c.from)} → ${esc(c.to)}</span></figcaption>${c.svg}</figure>`).join("")}</div>
+      <p class="ff-lkey"><span class="lk"><span class="lkl" style="border-color:${ACCENT}"></span>${esc(r.name)}</span><span class="lk"><span class="lkl dash" style="border-color:${MUTED}"></span>World median</span><span class="lk"><span class="lkl dot" style="border-color:#8a4b00"></span>${esc(REGION_NAME[r.region] || r.region)} median</span></p></section>`;
+    if (pyr || pf.length) h += `<section class="ff-pop" style="--gc:${GROUP_COLOURS.Population}">${pyr ? `<figure>${pyr.svg}<figcaption>Population by age and sex, ${pyr.latest} (bars)${pyr.base !== pyr.latest ? ` and ${pyr.base} (outline). Each bar is the share of the whole population.` : ""}</figcaption></figure>` : ""}
+      <div><h3>Population structure</h3><dl class="ff-facts">${pf.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      <p class="ff-note">The demographic transition stage is a simple guide worked out from birth and death rates: stage 1 high births and deaths; 2 births high, deaths falling; 3 births falling; 4 both low; 5 more deaths than births.</p></div></section>`;
+    return h;
+  }
+
   function buildHTML(iso) {
     const { byIso, esc, F } = window.WC;
     const r = byIso.get(iso);
@@ -291,6 +341,7 @@
     }
     const ex = extras(r);
     if (ex.length) h += `<h2 class="ff-theme">More detail</h2><section class="ff-extras">${ex.map((e) => `<div class="ff-box" style="--gc:${e.colour}"><h4>${esc(e.title)}</h4><table>${e.rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="n">${esc(b)}</td></tr>`).join("")}</table><p>${esc(e.note)}</p></div>`).join("")}</section>`;
+    h += changesHTML(r);
     const S = window.SOURCES;
     h += `<footer class="ff-foot"><h4>Sources</h4><p>${[...used, "boundaries"].filter((k) => S[k]).map((k) => `${esc(S[k].name)} (${esc(S[k].licence)})`).join("; ")}.</p>
       <p>Figures are the latest available for each measure; the Year column shows which year. Countries with no data are left out of ranks and medians. Made with Which Countries?, an open-source world map, on ${today}.</p></footer>`;
@@ -325,6 +376,10 @@
       </div>
       <div class="ff-scroll"><article class="ffdoc" id="ffDoc">${currentIso ? buildHTML(currentIso) : `<div class="ff-empty"><h2>Country factfiles</h2><p>Choose a country above to see every measure on this site for it, compared with its continent and the world, with maps. You can print it, save it as a PDF, or download it as a Word file.</p></div>`}</article></div>`;
     if (year) window.WC.applyYear(year);
+    if (currentIso && window.WV && !window.WV.pyramids) {
+      const want = currentIso;
+      window.WV.loadPyramids().then((p) => { if (p && want === currentIso && !$("#factfile").hidden) open(want); });
+    }
     $("#ffSel").onchange = (e) => open(e.target.value);
     $("#ffClose").onclick = close;
     $("#ffPrint").onclick = printIt;
@@ -375,6 +430,7 @@
   async function wordIt() {
     msg("Making the Word file…");
     const D = await loadDocx();
+    if (window.WV) await window.WV.loadPyramids();
     const st = window.WC.state, year = st.year;
     if (year) window.WC.applyYear(null);
     try {
@@ -475,6 +531,38 @@
           rows: e.rows.map(([a, b]) => new D.TableRow({ cantSplit: true, children: [cell(P(T(a, { size: 16 }), { after: 0 }), { w: 3800 }), cell(P(T(b, { size: 16 }), { after: 0, align: right }), { w: 2200 })] })),
         }));
         body.push(P(T(e.note, { size: 14, italics: true, color: hex(MUTED) }), { before: 40 }));
+      }
+    }
+    // Changes over time: small line charts and the population pyramid
+    const cards = trendCards(r), pyr = pyramidInfo(r), pf = popFacts(r);
+    if (cards.length || pyr) {
+      body.push(new D.Paragraph({ children: [T("Changes over time", { size: 30, bold: true, color: hex(ACCENT) })], spacing: { before: 240, after: 80 }, keepNext: true, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: hex(ACCENT), space: 2 } } }));
+      const pngs = await Promise.all(cards.map((c) => svgToPng(c.svg, 240, 118)));
+      const cw = Math.floor(W / 4);
+      const trows = [];
+      for (let i = 0; i < cards.length; i += 4) {
+        trows.push(new D.TableRow({ cantSplit: true, children: [0, 1, 2, 3].map((j) => {
+          const c = cards[i + j];
+          return cell(c ? [P(T(c.f.label, { size: 15, bold: true }), { after: 0 }), P(T(`${c.from} → ${c.to}`, { size: 12, color: hex(MUTED) }), { after: 20 }),
+            P(new D.ImageRun({ type: "png", data: pngs[i + j], transformation: { width: 160, height: 79 } }), { after: 0 })] : [P(T(""))], { w: cw });
+        }) }));
+      }
+      if (trows.length) {
+        body.push(new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, columnWidths: [cw, cw, cw, cw], rows: trows }));
+        body.push(P([T("━ ", { color: hex(ACCENT), bold: true }), T(r.name + "   ", { size: 14, color: hex(MUTED) }), T("‒ ‒ ", { color: hex(MUTED) }), T("World median   ", { size: 14, color: hex(MUTED) }), T("····· ", { color: "8a4b00", bold: true }), T(`${regionName} median`, { size: 14, color: hex(MUTED) })], { before: 40, after: 120 }));
+      }
+      if (pyr || pf.length) {
+        const pyrPng = pyr ? await svgToPng(pyr.svg, 300, 220) : null;
+        body.push(new D.Table({
+          width: { size: W, type: D.WidthType.DXA }, borders: noBorders, columnWidths: [4600, W - 4600],
+          rows: [new D.TableRow({ cantSplit: true, children: [
+            cell(pyr ? [P(new D.ImageRun({ type: "png", data: pyrPng, transformation: { width: 285, height: 209 } }), { after: 20 }),
+              P(T(`Population by age and sex, ${pyr.latest} (bars)${pyr.base !== pyr.latest ? ` and ${pyr.base} (outline)` : ""}. Each bar is the share of the whole population.`, { size: 13, italics: true, color: hex(MUTED) }))] : [P(T(""))], { w: 4600 }),
+            cell([P(T("Population structure", { size: 22, bold: true, color: hex(GROUP_COLOURS.Population) }), { after: 60 }),
+              ...pf.map(([k, v]) => P([T(k + ": ", { bold: true, size: 16 }), T(v, { size: 16 })], { after: 30 })),
+              P(T("The demographic transition stage is a simple guide worked out from birth and death rates: stage 1 high births and deaths; 2 births high, deaths falling; 3 births falling; 4 both low; 5 more deaths than births.", { size: 13, italics: true, color: hex(MUTED) }), { before: 80 })], { w: W - 4600 }),
+          ] })],
+        }));
       }
     }
     const S = window.SOURCES;

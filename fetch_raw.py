@@ -259,6 +259,62 @@ def fetch_timeseries():
                                          "renewables_share_elec", "co2"})
 
 
+# More yearly history: site field -> World Bank code (all already shown as latest values)
+TS_WB_HISTORY = {
+    "gni_ppp": "ny_gnp_pcap_pp_cd", "gini": "si_pov_gini", "extreme_poverty": "si_pov_dday",
+    "under5_mortality": "sh_dyn_mort", "maternal_mortality": "sh_sta_mmrt", "literacy": "se_adt_litr_zs",
+    "electricity": "eg_elc_accs_zs", "safe_water": "sh_h2o_smdw_zs", "internet": "it_net_user_zs",
+    "health_spend": "sh_xpd_chex_gd_zs", "education_spend": "se_xpd_totl_gd_zs", "density": "en_pop_dnst",
+    "pct_under15": "sp_pop_0014_to_zs", "dependency": "sp_pop_dpnd", "migrants_pct": "sm_pop_totl_zs",
+    "remittances_pct": "bx_trf_pwkr_dt_gd_zs", "emp_agriculture": "sl_agr_empl_zs", "emp_industry": "sl_ind_empl_zs",
+    "emp_services": "sl_srv_empl_zs", "trade_pct": "ne_trd_gnfs_zs", "fdi_pct": "bx_klt_dinv_wd_gd_zs",
+    "tourists": "st_int_arvl", "forest_pct": "ag_lnd_frst_zs", "renewables_pct": "eg_fec_rnew_zs",
+    "adolescent_births": "sp_ado_tfrt", "women_parliament": "sg_gen_parl_zs", "female_labour": "sl_tlf_cact_fe_zs",
+    "military_spend_pct": "ms_mil_xpnd_gd_zs", "armed_forces_pct": "ms_mil_totl_tf_zs", "exports_pct": "ne_exp_gnfs_zs",
+    "imports_pct": "ne_imp_gnfs_zs", "mobile_per100": "it_cel_sets_p2", "broadband_per100": "it_net_bbnd_p2",
+    "rnd_pct": "gb_xpd_rsdv_gd_zs", "resource_rents_pct": "ny_gdp_totl_rt_zs",
+}
+AGES = ["0004", "0509", "1014", "1519", "2024", "2529", "3034", "3539", "4044", "4549", "5054", "5559", "6064",
+        "6569", "7074", "7579", "80up"]
+
+
+def fetch_history():
+    """Yearly history for more World Bank measures (into timeseries.csv) and population by age and sex (pyramids.csv)."""
+    valid = {c["cca3"] for c in json.load(open(os.path.join(RAW, "world_countries.json"), encoding="utf-8"))}
+    fix = {"XKX": "UNK"}
+    out = []
+    for code in TS_WB_HISTORY.values():
+        for r in read_csv(WDI_URL.format(code)):
+            iso = fix.get(r["geo"].upper(), r["geo"].upper())
+            if r[code] and int(r["time"]) >= 1960 and iso in valid:
+                out.append([iso, code, int(r["time"]), f"{float(r[code]):.4g}"])
+    write_timeseries(out, set(TS_WB_HISTORY.values()))
+    # Population pyramids: % of each sex in each 5-year age group, plus the female share of the population
+    data = {}
+    for sex in ("fe", "ma"):
+        for a in AGES:
+            code = f"sp_pop_{a}_{sex}_5y"
+            for r in read_csv(WDI_URL.format(code)):
+                iso = fix.get(r["geo"].upper(), r["geo"].upper())
+                if r[code] and iso in valid:
+                    data[(iso, int(r["time"]), sex, a)] = float(r[code])
+    share = {}
+    for r in read_csv(WDI_URL.format("sp_pop_totl_fe_zs")):
+        iso = fix.get(r["geo"].upper(), r["geo"].upper())
+        if r["sp_pop_totl_fe_zs"] and iso in valid:
+            share[(iso, int(r["time"]))] = float(r["sp_pop_totl_fe_zs"])
+    with open(os.path.join(RAW, "pyramids.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["iso3", "year", "female_pct"] + [f"m{a}" for a in AGES] + [f"f{a}" for a in AGES])
+        for (iso, y), fs in sorted(share.items()):
+            m = [data.get((iso, y, "ma", a)) for a in AGES]
+            fe = [data.get((iso, y, "fe", a)) for a in AGES]
+            if None in m or None in fe:
+                continue
+            w.writerow([iso, y, f"{fs:.3f}"] + [f"{v:.3f}" for v in m + fe])
+    print("Updated timeseries.csv and wrote pyramids.csv. Now run: python3 build_data.py")
+
+
 def extract_undp(path):
     """Keep the latest value of each UNDP index per country, from UNDP's composite indices CSV."""
     keep = ["hdi", "hdi_rank", "gii", "gii_rank", "gdi", "gdi_group", "mys", "eys", "ihdi", "loss"]
@@ -273,14 +329,15 @@ def extract_undp(path):
                 if years:
                     y = years[-1]
                     w.writerow([r["iso3"], r["country"], r["hdicode"], k, y, r[f"{k}_{y}"]])
-    # HDI history for the year slider
+    # History for the year slider: HDI, gender inequality, schooling, inequality-adjusted HDI
+    hist_keys = {"hdi": "hdi", "gii": "gii", "mys": "undp_mys", "eys": "undp_eys", "ihdi": "ihdi"}
     hist = []
     for r in rows:
         for c, v in r.items():
-            m = re.match(r"^hdi_(\d{4})$", c)
+            m = re.match(r"^(hdi|gii|mys|eys|ihdi)_(\d{4})$", c)
             if m and v:
-                hist.append([r["iso3"], "hdi", int(m.group(1)), v])
-    write_timeseries(hist, {"hdi"})
+                hist.append([r["iso3"], hist_keys[m.group(1)], int(m.group(2)), v])
+    write_timeseries(hist, set(hist_keys.values()))
     print("Wrote undp_hdr.csv and updated timeseries.csv. Now run: python3 build_data.py")
 
 
@@ -320,6 +377,8 @@ def fetch_unhcr():
 def main():
     if "--unhcr" in sys.argv:
         return fetch_unhcr()
+    if "--history" in sys.argv:
+        return fetch_history()
     if "--undp" in sys.argv:
         return extract_undp(sys.argv[sys.argv.index("--undp") + 1])
     for name, url in FILES.items():

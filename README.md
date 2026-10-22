@@ -23,7 +23,18 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Cities.** Add a city filter (population, capital) to show cities as dots sized by population, inside the countries that match your other filters. A Cities tab lists them.
 - **Year slider.** Drag back in time, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. The slider only covers years the active filters have data for (HDI from 1990, for example). [DATA.md](DATA.md) marks which measures have yearly data.
 - **Zoom in for detail.** Country names, then capitals and cities, seas, lakes, rivers, mountain ranges, deserts and peaks appear as you zoom in. The **Aa** button turns them on and off.
-- **Country factfiles.** The 📄 Factfile button (or the button on any country profile) makes a printable summary of every measure for one country, with an outline map, a locator map and key facts. Each measure shows the country's value, its world rank, and the medians for its continent and for the world, with a small chart of where it sits. Print it, save it as a PDF from the print window, or download it as a Word file. (Printing and downloads don't work inside the claude.ai preview, only on the real website.)
+- **Country factfiles.** The 📄 Factfile button (or the button on any country profile) makes a printable summary of every measure for one country, with an outline map, a locator map and key facts. Each measure shows the country's value, its world rank, and the medians for its continent and for the world, with a small chart of where it sits. A "Changes over time" section has eight small trend charts and the population pyramid (now and in 1990). Print it, save it as a PDF from the print window, or download it as a Word file. (Printing and downloads don't work inside the claude.ai preview, only on the real website.)
+- **Four ways to look at the results.** The tabs above the map switch between:
+  - **Map**, with a 🎨 **Map style** button: colour by your filters, by **change over time** (any yearly measure between two years you choose, as an amount or a % change), or by **two measures at once** (each split into thirds, with a 3 × 3 colour key). Tick **Size countries by population** to draw every country as a circle sized by its population.
+  - **Compare**: a Gapminder-style bubble chart of any two measures, with bubbles sized by population (or another total) and coloured by continent or income group. When both measures have yearly data, press ▶ to watch the bubbles move through the years; click a bubble to follow it and draw its path. A plain-English line says how strong the link is (and that a link isn't proof of cause), and you can add a trend line or log scales.
+  - **Rankings**: every country in order as bars, or grouped by continent with each continent's median, for any year.
+  - **Trends**: any yearly measure over time, with the world and continent medians, and up to six countries you add.
+  Your filters apply in every view: countries that don't match are greyed out.
+- **More yearly data.** 58 measures now go back in time (most from 1960), including income, inequality, poverty, schooling, child and maternal deaths, internet and mobile use, jobs by sector, trade, forest cover, women in parliament and military spending. Survey-based measures that aren't collected every year use the latest figure from up to 4 years earlier.
+- **Population pyramids and the demographic transition model.** Each country profile has a population pyramid for any year since 1960 (with an optional outline of another year), a trend chart against the world and continent medians, and the country's demographic transition stage. "DTM stage" and "Natural increase" are also filters, and change with the year slider.
+- **Side by side.** Compare two or three countries on every measure, with a strip showing where each sits among all countries. It can be printed or saved as a PDF.
+- **Share and set a task.** 🔗 Share gives a link to exactly what you see (filters, year, view, map style and the open country). Teachers can add a question or task, which students see at the top of the page when they open the link.
+- **Download.** ⬇ Download saves the current map or chart as a PNG image (with a title and source line), or the data behind it as a CSV file that opens in Excel.
 - **Neighbours.** Every country profile lists its neighbours and the approximate length of each land border.
 - **Sorting.** A–Z and ↑/↓ buttons sort the results, like a spreadsheet. The red **Clear all** button on the map resets everything.
 - **Refugee flows.** Open any country's profile to see where its refugees have gone, or where the refugees it hosts come from, and map either one.
@@ -65,7 +76,8 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `index.html` | Page structure |
 | `style.css` | All styling, including the dark theme |
 | `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
-| `app.js` | Map, filtering logic, results list, URL state |
+| `app.js` | Map (including the map styles), filtering logic, results list, URL state |
+| `views.js` | The Compare, Rankings and Trends charts; trend charts and population pyramids in profiles and factfiles; side by side; share links and tasks; image and CSV downloads |
 | `countries.json` | One record per country (built by `build_data.py`) |
 | `cities.json` | Cities with 100,000+ people, plus every capital (built by `build_data.py`) |
 | `world-50m.json` | Country shapes (Natural Earth, 1:50m, via world-atlas) |
@@ -76,6 +88,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `refugees.csv`, `refugee_flows.csv` | UNHCR refugee totals per country, and every origin → host route with 100+ people |
 | `timeseries.csv` | Yearly values since 1960 for the year slider |
 | `timeseries.json` | The yearly values for the website (built by `build_data.py`) |
+| `pyramids.csv`, `pyramids.json` | Population by 5-year age group and sex (World Bank / UN World Population Prospects); the JSON keeps every 5th year plus the latest (built by `build_data.py`) |
 | `refugee_flows.json` | The refugee routes for the website (built by `build_data.py`) |
 | `groups.csv` | Membership of the EU, NATO, OECD, G7, G20, BRICS, ASEAN, African Union, Arab League, Commonwealth, Mercosur and OPEC. **Edited by hand**: update it when a country joins or leaves |
 | `climate_zones.csv` | Each country's Köppen climate zones and their share of its land (built by `make_climate_zones.py`) |
@@ -110,9 +123,13 @@ That's it: the search menu, chip, slider or checklist, histogram, profile page a
 ```bash
 pip install pyreadr pandas geonamescache
 python3 fetch_raw.py
+python3 fetch_raw.py --history                  # yearly history for more measures, and population pyramids
+python3 fetch_raw.py --undp HDR25_Composite_indices_complete_time_series.csv   # UNDP file, downloaded by hand
 python3 build_data.py
 node make_data_table.cjs
 ```
+
+To give another World Bank measure yearly data, add it to `TS_WB_HISTORY` in `fetch_raw.py` and to the list after `TS_CODES` in `build_data.py`. It then appears with a clock in the menus, on the year slider, in Compare, Trends and the change map automatically.
 
 ## Data sources and licences
 
