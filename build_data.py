@@ -63,6 +63,9 @@ for c in base:
         "area_km2": c.get("area"),
         "latlng": [round(x, 2) for x in (c.get("latlng") or [])],
     }
+    # other names people might type in the quiz (no 2-letter codes)
+    rec["aliases"] = sorted({n for n in [c["name"]["official"]] + list(c.get("altSpellings") or [])
+                             if n != rec["name"] and (len(n) > 3 or n in ("UK", "USA", "UAE", "DRC", "PRC", "ROK", "DPRK"))})
     countries[iso3] = rec
     names = [c["name"]["common"], c["name"]["official"]] + list(c.get("altSpellings") or [])
     for n in names:
@@ -645,6 +648,30 @@ if os.path.exists(raw("pyramids.csv")):
         json.dump({"ages": ["0–4", "5–9", "10–14", "15–19", "20–24", "25–29", "30–34", "35–39", "40–44", "45–49", "50–54",
                             "55–59", "60–64", "65–69", "70–74", "75–79", "80+"], "data": pyr}, f, separators=(",", ":"))
     print(f"Wrote pyramids.json for {len(pyr)} countries")
+
+# --- 15. Physical geography (physical_countries.json, built by make_physical.py) ---
+if os.path.exists(raw("physical_countries.json")):
+    phys = json.load(open(raw("physical_countries.json"), encoding="utf-8"))
+    for iso, facts in phys.items():
+        if iso not in countries:
+            continue
+        rec = countries[iso]
+        rec.update(facts)
+        if rec.get("lowest_m") is not None:
+            rec["below_sea_level"] = rec["lowest_m"] < 0
+        if rec.get("coastline_km") is not None and rec.get("area_km2"):
+            rec["coast_ratio"] = round(100 * rec["coastline_km"] / rec["area_km2"], 2)
+        for k in ("rivers", "lakes"):
+            if k in rec:
+                rec[k] = sorted(set(rec[k]))
+    for rec in countries.values():
+        rec["island"] = bool(rec.get("no_land_borders"))
+        rec["no_coast"] = bool(rec.get("landlocked"))
+        if rec["sovereign"]:
+            for k in ("volcanoes", "volcanoes_active", "quakes", "quakes7", "eruptions_1900"):
+                rec.setdefault(k, 0)
+            rec.setdefault("glacier_pct", 0)
+            rec.setdefault("hazards", [])
 
 # --- Write ---
 out = sorted(countries.values(), key=lambda r: r["name"])

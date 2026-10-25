@@ -299,6 +299,43 @@
     return h;
   }
 
+  // ---------- Physical geography ----------
+  function physRows(r) {
+    const n0 = (v) => d3.format(",")(Math.round(v));
+    const out = [];
+    const add = (k, v) => { if (v != null && v !== "" && !(Array.isArray(v) && !v.length)) out.push([k, Array.isArray(v) ? v.join(", ") : String(v)]); };
+    add("Highest point", r.highest_m != null ? `${r.highest_point ? r.highest_point + ", " : ""}${n0(r.highest_m)} m` : null);
+    add("Lowest point", r.lowest_m != null ? `${r.lowest_point ? r.lowest_point + ", " : ""}${n0(r.lowest_m)} m` : null);
+    add("Average height", r.mean_elevation_m != null ? `${n0(r.mean_elevation_m)} m` : null);
+    add("Coastline", r.coastline_km ? `${n0(r.coastline_km)} km` : r.coastline_km === 0 ? "None (landlocked)" : null);
+    add("Coast on", r.seas);
+    add("Mountain ranges", r.ranges);
+    add("Deserts", r.deserts);
+    add("Major rivers", (r.rivers || []).slice(0, 8));
+    add("Lakes", (r.lakes || []).slice(0, 6));
+    add("Drains into", r.drains_to);
+    add("Tectonic plates", r.plates);
+    add("Plate boundaries", r.margins);
+    add("Volcanoes", r.volcanoes ? `${r.volcanoes}${r.volcanoes_active ? ` (${r.volcanoes_active} erupted since 1900)` : ""}` : null);
+    add("Earthquakes since 1900", r.quakes ? `${n0(r.quakes)} of magnitude 6 or more${r.quake_max ? `; largest ${r.quake_max.toFixed(1)} in ${r.quake_max_year}` : ""}` : null);
+    add("Biomes", (r.biome_list || []).filter(([, p]) => p >= 5).map(([b, p]) => `${b} ${p}%`));
+    add("Ice cover", r.glacier_pct ? `${r.glacier_pct}% of the land` : null);
+    add("Land use", r.agri_land_pct != null ? `farmland ${r.agri_land_pct}%, forest ${r.forest_land_pct ?? "?"}%` : null);
+    add("Natural hazards", r.hazards);
+    return out;
+  }
+  function physHTML(r) {
+    const { esc } = window.WC;
+    const rows = physRows(r);
+    if (!rows.length) return "";
+    const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+    return `<h2 class="ff-theme">Physical geography</h2><section class="ff-group" style="--gc:${GROUP_COLOURS.Geography}">
+      ${r.terrain ? `<p class="ff-terrain"><b>Terrain:</b> ${esc(cap(r.terrain))}.</p>` : ""}
+      <dl class="ff-facts ff-phys">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      ${r.climate_text ? `<p class="ff-terrain"><b>Climate:</b> ${esc(cap(r.climate_text))}.</p>` : ""}
+      <p class="ff-missing">Sources: CIA World Factbook, Natural Earth, Smithsonian Global Volcanism Program, USGS, PB2002 plate model. Biomes are worked out from climate zones.</p></section>`;
+  }
+
   function buildHTML(iso) {
     const { byIso, esc, F } = window.WC;
     const r = byIso.get(iso);
@@ -342,6 +379,7 @@
     const ex = extras(r);
     if (ex.length) h += `<h2 class="ff-theme">More detail</h2><section class="ff-extras">${ex.map((e) => `<div class="ff-box" style="--gc:${e.colour}"><h4>${esc(e.title)}</h4><table>${e.rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="n">${esc(b)}</td></tr>`).join("")}</table><p>${esc(e.note)}</p></div>`).join("")}</section>`;
     h += changesHTML(r);
+    h += physHTML(r);
     const S = window.SOURCES;
     h += `<footer class="ff-foot"><h4>Sources</h4><p>${[...used, "boundaries"].filter((k) => S[k]).map((k) => `${esc(S[k].name)} (${esc(S[k].licence)})`).join("; ")}.</p>
       <p>Figures are the latest available for each measure; the Year column shows which year. Countries with no data are left out of ranks and medians. Made with Which Countries?, an open-source world map, on ${today}.</p></footer>`;
@@ -564,6 +602,16 @@
           ] })],
         }));
       }
+    }
+    const pr = physRows(r);
+    if (pr.length) {
+      body.push(new D.Paragraph({ children: [T("Physical geography", { size: 30, bold: true, color: hex(ACCENT) })], spacing: { before: 240, after: 80 }, keepNext: true, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: hex(ACCENT), space: 2 } } }));
+      if (r.terrain) body.push(P([T("Terrain: ", { bold: true }), T(r.terrain.charAt(0).toUpperCase() + r.terrain.slice(1) + ".")], { after: 80 }));
+      body.push(new D.Table({
+        width: { size: W, type: D.WidthType.DXA }, columnWidths: [2800, W - 2800], borders: lineBorders(hex(GROUP_COLOURS.Geography)),
+        rows: pr.map(([k, v]) => new D.TableRow({ cantSplit: true, children: [cell(P(T(k, { size: 16, bold: true }), { after: 0 }), { w: 2800 }), cell(P(T(v, { size: 16 }), { after: 0 }), { w: W - 2800 })] })),
+      }));
+      if (r.climate_text) body.push(P([T("Climate: ", { bold: true }), T(r.climate_text.charAt(0).toUpperCase() + r.climate_text.slice(1) + ".")], { before: 80 }));
     }
     const S = window.SOURCES;
     body.push(P(T("Sources", { size: 20, bold: true }), { before: 240, after: 40 }));

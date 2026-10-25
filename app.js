@@ -4,16 +4,20 @@
 
   // ---------- Load data ----------
   const loadJSON = (url) => fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
-  const [rows, topo, cityRows, flows, timeseries, features] = await Promise.all([
+  const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
     window.__WORLD__ || loadJSON("world-50m.json"),
     window.__CITIES__ || loadJSON("cities.json").catch(() => []),
     window.__FLOWS__ || loadJSON("refugee_flows.json").catch(() => []),
     window.__TIMESERIES__ || loadJSON("timeseries.json").catch(() => null),
     window.__FEATURES__ || loadJSON("features.json").catch(() => null),
+    window.__PHYSICAL__ || loadJSON("physical.json").catch(() => null),
   ]);
   // cities.json rows: [name, iso3, lat, lon, population, capital]
   const cities = cityRows.map(([name, iso3, lat, lon, pop, cap], id) => ({ id, name, iso3, lat, lon, city_population: pop, city_capital: !!cap }));
+  // physical geography features (rivers, volcanoes, earthquakes…), from physical.js
+  if (window.WP && physical) window.WP.load(physical);
+  const itemsFor = (f) => (f.target === "city" ? cities : f.target ? (window.WP?.items(f.target) || []) : rows);
 
   const FILTERS = window.FILTERS;
   // ---------- Year slider: which measures have yearly data ----------
@@ -107,6 +111,10 @@
       case "kmlen": return d3.format(",")(Math.round(v)) + " km";
       case "temp": return (+v.toFixed(1)) + "°C";
       case "mm": return d3.format(",")(Math.round(v)) + " mm";
+      case "m": return d3.format(",")(Math.round(v)) + " m";
+      case "mag": return v.toFixed(1);
+      case "mmyr": return (Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v)) + " mm/yr";
+      case "year": return String(Math.round(v));
       case "mt": return (a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v))) + " Mt";
       case "degc": return v.toFixed(3) + "°C";
       case "twh": case "kwh": return compact(v);
@@ -143,7 +151,7 @@
 
   // ---------- Filter domains and options ----------
   for (const f of FILTERS) {
-    const vals = (f.target === "city" ? cities : rows).map((r) => r[f.key]);
+    const vals = itemsFor(f).map((r) => r[f.key]);
     if (f.type === "range") {
       const nums = vals.filter((v) => typeof v === "number" && (f.scale !== "log" || v > 0)).sort((a, b) => a - b);
       if (f.bounds) [f.dmin, f.dmax] = f.bounds;
@@ -175,6 +183,8 @@
     flow: null,           // refugee flow view: { iso, dir: "from" | "to" }
     year: null,           // year slider: null means the latest data
     view: "map",          // "map", or a chart view from views.js: "compare", "rank", "trends"
+    mode: "human",        // "human" or "physical" geography
+    feat: null,           // a physical feature open in the results panel: { t, i }
     mapStyle: "std",      // map colours: "std" (filters), "change" (change over time), "bi" (two measures)
     popSized: false,      // draw countries as circles sized by population
     mm: { ck: "", from: null, to: null, pct: false, bx: "", by: "" },
@@ -267,7 +277,8 @@
   const expandedNear = new Set();
   const pool = () => rows.filter((r) => r.sovereign || state.territories);
   const isCity = (fl) => F[fl.key].target === "city";
-  const active = () => state.filters.filter((fl) => !isCity(fl) && isActive(fl));
+  const isFeat = (fl) => { const t = F[fl.key].target; return !!t && t !== "city"; };
+  const active = () => state.filters.filter((fl) => !F[fl.key].target && isActive(fl));
   const cityActive = () => state.filters.filter((fl) => isCity(fl) && isActive(fl));
   const showCities = () => state.filters.some(isCity);
 
@@ -296,8 +307,10 @@
       const ca = cityActive();
       cityList = cities.filter((c) => { const e = res.get(c.iso3); return e && e.match && ca.every((fl) => passes(c, fl)); });
     }
-    return { act, res, groups, cityList };
+    const feat = window.WP?.loaded ? window.WP.evaluate(res, act, state.filters.filter(isFeat)) : new Map();
+    return { act, res, groups, cityList, feat };
   }
+  window.WP?.setW({ F, isActive, passes, byIso });
 
   // ---------- Text: chips and sentence ----------
   function joinOr(list) {
@@ -356,14 +369,20 @@
       const cp = cityActive().map(phrase);
       cityPart = `<b>${m.toLocaleString()} ${m === 1 ? "city" : "cities"}</b>${cp.length ? ` where ${esc(andList(cp))}` : ""}`;
     }
+    for (const [t, list] of lastEval?.feat || []) {
+      const fp = state.filters.filter((fl) => F[fl.key].target === t && isActive(fl)).map(phrase).filter(Boolean);
+      const m = list.length, T = window.WP.T[t];
+      const part = `<b>${m.toLocaleString()} ${m === 1 ? T.one : T.many}</b>${fp.length ? ` where ${esc(andList(fp))}` : ""}`;
+      cityPart = cityPart ? `${cityPart}; ${part}` : part;
+    }
     if (!act.length) {
       if (cityPart) return `Showing ${cityPart}.${clear}`;
-      return `Showing all <b>${n} ${noun(n)}</b>. Add a filter to start asking questions.`;
+      return state.mode === "physical" ? `Physical geography: showing all <b>${n} ${noun(n)}</b>. Add a filter, or pick a feature such as rivers or volcanoes.` : `Showing all <b>${n} ${noun(n)}</b>. Add a filter to start asking questions.`;
     }
     const timed = act.some((fl) => F[fl.key].time), untimed = act.some((fl) => !F[fl.key].time);
     const when = state.year && timed ? `In <b>${state.year}</b>: ` : "";
     const note = state.year && untimed ? ` <span class="tnote">${timed ? "Filters without yearly data use the latest figures." : `The year slider doesn't change these filters; they use the latest figures.`}</span>` : "";
-    return `${when}Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart}` : ""}.${note}${clear}`;
+    return `${when}Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart} in them` : ""}.${note}${clear}`;
   }
 
   // ---------- Map ----------
@@ -396,6 +415,7 @@
     paths.attr("d", path);
     riverPaths.attr("d", path); lakePaths.attr("d", path);
     invalidatePoints();
+    window.WP?.layout(Math.max(0.55, Math.min(1, w / 1100)));
     cities.forEach((c) => { delete c._pt; delete c._lpt; });
     physLabels.forEach((l) => delete l._pt);
     placeCountryLabels();
@@ -412,6 +432,7 @@
     gRoot.attr("transform", e.transform);
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
+    window.WP?.zoomed(k);
   });
   svg.call(zoom).on("dblclick.zoom", null);
   $("#zin").onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1.6);
@@ -421,6 +442,11 @@
   // ---------- Place names and physical features that appear as you zoom in ----------
   state.labels = true;
   const gPhys = gRoot.insert("g", () => gDots.node()).attr("class", "phys");
+  // physical mode: background map and overlays under the rivers, chosen features above them
+  const gBase = gRoot.insert("g", () => gPhys.node()).attr("class", "pbase");
+  const gOver = gRoot.insert("g", () => gPhys.node()).attr("class", "pover");
+  const gFeat = gRoot.insert("g", () => gDots.node()).attr("class", "pfeat");
+  window.WP?.attach({ base: gBase, over: gOver, feat: gFeat }, projection, path);
   const gLabels = gRoot.append("g").attr("class", "labels");
   let rivers = [], lakes = [];
   if (features) {
@@ -600,6 +626,7 @@
       // with no country filters, leave countries plain so cities stand out
       return e && act.length ? (e.match ? "match" : e.near && e.shade ? "near" : "") : "";
     };
+    document.body.dataset.mode = state.mode;
     const fillFor = (rec) => {
       if (!rec) return null;
       if (styleInfo) return inScope(rec) ? styleInfo.colour(rec.iso3) : null;
@@ -614,6 +641,8 @@
     drawCities();
     gDots.selectAll("circle").style("fill", (d) => fillFor(d));
     drawCarto(clsFor, fillFor);
+    if (state.mode === "physical") { state.popSized = false; state.mapStyle = "std"; }
+    window.WP?.draw(state, lastEval);
     gLand.attr("opacity", state.popSized && !state.flow ? 0.16 : null).style("pointer-events", state.popSized && !state.flow ? "none" : null);
 
     gDots.attr("display", state.flow || state.popSized ? "none" : null);
@@ -626,6 +655,7 @@
     $("#mapClear").hidden = !(state.filters.length || state.flow || state.year || state.selected || state.mapStyle !== "std" || state.popSized);
     renderMapStyle();
     renderViews();
+    renderModes();
     renderChips(act);
     $("#sentence").innerHTML = sentence(matches.length, act);
     const ca = $("#clearAll"); if (ca) ca.onclick = clearAll;
@@ -658,7 +688,7 @@
   function renderTimebar() {
     const el = $("#timebar");
     if (!TS_YEARS.length) { el.hidden = true; return; }
-    el.hidden = !!state.flow;
+    el.hidden = !!state.flow || state.mode === "physical";
     const sp = sliderSpan();
     // keep the chosen year inside the span of the current filters
     if (state.year && (!sp || state.year < sp[0] || state.year > sp[1])) {
@@ -848,6 +878,9 @@
     for (let i = 0; i < (cartoNodes.size ? 80 : 240); i++) sim.tick();
     cartoNodes = new Map(nodes.map((n) => [n.rec.iso3, n]));
   }
+  // everyday short names for long country names (never codes)
+  const SHORT_NAMES = { USA: "USA", GBR: "UK", ARE: "UAE", COD: "DR Congo", COG: "Congo", CAF: "C. African Rep.", KOR: "S. Korea", PRK: "N. Korea",
+    BIH: "Bosnia", DOM: "Dominican Rep.", PNG: "Papua NG", SAU: "Saudi", ZAF: "S. Africa", SSD: "S. Sudan", TTO: "Trinidad", VCT: "St Vincent", MKD: "N. Macedonia" };
   function drawCarto(clsFor, fillFor) {
     if (!state.popSized || state.flow) { gCarto.selectAll("*").remove(); return; }
     cartoLayout();
@@ -863,13 +896,33 @@
       .style("fill", (d) => fillFor(d.rec));
     // white names on dark circles, dark names on light ones
     const darkFill = (d) => { const c = fillFor(d.rec) || (clsFor(d.rec) === "match" ? cssVar("--match") : cssVar("--land")); const l = d3.lab(c).l; return Number.isFinite(l) && l < 55; };
-    g.select("text").text((d) => (d.r >= 11 ? (d.rec.name.length * 3.3 < d.r * 1.7 ? d.rec.name : d.rec.iso3) : ""))
+    const fits = (t, d) => t.length * Math.min(12, d.r * 0.55) * 0.56 < d.r * 1.8;
+    const label = (d) => {
+      if (d.r < 9) return "";
+      const n = d.rec.name, sh = SHORT_NAMES[d.rec.iso3];
+      if (fits(n, d)) return n;
+      if (sh && fits(sh, d)) return sh;
+      const w = n.split(" ")[0];
+      return w.length >= 4 && fits(w + "…", d) ? w + "…" : "";
+    };
+    g.select("text").text(label)
       .attr("class", (d) => (darkFill(d) ? "lt" : null))
       .attr("font-size", (d) => Math.min(12, d.r * 0.55)).attr("dy", "0.35em");
   }
 
   function renderMapStyle() {
     const btn = $("#mmBtn"), card = $("#mmCard");
+    if (state.mode === "physical" && window.WP?.loaded) {
+      btn.hidden = !!state.flow;
+      btn.setAttribute("aria-expanded", String(!card.hidden));
+      const names = { landforms: "Landforms", biomes: "Biomes", climate: "Climate zones", plates: "Plates", none: "Plain" };
+      btn.innerHTML = `🎨 Map style: <b>${names[window.WP.style.base]}</b>`;
+      if (!card.hidden) {
+        window.WP.styleCard(card, () => render());
+        $("#mmClose").onclick = () => { card.hidden = true; renderMapStyle(); };
+      }
+      return;
+    }
     const name = { std: "", change: "Change", bi: "Two measures" }[state.mapStyle];
     btn.innerHTML = `🎨 Map style${name || state.popSized ? `: <b>${[name, state.popSized ? "by population" : ""].filter(Boolean).join(", ")}</b>` : ""}`;
     btn.hidden = !!state.flow;
@@ -948,6 +1001,13 @@
       el.innerHTML = styleLegend(styleInfo) + (state.popSized ? `<div class="lrow"><span class="sw city"></span>Circles sized by population</div>` : "");
       return;
     }
+    const physLeg = window.WP ? window.WP.legendHTML(state, lastEval) : "";
+    if (state.mode === "physical") {
+      let h = physLeg;
+      if (cs) h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+      else if (act.length) h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every country filter</div>`;
+      el.hidden = !h; el.innerHTML = h; return;
+    }
     if (!act.length && !showCities() && !state.popSized) { el.hidden = true; return; }
     el.hidden = false;
     let h = state.popSized ? `<div class="lrow"><span class="sw city"></span>Circles sized by population</div>` : "";
@@ -964,6 +1024,13 @@
 
   // ---------- Starter card and question of the day ----------
   const puzzles = window.PUZZLES.map((p) => ({ ...p, n: countFor(p.filters) })).filter((p) => p.n >= 1 && p.n <= 8);
+  // the countries (not territories) that pass a set of preset filters, including city filters
+  function matchList(presets) {
+    const fls = presets.map((p) => makeFilter(p.key, p));
+    const cf = fls.filter(isCity), nf = fls.filter((fl) => !isCity(fl));
+    return rows.filter((r) => r.sovereign && nf.every((fl) => passes(r, fl)) &&
+      (!cf.length || cities.some((c) => c.iso3 === r.iso3 && cf.every((fl) => passes(c, fl)))));
+  }
   function countFor(presets) {
     const fls = presets.map((p) => makeFilter(p.key, p));
     const cf = fls.filter(isCity), nf = fls.filter((fl) => !isCity(fl));
@@ -983,6 +1050,7 @@
   }
   function renderStarter(act) {
     const el = $("#starter");
+    if (window.WQ) return window.WQ.renderCard(el);
     el.hidden = !!state.filters.length || state.starterHidden || !!state.flow;
     if (el.hidden) return;
     const pz = todaysPuzzle();
@@ -1070,7 +1138,7 @@
 
   function rangeEditor(body, f, fl) {
     const T0 = f.toT(f.dmin), T1 = f.toT(f.dmax);
-    const vals = (f.target === "city" ? cities : pool()).map((r) => r[f.key]).filter((v) => typeof v === "number" && (f.scale !== "log" || v > 0));
+    const vals = (f.target ? itemsFor(f) : pool()).map((r) => r[f.key]).filter((v) => typeof v === "number" && (f.scale !== "log" || v > 0));
     const bins = d3.bin().domain([T0, T1]).thresholds(28)(vals.map((v) => Math.min(Math.max(f.toT(v), T0), T1)));
     const maxN = d3.max(bins, (b) => b.length) || 1;
     const W = 330, H = 56;
@@ -1116,7 +1184,8 @@
   }
 
   function boolEditor(body, f, fl) {
-    const cnt = f.target === "city"
+    const cnt = isFeat({ key: f.key }) ? (v) => featCount(f, (x) => x === v)
+      : f.target === "city"
       ? (v) => cities.filter((c) => { const e = lastEval.res.get(c.iso3); return e && e.match && c[f.key] === v && cityActive().every((x) => x.key === f.key || passes(c, x)); }).length
       : (v) => pool().filter((r) => r[f.key] === v && othersPass(r, f.key)).length;
     body.innerHTML = `<div class="seg" role="group">
@@ -1125,9 +1194,17 @@
     body.querySelectorAll("button").forEach((b) => (b.onclick = () => { fl.value = b.dataset.v === "1"; render(); }));
   }
 
+  // how many features of this kind would match with this filter set to a value (the other filters kept)
+  function featCount(f, test) {
+    const others = state.filters.filter((x) => x.key !== f.key && F[x.key].target === f.target && isActive(x));
+    const { act, res } = lastEval;
+    return itemsFor(f).filter((it) => (!act.length || !it.iso || it.iso.some((i) => res.get(i)?.match)) && others.every((x) => passes(it, x)) && test(it[f.key])).length;
+  }
   function optionEditor(body, f, fl, keepSearch, scroll) {
     const counts = new Map(f.options.map((o) => [o, 0]));
-    for (const r of pool()) {
+    if (isFeat({ key: f.key })) {
+      for (const o of f.options) counts.set(o, featCount(f, (v) => (Array.isArray(v) ? v.includes(o) : v === o)));
+    } else for (const r of pool()) {
       if (!othersPass(r, f.key)) continue;
       const v = r[f.key];
       (Array.isArray(v) ? v : [v]).forEach((x) => counts.has(x) && counts.set(x, counts.get(x) + 1));
@@ -1137,7 +1214,7 @@
     const searchable = opts.length > 12;
     body.innerHTML = `${searchable ? `<input class="optsearch" id="optSearch" type="search" placeholder="Search ${opts.length} options" value="${esc(keepSearch)}">` : ""}
       <div class="opts" role="group" aria-label="${esc(f.label)}"></div>
-      ${f.type === "multi" ? `<p class="info">Countries match if they have <b>any</b> of the ticked options.</p>` : ""}`;
+      ${f.type === "multi" && !f.target ? `<p class="info">Countries match if they have <b>any</b> of the ticked options.</p>` : ""}`;
     const list = body.querySelector(".opts");
     function draw(q) {
       q = (q || "").toLowerCase();
@@ -1165,11 +1242,38 @@
 
   // ---------- Results list ----------
   function tabsHTML(n) {
-    if (!showCities()) return "";
+    const ft = window.WP ? window.WP.tabs(lastEval) : [];
+    if (!showCities() && !ft.length) return "";
     const t = state.tab;
-    return `<div class="tabs" role="tablist">
-      <button type="button" role="tab" data-tab="countries" aria-selected="${t !== "cities"}" class="${t !== "cities" ? "on" : ""}">Countries <span class="num">${n}</span></button>
-      <button type="button" role="tab" data-tab="cities" aria-selected="${t === "cities"}" class="${t === "cities" ? "on" : ""}">Cities <span class="num">${lastEval.cityList.length.toLocaleString()}</span></button></div>`;
+    const tab = (id, label, k) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${t === id}" class="${t === id ? "on" : ""}">${label} <span class="num">${k.toLocaleString()}</span></button>`;
+    return `<div class="tabs" role="tablist">${tab("countries", "Countries", n)}${showCities() ? tab("cities", "Cities", lastEval.cityList.length) : ""}${ft.map((x) => tab("feat:" + x.t, x.label, x.n)).join("")}</div>`;
+  }
+  // a list of physical features, or one feature's profile
+  function renderFeatResults(matches) {
+    const el = $("#results");
+    const t = state.tab.slice(5);
+    const list = lastEval.feat.get(t) || [];
+    if (state.feat && state.feat.t === t) {
+      el.innerHTML = window.WP.detailHTML(`${t}:${state.feat.i}`) + footHTML();
+      $("#fback").onclick = () => { state.feat = null; render(); };
+      $("#fzoom").onclick = () => zoomTo(window.WP.bounds(window.WP.byRef(`${t}:${state.feat.i}`)));
+      el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.feat = null; state.tab = "countries"; state.selected = b.dataset.iso; render(); }));
+      bindCommon(el);
+      return;
+    }
+    const scrollTop = el.querySelector(".rlist")?.scrollTop || 0;
+    el.innerHTML = `<div class="rhead">${tabsHTML(matches.length)}</div>${window.WP.listHTML(t, list, state)}${footHTML()}`;
+    el.querySelector(".rlist") && (el.querySelector(".rlist").scrollTop = scrollTop);
+    bindCommon(el);
+    el.querySelectorAll(".frow").forEach((b) => (b.onclick = () => { const [ft, fi] = b.dataset.ref.split(":"); state.feat = { t: ft, i: +fi }; render(); }));
+  }
+  function zoomTo(b) {
+    if (!b) return;
+    const [[x0, y0], [x1, y1]] = b;
+    const vb = svg.attr("viewBox").split(" ").map(Number);
+    const kk = Math.max(1, Math.min(14, 0.8 / Math.max((x1 - x0) / vb[2], (y1 - y0) / vb[3])));
+    const tx = vb[2] / 2 - kk * (x0 + x1) / 2, ty = vb[3] / 2 - kk * (y0 + y1) / 2;
+    svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(kk));
   }
   function footHTML() {
     return `<div class="rfoot">
@@ -1241,6 +1345,8 @@
 
   function renderResults(matches, act, res) {
     if (showCities() && state.tab === "cities") return renderCityResults(matches);
+    if (state.tab.startsWith("feat:") && lastEval.feat.has(state.tab.slice(5))) return renderFeatResults(matches);
+    if (state.tab.startsWith("feat:")) state.tab = "countries";
     const el = $("#results");
     const rangeAct = act.map((fl) => F[fl.key]).filter((f) => f.type === "range");
     const sortKey = state.sort || colourKey() || rangeAct[0]?.key || "__name";
@@ -1322,7 +1428,8 @@
       if (Array.isArray(v)) return v.length ? v.join(", ") : "none listed";
       return v ?? "no data";
     };
-    const groups = window.FILTER_GROUPS.map((g) => {
+    const mg = modeGroups();
+    const groups = window.FILTER_GROUPS.filter((g) => mg.has(g)).map((g) => {
       const fs = FILTERS.filter((f) => f.group === g && !f.target && !f.hidden);
       if (!fs.length) return "";
       return `<h4 data-g="${gslug(g)}">${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
@@ -1334,7 +1441,7 @@
       <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
       ${badge}
       ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; refugee routes and everything else show the latest figures.</p>` : ""}
-      ${window.WV ? window.WV.profileHTML(r) : ""}
+      ${state.mode === "physical" ? (window.WP ? window.WP.profileHTML(r) : "") : window.WV ? window.WV.profileHTML(r) : ""}
       ${(() => {
         const out = flows.filter((f) => f[0] === r.iso3).sort((a, b) => b[2] - a[2]);
         const inn = flows.filter((f) => f[1] === r.iso3).sort((a, b) => b[2] - a[2]);
@@ -1364,7 +1471,7 @@
       ${groups}
     </div>`;
     $("#back").onclick = () => { state.selected = null; render(); };
-    window.WV?.bindProfile(el, r);
+    if (state.mode !== "physical") window.WV?.bindProfile(el, r);
     $("#ffOpen").onclick = () => window.openFactfile?.(r.iso3);
     el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.selected = b.dataset.iso; render(); }));
     el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir }; render(); }));
@@ -1417,8 +1524,12 @@
   svg.on("pointermove", (evt) => {
     if (evt.pointerType === "touch") return;
     const t = evt.target;
+    const fref = t.getAttribute && t.getAttribute("data-feat");
+    if (fref && window.WP) { paths.classed("hover", false); tip.innerHTML = window.WP.tipHTML(fref); return placeTip(evt); }
     const cid = t.getAttribute && t.getAttribute("data-city");
     if (cid) { paths.classed("hover", false); return showCityTip(evt, cities[+cid]); }
+    const bref = t.getAttribute && t.getAttribute("data-base");
+    if (bref) { paths.classed("hover", false); tip.innerHTML = `<strong>${esc(bref)}</strong>`; return placeTip(evt); }
     const iso = t.getAttribute && t.getAttribute("data-iso");
     paths.classed("hover", false);
     if (iso) d3.select(t).filter("path").classed("hover", true).raise();
@@ -1426,6 +1537,8 @@
   }).on("pointerleave", () => { tip.hidden = true; paths.classed("hover", false); });
   svg.on("click", (evt) => {
     const t = evt.target;
+    const fref = t.getAttribute && t.getAttribute("data-feat");
+    if (fref) { const [ft, fi] = fref.split(":"); state.feat = { t: ft, i: +fi }; state.selected = null; state.tab = "feat:" + ft; return render(); }
     const cid = t.getAttribute && t.getAttribute("data-city");
     const iso = cid ? cities[+cid].iso3 : t.getAttribute && t.getAttribute("data-iso");
     if (iso && byIso.get(iso)) { state.selected = iso; state.open = null; render(); }
@@ -1454,7 +1567,8 @@
       const right = added ? `<span class="added-tag">✓ Added</span>` : `<span class="gtag">${esc(where)}</span>`;
       return `<button type="button" role="option" class="item${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"><span>${!isValue && f.time ? CLOCK : ""}${esc(label)}</span>${right}</button>`;
     };
-    const visible = FILTERS.filter((f) => !f.hidden);
+    const mg = modeGroups();
+    const visible = FILTERS.filter((f) => !f.hidden && mg.has(f.group));
     const fs = visible.map((f) => {
       const fam = famOf[f.key];
       // a family name also finds its measures, e.g. "HDI" finds HDI rank
@@ -1487,7 +1601,10 @@
   }
   function closeMenu() { menu.hidden = true; input.setAttribute("aria-expanded", "false"); }
   // ---------- Browse filters: theme bar, panels, definition cards ----------
-  const THEMES = window.THEMES || [];
+  const HUMAN_THEMES = window.THEMES || [];
+  const PHYS_THEMES = window.PHYS_THEMES || [];
+  const themes = () => (state.mode === "physical" ? PHYS_THEMES : HUMAN_THEMES);
+  const modeGroups = () => new Set(themes().flatMap((t) => t.groups));
   const MENU_LABELS = window.MENU_LABELS || {};
   const SHOW_FIRST = 6; // filters shown per category before "More…"
   const touch = window.matchMedia("(hover: none)");
@@ -1519,8 +1636,9 @@
   }
   function renderThemeBar() {
     const nav = $("#themes");
-    nav.innerHTML = `<button type="button" class="browse-btn" data-theme="${THEMES[0].id}" aria-haspopup="dialog">Browse filters</button>` +
-      THEMES.map((t) => `<button type="button" class="theme-btn${openTheme === t.id ? " on" : ""}" data-theme="${t.id}" aria-expanded="${openTheme === t.id}">${esc(t.label)}<span class="caret" aria-hidden="true">▾</span></button>`).join("");
+    const TH = themes();
+    nav.innerHTML = `<button type="button" class="browse-btn" data-theme="${TH[0].id}" aria-haspopup="dialog">Browse filters</button>` +
+      TH.map((t) => `<button type="button" class="theme-btn${openTheme === t.id ? " on" : ""}" data-theme="${t.id}" aria-expanded="${openTheme === t.id}">${esc(t.label)}<span class="caret" aria-hidden="true">▾</span></button>`).join("");
     nav.querySelectorAll("button").forEach((b) => (b.onclick = (ev) => {
       ev.stopPropagation();
       if (openTheme === b.dataset.theme && b.classList.contains("theme-btn")) closeThemes(); else showTheme(b.dataset.theme);
@@ -1530,10 +1648,11 @@
     openTheme = id;
     closeMenu();
     hideCard();
-    const t = THEMES.find((x) => x.id === id);
+    const TH = themes();
+    const t = TH.find((x) => x.id === id) || TH[0];
     const panel = $("#tpanel");
     panel.hidden = false;
-    panel.innerHTML = `<div class="tp-head"><div class="tp-tabs" role="tablist">${THEMES.map((x) => `<button type="button" role="tab" data-theme="${x.id}" aria-selected="${x.id === id}" class="${x.id === id ? "on" : ""}">${esc(x.label)}</button>`).join("")}</div>
+    panel.innerHTML = `<div class="tp-head"><div class="tp-tabs" role="tablist">${TH.map((x) => `<button type="button" role="tab" data-theme="${x.id}" aria-selected="${x.id === id}" class="${x.id === id ? "on" : ""}">${esc(x.label)}</button>`).join("")}</div>
         <button type="button" class="iconbtn tp-close" aria-label="Close">×</button></div>
       <div class="tp-body">${t.groups.map((g) => {
         const es = entriesFor(g);
@@ -1544,7 +1663,7 @@
           return `<button type="button" class="fchip${added ? " added" : ""}" data-id="${esc(e.id)}" data-g="${gslug(g)}">${entryTime(e) ? CLOCK : ""}<span>${esc(entryLabel(e))}</span>${added ? `<span class="tick" aria-label="added">✓</span>` : ""}</button>`;
         }).join("")}${es.length > SHOW_FIRST ? `<button type="button" class="more-btn" data-g="${esc(g)}">${open ? "Fewer" : `${es.length - SHOW_FIRST} more…`}</button>` : ""}</div></section>`;
       }).join("")}</div>
-      <p class="mkey">${CLOCK}<span>Has data for past years: use the year slider under the map.</span> <span class="mtick">✓</span><span>Added</span> <span class="mhint">${touch.matches ? "Tap a filter to see what it means." : "Hover over a filter to see what it means."}</span></p>`;
+      <p class="mkey">${state.mode === "physical" ? "" : `${CLOCK}<span>Has data for past years: use the year slider under the map.</span>`} <span class="mtick">✓</span><span>Added</span> <span class="mhint">${touch.matches ? "Tap a filter to see what it means." : "Hover over a filter to see what it means."}</span></p>`;
     renderThemeBar();
     panel.querySelectorAll(".tp-tabs button").forEach((b) => (b.onclick = () => showTheme(b.dataset.theme)));
     panel.querySelector(".tp-tabs button.on")?.scrollIntoView({ block: "nearest", inline: "center" });
@@ -1609,6 +1728,43 @@
   });
   renderThemeBar();
 
+  // ---------- Human / physical geography switch ----------
+  const filtersByMode = { human: [], physical: [] };
+  function setMode(m) {
+    if (m === state.mode) return;
+    filtersByMode[state.mode] = state.filters;
+    state.filters = filtersByMode[m] || [];
+    state.mode = m;
+    state.open = null; state.feat = null; state.tab = "countries"; state.colourBy = ""; state.sort = ""; state.sortDir = null;
+    if (m === "physical") { state.mapStyle = "std"; state.popSized = false; if (state.view === "trends") state.view = "map"; }
+    if (openTheme) closeThemes(); else renderThemeBar();
+    $("#mmCard").hidden = true;
+    render();
+  }
+  document.querySelectorAll("#modes button").forEach((b) => (b.onclick = () => setMode(b.dataset.m)));
+  let modeShown = "human";
+  function renderModes() {
+    document.querySelectorAll("#modes button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.m === state.mode)));
+    if (modeShown !== state.mode) {
+      modeShown = state.mode;
+      if (!openTheme) renderThemeBar();
+      input.placeholder = state.mode === "physical" ? "Search: try “volcano”, “river” or “plates”" : "Search filters: try “religion”, “coast” or “HDI”";
+    }
+  }
+  // show one physical feature: make sure its kind is on the map, open its profile and zoom to it
+  function showFeature(t, i) {
+    if (state.mode !== "physical") setMode("physical");
+    if (!state.filters.some((x) => F[x.key].target === t)) {
+      const f = FILTERS.find((x) => x.target === t);
+      const fl = makeFilter(f.key);
+      if (f.type === "range") { fl.min = f.dmin; fl.max = f.dmax; }
+      state.filters.push(fl);
+    }
+    state.feat = { t, i }; state.tab = "feat:" + t; state.selected = null; state.view = "map";
+    render();
+    zoomTo(window.WP.bounds(window.WP.byRef(`${t}:${i}`)));
+  }
+
   function choose(it) {
     if (!it) return;
     let fl = state.filters.find((x) => x.key === it.key);
@@ -1616,6 +1772,7 @@
     if (it.value && fl.values && !fl.values.includes(it.value)) fl.values.push(it.value);
     state.open = it.key; state.selected = null;
     if (F[it.key].target === "city") state.tab = "cities";
+    else if (F[it.key].target) { state.tab = "feat:" + F[it.key].target; state.feat = null; }
     input.value = ""; closeMenu(); input.blur();
     render();
   }
@@ -1639,12 +1796,13 @@
     state.filters = state.filters.filter((x) => x.key !== key);
     if (state.open === key) state.open = null;
     if (state.colourBy === key) state.colourBy = "";
-    if (!showCities()) state.tab = "countries";
+    if (!showCities() && state.tab === "cities") state.tab = "countries";
+    if (state.tab.startsWith("feat:") && !state.filters.some((x) => F[x.key].target === state.tab.slice(5))) { state.tab = "countries"; state.feat = null; }
     render();
   }
   function clearAll() {
     state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; state.sortDir = null; state.tab = "countries";
-    state.flow = null; state.selected = null; state.mapStyle = "std"; state.popSized = false;
+    state.flow = null; state.selected = null; state.mapStyle = "std"; state.popSized = false; state.feat = null;
     stopPlay(); if (state.year) { state.year = null; applyYear(null); }
     svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
     render();
@@ -1685,6 +1843,7 @@
     if (state.colourBy) p.set("c", state.colourBy);
     if (state.year) p.set("y", state.year);
     if (state.view !== "map") p.set("v", state.view);
+    if (state.mode === "physical") { p.set("m", "p"); if (window.WP && window.WP.style.base !== "landforms") p.set("pb", window.WP.style.base); }
     if (state.mapStyle === "change") {
       const { key, from, to } = changeYears();
       p.set("ms", "change"); p.set("mc", key); p.set("mf", from); p.set("mt", to);
@@ -1721,6 +1880,7 @@
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";
     if (["compare", "rank", "trends"].includes(p.get("v"))) state.view = p.get("v");
+    if (p.get("m") === "p") { state.mode = "physical"; if (window.WP && ["biomes", "climate", "plates", "none"].includes(p.get("pb"))) window.WP.style.base = p.get("pb"); }
     if (p.get("ms") === "change" && F[p.get("mc")]) {
       state.mapStyle = "change"; state.mm.ck = p.get("mc"); state.mm.from = +p.get("mf") || null; state.mm.to = +p.get("mt") || null; state.mm.pct = p.get("mp") === "1";
     } else if (p.get("ms") === "bi") {
@@ -1744,7 +1904,7 @@
   window.WC = {
     F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
     applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
-    pool, isActive, chipLabel,
+    pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
     get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; },
     render: (o) => render(o), setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
     mapSVG: () => svg.node(), clearAll: () => clearAll(),
@@ -1753,8 +1913,8 @@
       const list = pool().filter((r) => res.get(r.iso3).match).sort((a, b) => a.name.localeCompare(b.name));
       const keys = [...new Set(act.map((fl) => fl.key).concat(colourKey() ? [colourKey()] : []))];
       const cell = (r, k) => { const v = r[k]; return Array.isArray(v) ? v.join("; ") : typeof v === "boolean" ? (v ? "Yes" : "No") : v ?? ""; };
-      return [["Country", "ISO code", "Continent", ...keys.map((k) => F[k].label + (state.year && F[k].time ? ` (${state.year})` : ""))],
-        ...list.map((r) => [r.name, r.iso3, r.region, ...keys.map((k) => cell(r, k))])];
+      return [["Country", "Continent", ...keys.map((k) => F[k].label + (state.year && F[k].time ? ` (${state.year})` : ""))],
+        ...list.map((r) => [r.name, r.region, ...keys.map((k) => cell(r, k))])];
     },
     latest: (r, key) => (r._latest && key in r._latest ? r._latest[key] : r[key]),
     latestYear: (r, f) => {
@@ -1764,6 +1924,7 @@
   };
   $("#ffBtn")?.addEventListener("click", () => window.openFactfile?.(state.selected));
   window.WV?.init();
+  window.WQ?.init();
 
   // ---------- Go ----------
   new ResizeObserver(() => layout()).observe($("#mapwrap"));

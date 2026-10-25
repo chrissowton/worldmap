@@ -1,0 +1,16 @@
+# Deepest ocean trenches and deeps. Depths: Wikipedia "Oceanic trench" (2026). Positions of the deepest points are approximate. Edited by hand.
+name,deepest_point,ocean,depth_m,lat,lon,plates
+Mariana Trench,Challenger Deep,Pacific,10925,11.37,142.59,Pacific under Philippine Sea / Mariana
+Tonga Trench,Horizon Deep,Pacific,10820,-23.26,-174.73,Pacific under Tonga
+Philippine Trench,Emden Deep,Pacific,10540,10.0,126.7,Philippine Sea under Sunda / Molucca Sea
+Kermadec Trench,Scholl Deep,Pacific,10047,-31.9,-177.3,Pacific under Kermadec
+Izu–Bonin Trench,,Pacific,9810,29.1,142.8,Pacific under Philippine Sea
+Kuril–Kamchatka Trench,,Pacific,9604,44.1,150.9,Pacific under Okhotsk
+New Britain Trench,Planet Deep,Pacific,9140,-6.5,153.9,Solomon Sea under South Bismarck
+Japan Trench,,Pacific,8412,36.1,142.9,Pacific under Okhotsk
+Puerto Rico Trench,Milwaukee Deep,Atlantic,8376,19.7,-67.2,North America under Caribbean
+South Sandwich Trench,Meteor Deep,Atlantic,8266,-55.2,-26.2,South America under Sandwich
+Peru–Chile Trench,Richards Deep,Pacific,8055,-23.37,-71.35,Nazca under South America
+Cayman Trough,Caribbean Deep,Atlantic,7686,18.7,-79.9,North America / Caribbean (transform)
+Sunda Trench,Java Deep,Indian,7192,-11.13,114.94,Australia under Sunda
+Fram Strait,Molloy Deep,Arctic,5550,79.14,2.83,Eurasia / North America (spreading)

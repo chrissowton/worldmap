@@ -24,6 +24,12 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Year slider.** Drag back in time, or press play, and filters with yearly data (population, fertility, life expectancy, urbanisation, GDP, HDI, democracy, CO₂, refugees and more) show that year. The slider only covers years the active filters have data for (HDI from 1990, for example). [DATA.md](DATA.md) marks which measures have yearly data.
 - **Zoom in for detail.** Country names, then capitals and cities, seas, lakes, rivers, mountain ranges, deserts and peaks appear as you zoom in. The **Aa** button turns them on and off.
 - **Country factfiles.** The 📄 Factfile button (or the button on any country profile) makes a printable summary of every measure for one country, with an outline map, a locator map and key facts. Each measure shows the country's value, its world rank, and the medians for its continent and for the world, with a small chart of where it sits. A "Changes over time" section has eight small trend charts and the population pyramid (now and in 1990). Print it, save it as a PDF from the print window, or download it as a Word file. (Printing and downloads don't work inside the claude.ai preview, only on the real website.)
+- **Human and physical geography.** A switch in the header changes the whole site between human geography (the default) and physical geography, each with its own themes, filters, quiz topics and map.
+  - **Physical themes:** Landscape (heights, mountain ranges, peaks, plateaus, deserts and other landforms), Water & ice (rivers, lakes, waterfalls, deltas, glaciers), Tectonics (plates, plate boundaries, volcanoes, earthquakes), Climate & biomes, Coasts & oceans (coastlines, seas, trenches) and Hazards.
+  - **Filters for features as well as countries.** Some physical filters pick out features on the map instead of countries: rivers by length or the ocean they drain to, lakes, peaks, landforms, waterfalls, deltas by shape, trenches, volcanoes (by type, last eruption, setting, VEI), earthquakes of magnitude 6+ since 1900 (by magnitude, year, depth and the nearest plate boundary) and plate boundaries (constructive, destructive, collision, conservative). Each kind gets its own tab in the results list, with a profile for every feature. Country filters still work alongside them: add "Continent: Asia" to see only Asia's volcanoes.
+  - **Physical base maps:** landforms, biomes, climate zones or tectonic plates, with plate boundaries, major rivers and ice drawn on top (🎨 Map style).
+  - **Country profiles and factfiles** gain a physical geography section: terrain, highest and lowest points, coastline, seas, plates, volcanoes, earthquakes, rivers, lakes, biomes and hazards.
+  - **About 4,000 physical quiz questions**, on mountains, rivers and lakes, volcanoes, earthquakes, plates, deserts and landforms, coasts and oceans, biomes and hazards.
 - **Four ways to look at the results.** The tabs above the map switch between:
   - **Map**, with a 🎨 **Map style** button: colour by your filters, by **change over time** (any yearly measure between two years you choose, as an amount or a % change), or by **two measures at once** (each split into thirds, with a 3 × 3 colour key). Tick **Size countries by population** to draw every country as a circle sized by its population.
   - **Compare**: a Gapminder-style bubble chart of any two measures, with bubbles sized by population (or another total) and coloured by continent or income group. When both measures have yearly data, press ▶ to watch the bubbles move through the years; click a bubble to follow it and draw its path. A plain-English line says how strong the link is (and that a link isn't proof of cause), and you can add a trend line or log scales.
@@ -42,7 +48,7 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Shading by value.** Matching countries are shaded darker for higher values of the last number filter you added, or any number you pick under "Shade by". Near misses are striped.
 - **Country profiles** with every value and its source year.
 - **Shareable links.** The URL holds the current filters, e.g. `?f=official_languages:Portuguese,democracy:1`.
-- **Starter questions and a question of the day** for people who don't know where to begin.
+- **Quiz: "Ask the map a question".** Pick a topic (languages, religion, population, capitals, borders, wealth, health, gender, politics, climate, trade, technology, sport, refugees, or "Surprise me") and get a random question from a bank of about 6,000, generated from the site's own data. Type a guess, or ask for options: one right, two plausible and one clearly wrong. Typed answers allow small spelling slips and other names for countries ("Holland", "Ivory Coast", "USA"), and numbers allow a sensible margin. Each answer explains the facts and links to the map or the rankings. Questions already answered in this browser don't come up again, and a running score is kept. The 🎯 Quiz button brings the card back. Ready-made starter maps are underneath.
 - Works on phones, in light and dark mode.
 
 ## Run it locally
@@ -77,6 +83,14 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `style.css` | All styling, including the dark theme |
 | `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
 | `app.js` | Map (including the map styles), filtering logic, results list, URL state |
+| `quiz.js` | The quiz: builds the question bank from the data, checks typed answers and makes the multiple-choice options |
+| `physical.js` | The physical side: feature layers, base maps, feature lists and profiles |
+| `physical.json` | Physical map layers: peaks, landforms, rivers, lakes, ice, plates and boundaries, volcanoes, earthquakes, trenches, deltas, waterfalls, biomes, climate zones (built by `make_physical.py`) |
+| `fetch_physical.py`, `make_physical.py` | Download and build the physical data (see "Updating the data") |
+| `factbook_physical.csv`, `rivers.csv`, `lakes.csv`, `watersheds.csv` | Country facts, rivers, lakes and drainage basins from the CIA World Factbook |
+| `volcanoes.csv`, `earthquakes.csv` | Volcanoes (Smithsonian GVP) and magnitude 6+ earthquakes since 1900 (USGS) |
+| `trenches.csv`, `deltas.csv`, `waterfalls.csv` | Ocean trenches, river deltas and waterfalls. **Edited by hand** |
+| `physical_countries.json` | Physical facts per country, merged into `countries.json` by `build_data.py` |
 | `views.js` | The Compare, Rankings and Trends charts; trend charts and population pyramids in profiles and factfiles; side by side; share links and tasks; image and CSV downloads |
 | `countries.json` | One record per country (built by `build_data.py`) |
 | `cities.json` | Cities with 100,000+ people, plus every capital (built by `build_data.py`) |
@@ -125,6 +139,9 @@ pip install pyreadr pandas geonamescache
 python3 fetch_raw.py
 python3 fetch_raw.py --history                  # yearly history for more measures, and population pyramids
 python3 fetch_raw.py --undp HDR25_Composite_indices_complete_time_series.csv   # UNDP file, downloaded by hand
+python3 fetch_physical.py                       # physical: Factbook facts, volcanoes
+python3 fetch_physical.py --quakes query.csv    # earthquakes, from the USGS link in fetch_physical.py
+python3 make_physical.py                        # physical map layers and country facts (a few minutes)
 python3 build_data.py
 node make_data_table.cjs
 ```
@@ -156,6 +173,13 @@ To give another World Bank measure yearly data, add it to `TS_WB_HISTORY` in `fe
 | CO₂ totals, shares and historical emissions, greenhouse gases, share of warming | [Our World in Data CO₂ data](https://github.com/owid/co2-data) | CC BY 4.0 |
 | Energy use, electricity mix, oil/gas/coal production | [Our World in Data energy data](https://github.com/owid/energy-data) | CC BY 4.0 |
 | Exports, imports, export make-up, tariffs, resource income, tourism spending, mobile, broadband, servers, R&D, researchers, patents, science articles, high-tech and digital exports, rainfall | World Bank World Development Indicators | CC BY 4.0 |
+| Physical facts per country (heights, coastline, land use, terrain, hazards, climate), major rivers and lakes | [CIA World Factbook](https://www.cia.gov/the-world-factbook/) via [factbook.json](https://github.com/factbook/factbook.json) | Public domain |
+| Landforms, peaks, rivers, lakes, glaciers, seas | [Natural Earth](https://www.naturalearthdata.com/) | Public domain |
+| Tectonic plates and boundaries | PB2002 model (Bird, 2003) via [fraxen/tectonicplates](https://github.com/fraxen/tectonicplates) | ODC-By 1.0 |
+| Volcanoes and eruptions | [Smithsonian Global Volcanism Program](https://volcano.si.edu/) via the [volcanoes](https://github.com/cran/volcanoes) R package | Free to use with citation |
+| Earthquakes (magnitude 6+, 1900–2026) | [USGS earthquake catalogue](https://earthquake.usgs.gov/earthquakes/search/) | Public domain |
+| Biomes (approximate) | Worked out from the Köppen–Geiger grid in [kgc](https://github.com/cran/kgc) | BSD 2-clause |
+| Ocean trenches, deltas, waterfalls | Compiled by hand from Wikipedia and other references | CC0 |
 | Mineral production | [USGS Mineral Commodity Summaries 2026](https://pubs.usgs.gov/publication/mcs2026) | Public domain |
 | World Heritage sites | UNESCO, counted via [worldheritagesite.org](https://www.worldheritagesite.org/) plus 2025 inscriptions | Public facts |
 | People using AI | [Microsoft AI Diffusion Report 2026 Q1](https://www.microsoft.com/en-us/corporate-responsibility/topics/AI-Economy-Institute/) | Microsoft terms of use — check before commercial use |

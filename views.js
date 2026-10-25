@@ -250,6 +250,8 @@
       pts.push({ r, iso: r.iso3, x, y, z: z ?? 0, m: !ms || ms.has(r.iso3) });
     }
     const { w, h } = size();
+    // no animation when the chart has just changed size, so bubbles never lag behind the axes
+    if (drawCompare.size !== w + "x" + h) { dur = 0; drawCompare.size = w + "x" + h; }
     const mob = w < 560;
     const M = { t: 30, r: mob ? 12 : 24, b: 40, l: mob ? 46 : 60 };
     // axes span every year so bubbles move against still axes
@@ -382,8 +384,8 @@
     $("#cPins").innerHTML = pinned.map((iso) => `<span class="pin"><span class="sw" style="background:${contColour(W.byIso.get(iso).region)}"></span>${esc(W.byIso.get(iso).name)}<button type="button" data-iso="${iso}" aria-label="Stop following ${esc(W.byIso.get(iso).name)}">×</button></span>`).join("") +
       (yrs && !pinned.length ? `<span class="hint">Click a bubble to follow it and see its path.</span>` : "");
     $$("#cPins button").forEach((b) => (b.onclick = () => { c.pins = c.pins.filter((x) => x !== b.dataset.iso); W.render(); }));
-    V.csv = () => [["Country", "ISO code", "Continent", fx.label, fy.label].concat(fz ? [fz.label] : []).concat(["Year"]),
-      ...pts.map((p) => [p.r.name, p.iso, p.r.region, p.x, p.y].concat(fz ? [p.z] : []).concat([year || "latest"]))];
+    V.csv = () => [["Country", "Continent", fx.label, fy.label].concat(fz ? [fz.label] : []).concat(["Year"]),
+      ...pts.map((p) => [p.r.name, p.r.region, p.x, p.y].concat(fz ? [p.z] : []).concat([year || "latest"]))];
     V.title = `${fy.label} and ${fx.label}${year ? `, ${year}` : ""}`;
   }
   function bubbleTip(p, fx, fy, fz, year) {
@@ -406,7 +408,7 @@
     const ck = W.state.colourBy && W.state.colourBy !== "none" ? W.state.colourBy : null;
     if (ck && F[ck]?.type === "range") return ck;
     const fl = W.state.filters.slice().reverse().find((x) => F[x.key].type === "range" && !F[x.key].target);
-    return fl ? fl.key : "hdi";
+    return fl ? fl.key : W.state.mode === "physical" ? "highest_m" : "hdi";
   }
   function drawRank() {
     const k = V.rank, f = F[k.key];
@@ -432,7 +434,7 @@
     else drawBars(pts, f, world);
     const yearText = year ? year : W.yearLabel(f) || "latest";
     $("#rNote").innerHTML = `${pts.length} ${W.state.territories ? "places" : "countries"} with data (${esc(String(yearText))}). ${asc ? "Rank 1 is shown first." : "Highest first."} ${f.info ? esc(f.info) : ""}`;
-    V.csv = () => [["Rank", "Country", "ISO code", "Continent", f.label + (year ? ` (${year})` : "")], ...pts.map((p) => [p.rank, p.r.name, p.iso, p.r.region, p.v])];
+    V.csv = () => [["Rank", "Country", "Continent", f.label + (year ? ` (${year})` : "")], ...pts.map((p) => [p.rank, p.r.name, p.r.region, p.v])];
     V.title = `${f.label}: ${k.mode === "cont" ? "by continent" : "ranking"}${year ? `, ${year}` : ""}`;
   }
   function drawBars(pts, f, world) {
@@ -977,5 +979,11 @@
     d3.selectAll(`#vsvg [data-iso="${iso}"]`).classed("hl", on);
   }
 
-  window.WV = { init, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
+  // open Rankings on a measure, with a country picked out
+  function showRank(key, iso) {
+    V.rank.key = key; V.rank.mode = "bars"; V.rank.year = null; V.rank.only = false;
+    if (iso) W.state.selected = iso;
+    if (W.state.view === "rank") { V.built = null; W.render(); } else W.setView("rank");
+  }
+  window.WV = { init, showRank, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
 })();

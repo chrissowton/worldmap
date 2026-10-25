@@ -31,10 +31,11 @@ def main():
     timeseries = read("timeseries.json")
     features = read("features.json")
     pyramids = read("pyramids.json")
+    physical = read("physical.json")
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
     inline = (
-        f"<script>window.__COUNTRIES__={data};window.__WORLD__={world};window.__CITIES__={cities};window.__FLOWS__={flows};window.__TIMESERIES__={timeseries};window.__FEATURES__={features};window.__PYRAMIDS__={pyramids};</script>\n"
-        f"<script>{read('filters.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('factfile.js')}</script>"
+        f"<script>window.__COUNTRIES__={data};window.__WORLD__={world};window.__CITIES__={cities};window.__FLOWS__={flows};window.__TIMESERIES__={timeseries};window.__FEATURES__={features};window.__PYRAMIDS__={pyramids};window.__PHYSICAL__={physical};</script>\n"
+        f"<script>{read('filters.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('factfile.js')}</script>"
     )
     head = (
         f"<title>Which Countries?</title>\n"

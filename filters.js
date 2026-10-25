@@ -1218,3 +1218,406 @@ window.MENU_LABELS = {
   security_council: "UN Security Council", regime: "Type of government", treaties_joined: "Treaties joined",
   events_hosted: "Has hosted", density: "Population density", area_km2: "Area", subregion: "Region of the world",
 };
+
+/* =====================================================================
+ * PHYSICAL GEOGRAPHY
+ * The "Physical" switch in the header shows these themes instead of the human ones.
+ * Filters with a `target` pick out features on the map (rivers, volcanoes, earthquakes…)
+ * rather than countries; the rest describe countries, like every filter above.
+ * ===================================================================== */
+window.FILTER_GROUPS.push("Mountains & relief", "Landforms", "Rivers & lakes", "Ice", "Plates", "Volcanoes", "Earthquakes", "Biomes", "Coasts & oceans", "Hazards");
+window.PHYS_THEMES = [
+  { id: "landscape", label: "Landscape", groups: ["Mountains & relief", "Landforms"] },
+  { id: "water", label: "Water & ice", groups: ["Rivers & lakes", "Ice"] },
+  { id: "tectonics", label: "Tectonics", groups: ["Plates", "Volcanoes", "Earthquakes"] },
+  { id: "biomes", label: "Climate & biomes", groups: ["Climate", "Biomes"] },
+  { id: "coasts", label: "Coasts & oceans", groups: ["Coasts & oceans"] },
+  { id: "hazards", label: "Hazards", groups: ["Hazards"] },
+];
+const PHYS_LANDFORMS = ["Mountain range", "Plateau", "Desert", "Plain", "Basin", "Delta", "Tundra", "Valley", "Lowland", "Wetland", "Depression", "Gorge", "Foothills", "Peninsula", "Isthmus"];
+window.FILTERS.push(
+  // ---------------- Mountains & relief ----------------
+  num("highest_m", "Mountains & relief", "Highest point", {
+    short: "Highest point", format: "m", step: 50, source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `the highest point is ${b}`,
+    info: "Height above sea level of the country's highest point, in metres.",
+    keywords: "highest point mountain peak summit elevation height altitude relief",
+  }),
+  num("mean_elevation_m", "Mountains & relief", "Average height", {
+    short: "Average height", format: "m", step: 10, source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `the average height of the land is ${b}`,
+    info: "The average height of the land above sea level (mean elevation), in metres.",
+    keywords: "average mean elevation height altitude relief highland lowland",
+  }),
+  num("lowest_m", "Mountains & relief", "Lowest point", {
+    short: "Lowest point", format: "m", step: 1, source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `the lowest point is ${b}`,
+    info: "Height of the lowest point on land. Below zero means below sea level, like the shore of the Dead Sea.",
+    keywords: "lowest point below sea level depression dead sea elevation",
+  }),
+  {
+    key: "below_sea_level", type: "bool", group: "Mountains & relief", label: "Has land below sea level", short: "Below sea level",
+    yes: "Land below sea level", no: "No land below sea level",
+    say: (v) => (v ? "some land is below sea level" : "no land is below sea level"),
+    source: "factbook", yearText: "CIA World Factbook 2026",
+    info: "Whether the country's lowest point on land is below sea level.",
+    keywords: "below sea level depression polder dead sea lowest",
+  },
+  num("mountain_pct", "Mountains & relief", "Covered by mountain ranges", {
+    short: "Mountains", format: "pct", bounds: [0, 100], source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `${b} of the land is in named mountain ranges`,
+    info: "Rough share of the land inside the mountain ranges mapped by Natural Earth. Good for comparing, not exact.",
+    keywords: "mountains mountainous ranges relief highland",
+  }),
+  {
+    key: "ranges", type: "multi", group: "Mountains & relief", label: "Mountain ranges", short: "Range",
+    say: (v) => `it includes part of the ${v}`, sayNot: (v) => `it doesn't include the ${v}`, modes: true,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Named mountain ranges covering a noticeable part of the country (Natural Earth).",
+    keywords: "mountain range alps andes himalayas rockies atlas",
+  },
+  num("peak_elev", "Mountains & relief", "Mountain peaks", {
+    target: "peak", short: "Peaks", format: "m", step: 100, source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `the peak is ${b} high`,
+    info: "Shows named mountain peaks on the map, by height. Heights are from Natural Earth and can differ slightly from other sources.",
+    keywords: "peak summit mountain height everest k2 kilimanjaro",
+  }),
+  // ---------------- Landforms ----------------
+  {
+    key: "landforms", type: "multi", group: "Landforms", label: "Landforms in the country", short: "Landforms", order: PHYS_LANDFORMS,
+    say: (v) => `it has ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`, sayNot: (v) => `it has no ${v.toLowerCase()}`, modes: true,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Large named landforms (mountain ranges, plateaus, deserts, plains, basins, deltas…) covering at least about 3% of the country.",
+    keywords: "landform terrain plateau plain basin desert tundra valley lowland relief",
+  },
+  {
+    key: "deserts", type: "multi", group: "Landforms", label: "Deserts", short: "Desert",
+    say: (v) => `it includes part of the ${v}`, sayNot: (v) => `it doesn't include the ${v}`, modes: true,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Named deserts covering a noticeable part of the country.",
+    keywords: "desert sahara gobi kalahari namib atacama arabian",
+  },
+  {
+    key: "landform_kind", type: "multi", group: "Landforms", label: "Landform features", short: "Landforms", target: "landform", order: PHYS_LANDFORMS,
+    say: (v) => `it is ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`, sayNot: (v) => `it isn't ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Shows named landforms on the map: mountain ranges, plateaus, deserts, plains, basins, deltas, peninsulas and more.",
+    keywords: "landform range plateau desert plain basin delta peninsula valley gorge",
+  },
+  num("landform_area", "Landforms", "Landform size", {
+    target: "landform", short: "Landform size", format: "km2", scale: "log", source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `it covers ${b}`,
+    info: "Shows named landforms by the area they cover (approximate, from Natural Earth's outlines).",
+    keywords: "size area largest desert biggest plateau",
+  }),
+  // ---------------- Rivers & lakes ----------------
+  num("river_km", "Rivers & lakes", "River length", {
+    target: "river", short: "River length", format: "kmlen", step: 50, scale: "log", source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `the river is ${b} long`,
+    info: "Shows major rivers by length. River lengths are hard to measure and differ between sources; these are the CIA World Factbook's.",
+    keywords: "river length longest nile amazon yangtze mississippi",
+  }),
+  {
+    key: "river_to", type: "multi", group: "Rivers & lakes", label: "River flows into", short: "Flows into", target: "river",
+    order: ["Atlantic Ocean", "Pacific Ocean", "Indian Ocean", "Arctic Ocean", "Internal (no outlet to the sea)"],
+    say: (v) => (v.startsWith("Internal") ? "it never reaches the sea" : `it drains to the ${v}`),
+    source: "factbook", yearText: "CIA World Factbook 2026",
+    info: "Which ocean a river's basin drains to, or whether it ends inland (an endorheic basin), from the Factbook's list of major watersheds.",
+    keywords: "drainage basin watershed ocean endorheic mouth",
+  },
+  num("river_countries", "Rivers & lakes", "Countries a river flows through", {
+    target: "river", short: "River countries", format: "int", source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `it flows through ${b} countries`,
+    info: "Shows rivers by how many countries they flow through. Rivers shared by many countries need international agreements on water.",
+    keywords: "international shared transboundary river countries",
+  }),
+  {
+    key: "rivers", type: "multi", group: "Rivers & lakes", label: "Rivers", short: "River",
+    say: (v) => `the ${v} flows through it`, sayNot: (v) => `the ${v} doesn't flow through it`,
+    source: "factbook", yearText: "CIA World Factbook 2026",
+    info: "Major rivers that flow through the country (CIA World Factbook).",
+    keywords: "river nile amazon danube rhine ganges mekong",
+  },
+  num("longest_river_km", "Rivers & lakes", "Longest river", {
+    short: "Longest river", format: "kmlen", step: 50, source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `its longest river is ${b} long`,
+    info: "Length of the longest major river flowing through the country (its whole length, not just the part in the country).",
+    keywords: "longest river length",
+  }),
+  {
+    key: "drains_to", type: "multi", group: "Rivers & lakes", label: "Drains into", short: "Drains into", modes: true,
+    order: ["Atlantic Ocean", "Pacific Ocean", "Indian Ocean", "Arctic Ocean", "Internal (no outlet to the sea)"],
+    say: (v) => (v.startsWith("Internal") ? "some of its rivers never reach the sea" : `its rivers drain to the ${v}`),
+    source: "factbook", yearText: "CIA World Factbook 2026",
+    info: "The oceans its major river basins drain to, from the Factbook's list of major watersheds (only listed for some countries).",
+    keywords: "drainage basin watershed ocean endorheic",
+  },
+  {
+    key: "lakes", type: "multi", group: "Rivers & lakes", label: "Lakes", short: "Lake",
+    say: (v) => `it has part of ${v}`, sayNot: (v) => `it doesn't have part of ${v}`,
+    source: "naturalearth", yearText: "Natural Earth and CIA World Factbook",
+    info: "Large lakes in or on the border of the country.",
+    keywords: "lake victoria baikal superior caspian titicaca",
+  },
+  num("lake_km2", "Rivers & lakes", "Lake size", {
+    target: "lake", short: "Lake size", format: "km2", scale: "log", source: "naturalearth", yearText: "Natural Earth and CIA World Factbook",
+    say: (b) => `the lake covers ${b}`,
+    info: "Shows lakes on the map by area. Areas are the Factbook's where it lists them, otherwise measured from Natural Earth.",
+    keywords: "lake area largest size",
+  }),
+  {
+    key: "lake_kind", type: "multi", group: "Rivers & lakes", label: "Lake type", short: "Lake type", target: "lake",
+    order: ["Freshwater lake", "Salt lake", "Reservoir"],
+    say: (v) => `it is ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`,
+    source: "naturalearth", yearText: "Natural Earth and CIA World Factbook",
+    info: "Freshwater lakes, salt lakes (often in dry areas with no outlet), and reservoirs made by dams.",
+    keywords: "salt lake fresh reservoir dam",
+  },
+  num("waterfall_m", "Rivers & lakes", "Waterfalls", {
+    target: "waterfall", short: "Waterfalls", format: "m", source: "handlists", yearText: "2026",
+    say: (b) => `the waterfall is ${b} high`,
+    info: "Shows famous waterfalls by height. There's no standard way to measure a waterfall, so heights vary between sources.",
+    keywords: "waterfall angel victoria niagara iguazu falls",
+  }),
+  {
+    key: "delta_shape", type: "multi", group: "Rivers & lakes", label: "River deltas", short: "Deltas", target: "delta",
+    order: ["Arcuate", "Bird's-foot", "Cuspate", "Inland", "Not usually classed by shape"],
+    say: (v) => (v.startsWith("Not") ? "it isn't usually classed by shape" : `it is ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()} delta`),
+    source: "handlists", yearText: "2026",
+    info: "Shows major river deltas. Arcuate deltas are fan-shaped (the Nile), bird's-foot deltas push out in fingers (the Mississippi), cuspate deltas are shaped by waves into a point (the Tiber), and inland deltas spread out on land (the Okavango).",
+    keywords: "delta arcuate birds foot cuspate nile mississippi river mouth",
+  },
+  // ---------------- Ice ----------------
+  num("glacier_pct", "Ice", "Covered by ice", {
+    short: "Ice cover", format: "pct", bounds: [0, 100], source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `${b} of the land is covered by glaciers or ice`,
+    info: "Share of the land covered by glaciers and ice caps, measured from Natural Earth's map of glaciated areas.",
+    keywords: "glacier ice cap ice sheet frozen",
+  }),
+  num("glacier_km2", "Ice", "Area of ice", {
+    short: "Ice area", format: "km2", scale: "log", source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `glaciers cover ${b}`,
+    info: "Area covered by glaciers and ice caps (Natural Earth, approximate).",
+    keywords: "glacier ice area",
+  }),
+  // ---------------- Plates ----------------
+  {
+    key: "plates", type: "multi", group: "Plates", label: "Tectonic plates", short: "Plate", modes: true,
+    say: (v) => `it is on the ${v} Plate`, sayNot: (v) => `it isn't on the ${v} Plate`,
+    source: "pb2002", yearText: "PB2002 model",
+    info: "The tectonic plates under the country, from Peter Bird's PB2002 model, which includes many small plates as well as the big ones.",
+    keywords: "tectonic plate eurasian pacific african north american plates",
+  },
+  {
+    key: "margins", type: "multi", group: "Plates", label: "Plate boundaries", short: "Boundaries", modes: true,
+    order: ["Constructive", "Destructive", "Collision", "Conservative"],
+    say: (v) => `it has ${v === "Collision" ? "a collision" : `a ${v.toLowerCase()}`} plate boundary`, sayNot: (v) => `it has no ${v.toLowerCase()} plate boundary`,
+    source: "pb2002", yearText: "PB2002 model",
+    info: "Types of plate boundary in or within about 40 km of the country. Constructive: plates move apart. Destructive: one plate sinks under another. Collision: two continents push together. Conservative: plates slide past each other.",
+    keywords: "plate boundary margin constructive destructive collision conservative divergent convergent transform",
+  },
+  {
+    key: "boundary_margin", type: "multi", group: "Plates", label: "Plate boundary type", short: "Boundary type", target: "boundary",
+    order: ["Constructive", "Destructive", "Collision", "Conservative"],
+    say: (v) => `it is ${v === "Collision" ? "a collision" : `a ${v.toLowerCase()}`} boundary`,
+    source: "pb2002", yearText: "PB2002 model",
+    info: "Shows plate boundaries on the map by type. Constructive (divergent): plates move apart at ridges and rifts. Destructive (convergent): one plate sinks under another at a trench. Collision: continents crumple into mountains. Conservative (transform): plates slide past each other.",
+    keywords: "plate boundary constructive destructive collision conservative ridge trench rift fault",
+  },
+  num("boundary_speed", "Plates", "Plate speed at the boundary", {
+    target: "boundary", short: "Plate speed", format: "mmyr", step: 1, source: "pb2002", yearText: "PB2002 model",
+    say: (b) => `the plates move ${b} relative to each other`,
+    info: "How fast the two plates move relative to each other, in millimetres a year — about as fast as fingernails grow.",
+    keywords: "plate speed movement velocity",
+  }),
+  // ---------------- Volcanoes ----------------
+  num("volcanoes", "Volcanoes", "Volcanoes", {
+    short: "Volcanoes", format: "int", source: "gvp", yearText: "2026",
+    say: (b) => `it has ${b} volcanoes`,
+    info: "Volcanoes that have been active in the last 12,000 years (the Holocene), in or within about 100 km of the country (Smithsonian Global Volcanism Program).",
+    keywords: "volcano volcanoes volcanic active",
+  }),
+  num("volcanoes_active", "Volcanoes", "Volcanoes erupting since 1900", {
+    short: "Erupted since 1900", format: "int", source: "gvp", yearText: "2026",
+    say: (b) => `${b} volcanoes have erupted since 1900`,
+    info: "Volcanoes in or near the country that have erupted since 1900.",
+    keywords: "active volcano eruption recent",
+  }),
+  {
+    key: "volcano_type", type: "multi", group: "Volcanoes", label: "Volcano type", short: "Volcano type", target: "volcano",
+    order: ["Stratovolcano", "Shield volcano", "Caldera", "Volcanic field", "Lava dome", "Cinder cone", "Complex volcano", "Submarine volcano", "Fissure vent", "Lava cone", "Maar", "Tuff cone", "Subglacial volcano", "Other"],
+    say: (v) => `it is ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`,
+    source: "gvp", yearText: "2026",
+    info: "Shows volcanoes on the map by type. Stratovolcanoes (composite cones) are steep and explosive, often at destructive boundaries. Shield volcanoes are wide and gentle, with runny lava, like Hawaii's.",
+    keywords: "volcano type stratovolcano composite shield caldera cone",
+  },
+  {
+    key: "volcano_last", type: "cat", group: "Volcanoes", label: "Last eruption", short: "Last eruption", target: "volcano",
+    order: ["Since 2000", "1900–1999", "1500–1899", "Before 1500", "No dated eruption"],
+    say: (v) => (v.startsWith("No") ? "it has no dated eruption" : v.startsWith("Since") ? "it last erupted since 2000" : v.startsWith("Before") ? "it last erupted before 1500" : `it last erupted in ${v}`),
+    source: "gvp", yearText: "2026",
+    info: "When each volcano last erupted. \"No dated eruption\" means there's evidence it was active in the last 12,000 years but no date.",
+    keywords: "volcano eruption active dormant recent",
+  },
+  {
+    key: "volcano_setting", type: "cat", group: "Volcanoes", label: "Volcano setting", short: "Setting", target: "volcano",
+    order: ["Subduction zone", "Rift zone", "Intraplate", "Unknown"],
+    say: (v) => (v === "Intraplate" ? "it is away from plate boundaries (a hotspot or intraplate volcano)" : `it is at a ${v.toLowerCase()}`),
+    source: "gvp", yearText: "2026",
+    info: "Where the volcano sits: at a subduction zone (destructive boundary), a rift zone (constructive boundary), or in the middle of a plate, often over a hotspot.",
+    keywords: "subduction rift hotspot intraplate volcano setting",
+  },
+  num("volcano_vei", "Volcanoes", "Largest eruption (VEI)", {
+    target: "volcano", short: "VEI", format: "int", bounds: [0, 8], source: "gvp", yearText: "2026",
+    say: (b) => `its largest known eruption scored ${b} on the VEI`,
+    info: "The Volcanic Explosivity Index of the volcano's largest recorded eruption, from 0 (gentle) to 8 (super-eruption). Each step is about ten times bigger.",
+    keywords: "vei volcanic explosivity index eruption size",
+  }),
+  num("volcano_elev", "Volcanoes", "Volcano height", {
+    target: "volcano", short: "Volcano height", format: "m", step: 100, source: "gvp", yearText: "2026",
+    say: (b) => `its summit is ${b}`,
+    info: "Height of the volcano's summit. Below zero means an underwater (submarine) volcano.",
+    keywords: "volcano height summit elevation",
+  }),
+  // ---------------- Earthquakes ----------------
+  num("quakes", "Earthquakes", "Big earthquakes since 1900", {
+    short: "Earthquakes", format: "int", scale: "log", source: "usgsquakes", yearText: "1900–2026",
+    say: (b) => `${b} earthquakes of magnitude 6 or more have hit it since 1900`,
+    info: "Earthquakes of magnitude 6 or more since 1900 in the country or within about 150 km of its coast (USGS).",
+    keywords: "earthquake quake seismic tremor",
+  }),
+  num("quake_max", "Earthquakes", "Largest earthquake since 1900", {
+    short: "Largest quake", format: "mag", step: 0.1, source: "usgsquakes", yearText: "1900–2026",
+    say: (b) => `its largest earthquake since 1900 was magnitude ${b}`,
+    info: "Magnitude of the largest earthquake since 1900 in or near the country. Each step up in magnitude releases about 32 times more energy.",
+    keywords: "largest earthquake magnitude biggest",
+  }),
+  num("quake_mag", "Earthquakes", "Earthquakes (magnitude)", {
+    target: "quake", short: "Quake magnitude", format: "mag", step: 0.1, bounds: [6, 9.5], source: "usgsquakes", yearText: "1900–2026",
+    say: (b) => `its magnitude is ${b}`,
+    initial: { min: 7 },
+    info: "Shows earthquakes of magnitude 6 or more since 1900 on the map. Each step up in magnitude means about 32 times more energy.",
+    keywords: "earthquake magnitude quake richter seismic",
+  }),
+  num("quake_year", "Earthquakes", "Earthquake year", {
+    target: "quake", short: "Quake year", format: "year", step: 1, bounds: [1900, 2026], source: "usgsquakes", yearText: "1900–2026",
+    say: (b) => `it happened ${b.replace(/at least/, "in or after").replace(/at most/, "in or before")}`,
+    info: "Shows earthquakes from a range of years. Records before about 1960 miss some quakes in remote places.",
+    keywords: "earthquake year date when",
+  }),
+  num("quake_depth", "Earthquakes", "Earthquake depth", {
+    target: "quake", short: "Quake depth", format: "kmlen", step: 10, bounds: [0, 700], source: "usgsquakes", yearText: "1900–2026",
+    say: (b) => `its focus was ${b} deep`,
+    info: "How deep the earthquake started (its focus). Shallow quakes (under 70 km) do the most damage. Deep ones happen only where a plate sinks into the mantle.",
+    keywords: "earthquake depth focus shallow deep",
+  }),
+  {
+    key: "quake_margin", type: "multi", group: "Earthquakes", label: "Nearest plate boundary", short: "Quake boundary", target: "quake",
+    order: ["Constructive", "Destructive", "Collision", "Conservative", "Far from a boundary"],
+    say: (v) => (v.startsWith("Far") ? "it was far from a plate boundary" : `the nearest plate boundary is ${v === "Collision" ? "a collision" : `a ${v.toLowerCase()}`} one`),
+    source: "pb2002", yearText: "PB2002 model",
+    info: "The type of plate boundary nearest each earthquake (within about 300 km). Most big earthquakes happen at destructive boundaries.",
+    keywords: "earthquake plate boundary destructive subduction",
+  },
+  // ---------------- Biomes ----------------
+  {
+    key: "main_biome", type: "cat", group: "Biomes", label: "Main biome", short: "Biome",
+    order: ["Tropical rainforest", "Tropical savanna", "Hot desert", "Cold desert", "Steppe and dry grassland", "Mediterranean", "Temperate forest", "Boreal forest (taiga)", "Tundra", "Ice sheet"],
+    say: (v) => `its main biome is ${v.toLowerCase()}`,
+    source: "biomes", yearText: "1976–2000 climate",
+    info: "The biome covering most of the country. Worked out from climate zones (Köppen), so it shows the natural vegetation the climate supports, not today's land use.",
+    keywords: "biome rainforest savanna desert taiga tundra grassland ecosystem",
+  },
+  {
+    key: "biomes", type: "multi", group: "Biomes", label: "Has biome", short: "Has biome", modes: true,
+    order: ["Tropical rainforest", "Tropical savanna", "Hot desert", "Cold desert", "Steppe and dry grassland", "Mediterranean", "Temperate forest", "Boreal forest (taiga)", "Tundra", "Ice sheet"],
+    say: (v) => `at least 10% of the land is ${v.toLowerCase()}`, sayNot: (v) => `less than 10% of the land is ${v.toLowerCase()}`,
+    source: "biomes", yearText: "1976–2000 climate",
+    info: "Biomes covering at least 10% of the country (approximate, worked out from climate zones).",
+    keywords: "biome rainforest savanna desert taiga tundra grassland mediterranean",
+  },
+  num("forest_land_pct", "Biomes", "Forest land", {
+    short: "Forest land", format: "pct", bounds: [0, 100], source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `${b} of the land is forest`,
+    info: "Share of the land that is forest today (CIA World Factbook land use).",
+    keywords: "forest trees woodland land use",
+  }),
+  num("arable_pct", "Biomes", "Farmland for crops", {
+    short: "Arable land", format: "pct", bounds: [0, 100], source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `${b} of the land is used for crops`,
+    info: "Share of the land used for growing crops (arable land), from the CIA World Factbook.",
+    keywords: "arable farmland crops agriculture land use",
+  }),
+  // ---------------- Coasts & oceans ----------------
+  num("coastline_km", "Coasts & oceans", "Coastline length", {
+    short: "Coastline", format: "kmlen", scale: "log", source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `its coastline is ${b} long`,
+    info: "Length of the coastline (CIA World Factbook). Coastlines are fractal: the more closely you measure, the longer they get, so sources disagree.",
+    keywords: "coast coastline shore beach length",
+  }),
+  num("coast_ratio", "Coasts & oceans", "Coastline for its size", {
+    short: "Coast for size", format: "dec1", scale: "log", source: "factbook", yearText: "CIA World Factbook 2026",
+    say: (b) => `it has ${b} km of coast for every 100 km² of land`,
+    info: "Kilometres of coastline for every 100 km² of area: high for islands and countries with lots of inlets, zero for landlocked ones.",
+    keywords: "coast ratio island maritime",
+  }),
+  {
+    key: "seas", type: "multi", group: "Coasts & oceans", label: "Coast on", short: "Coast on", modes: true,
+    say: (v) => `it has a coast on the ${v}`, sayNot: (v) => `it has no coast on the ${v}`,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Seas and oceans the country has a coastline on (Natural Earth's named seas, plus large gulfs and bays).",
+    keywords: "sea ocean coast mediterranean caribbean pacific atlantic",
+  },
+  {
+    key: "island", type: "bool", group: "Coasts & oceans", label: "Island country", short: "Island",
+    yes: "Island country", no: "Not an island country",
+    say: (v) => (v ? "it is an island country (no land borders)" : "it has land borders"),
+    source: "countries", yearText: "2026",
+    info: "Countries with a coast and no land border with another country.",
+    keywords: "island archipelago",
+  },
+  {
+    key: "no_coast", type: "bool", group: "Coasts & oceans", label: "Landlocked", short: "Landlocked",
+    yes: "Landlocked", no: "Has a coast",
+    say: (v) => (v ? "it is landlocked" : "it has a coast"),
+    source: "countries", yearText: "2026",
+    info: "Landlocked countries have no coast on the open sea.",
+    keywords: "landlocked coast sea access",
+  },
+  num("trench_depth", "Coasts & oceans", "Ocean trenches", {
+    target: "trench", short: "Trenches", format: "m", step: 100, source: "handlists", yearText: "2026",
+    say: (b) => `its deepest point is ${b} deep`,
+    info: "Shows the deepest ocean trenches and their deepest points. Trenches form where one plate sinks under another.",
+    keywords: "trench ocean deep mariana challenger deepest",
+  }),
+  // ---------------- Hazards ----------------
+  {
+    key: "hazards", type: "multi", group: "Hazards", label: "Natural hazards", short: "Hazards", modes: true,
+    order: ["Earthquakes", "Volcanoes", "Tsunamis", "Tropical storms", "Floods", "Droughts", "Landslides", "Avalanches", "Dust and sand storms", "Wildfires", "Extreme cold", "Extreme heat", "Tornadoes", "Storm surges"],
+    say: (v) => `it faces ${v.toLowerCase()}`, sayNot: (v) => `it doesn't face ${v.toLowerCase()}`,
+    source: "factbook", yearText: "CIA World Factbook 2026",
+    info: "Natural hazards listed for the country in the CIA World Factbook. Tropical storms include hurricanes, typhoons and cyclones.",
+    keywords: "hazard disaster earthquake flood drought cyclone hurricane typhoon tsunami landslide",
+  },
+);
+window.FAMILIES.push(
+  { id: "height", label: "Height of the land", short: "Height", info: "The highest point, the average height of the land, or the lowest point.",
+    variants: [["highest_m", "Highest point"], ["mean_elevation_m", "Average height"], ["lowest_m", "Lowest point"]] },
+  { id: "volcounts", label: "Volcanoes in the country", short: "Volcanoes", info: "How many volcanoes a country has, and how many have erupted since 1900.",
+    variants: [["volcanoes", "All volcanoes"], ["volcanoes_active", "Erupted since 1900"]] },
+  { id: "quakecounts", label: "Earthquakes in the country", short: "Earthquakes", info: "How many big earthquakes have hit a country since 1900, and the largest.",
+    variants: [["quakes", "Number of quakes"], ["quake_max", "Largest quake"]] },
+  { id: "ice", label: "Ice cover", short: "Ice", info: "Glaciers and ice caps: share of the land, or area.",
+    variants: [["glacier_pct", "Share of land"], ["glacier_km2", "Area"]] },
+  { id: "coast", label: "Coastline", short: "Coastline", info: "Coastline length, or coastline compared with the size of the country.",
+    variants: [["coastline_km", "Length"], ["coast_ratio", "For its size"]] },
+);
+Object.assign(window.SOURCES, {
+  factbook: { name: "CIA World Factbook (via factbook.json)", url: "https://github.com/factbook/factbook.json", licence: "Public domain" },
+  naturalearth: { name: "Natural Earth physical data", url: "https://www.naturalearthdata.com/", licence: "Public domain" },
+  pb2002: { name: "PB2002 plate boundary model (Bird, 2003), via fraxen/tectonicplates", url: "https://github.com/fraxen/tectonicplates", licence: "ODC-By 1.0" },
+  gvp: { name: "Smithsonian Global Volcanism Program, Volcanoes of the World (via the volcanoes R package)", url: "https://volcano.si.edu/", licence: "Free to use with citation" },
+  usgsquakes: { name: "USGS earthquake catalogue (magnitude 6+, 1900–2026)", url: "https://earthquake.usgs.gov/earthquakes/search/", licence: "Public domain" },
+  biomes: { name: "Biomes worked out from Köppen–Geiger climate zones (kgc package)", url: "https://github.com/cran/kgc", licence: "BSD 2-clause" },
+  handlists: { name: "Compiled by hand from Wikipedia and other references", url: "https://en.wikipedia.org/wiki/Oceanic_trench", licence: "CC0" },
+});
