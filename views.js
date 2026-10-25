@@ -119,10 +119,10 @@
     V.built = view;
     const shells = {
       compare: `<div class="vhead"><div class="vctrls">
-          <label class="fld"><span>↑ Up</span><select id="cY"></select></label>
-          <label class="fld"><span>→ Across</span><select id="cX"></select></label>
-          <label class="fld"><span>Bubble size</span><select id="cZ"></select></label>
-          <label class="fld"><span>Colour</span><select id="cC"><option value="region">Continent</option><option value="income_group">Income group</option><option value="match">Matches your filters</option></select></label>
+          <label class="fld"><span>↑ Up</span><select id="cY" data-pick></select></label>
+          <label class="fld"><span>→ Across</span><select id="cX" data-pick></select></label>
+          <label class="fld"><span>Bubble size</span><select id="cZ" data-pick></select></label>
+          <label class="fld"><span>Colour</span><select id="cC" data-pick><option value="region">Continent</option><option value="income_group">Income group</option><option value="match">Matches your filters</option></select></label>
         </div></div>
         <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg></div>
         <div class="vfoot">
@@ -138,7 +138,7 @@
           </div>
         </div>`,
       rank: `<div class="vhead"><div class="vctrls">
-          <label class="fld"><span>Measure</span><select id="rK"></select></label>
+          <label class="fld"><span>Measure</span><select id="rK" data-pick></select></label>
           <label class="fld"><span>Year</span><select id="rYear"></select></label>
           <div class="seg" role="radiogroup" aria-label="Show as"><button type="button" role="radio" data-m="bars">Ranked bars</button><button type="button" role="radio" data-m="cont">By continent</button></div>
           <label class="tog" id="rOnlyL"><input type="checkbox" id="rOnly"> Only countries that match</label>
@@ -147,7 +147,7 @@
         <div class="vbody scroll" id="vbody"><svg id="vsvg" role="img"></svg></div>
         <p class="vnote" id="rNote"></p>`,
       trends: `<div class="vhead"><div class="vctrls">
-          <label class="fld"><span>Measure</span><select id="tK"></select></label>
+          <label class="fld"><span>Measure</span><select id="tK" data-pick></select></label>
           <label class="tog"><input type="checkbox" id="tW"> World median</label>
           <label class="tog"><input type="checkbox" id="tC"> Continent medians</label>
           <label class="tog" id="tML"><input type="checkbox" id="tM"> Matching countries</label>
@@ -598,7 +598,7 @@
   let pyramids = window.__PYRAMIDS__ || null, pyrLoading = null;
   function loadPyramids() {
     if (pyramids) return Promise.resolve(pyramids);
-    pyrLoading ||= fetch("pyramids.json").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
+    pyrLoading ||= fetch("pyramids.json?v=16").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
     return pyrLoading;
   }
   // A small line chart as an SVG string: the country against the world and continent medians
@@ -845,6 +845,8 @@
   async function svgToCanvas(svgEl, scale = 2, bg) {
     const vb = (svgEl.getAttribute("viewBox") || `0 0 ${svgEl.clientWidth} ${svgEl.clientHeight}`).split(/[\s,]+/).map(Number);
     const clone = inlineSVG(svgEl);
+    // a picture can't use the page's flag font, so leave flags out of downloads
+    clone.querySelectorAll("text, tspan").forEach((t) => { if (!t.children.length) t.textContent = t.textContent.replace(/[\u{1F1E6}-\u{1F1FF}]{2}\s?/gu, ""); });
     clone.setAttribute("width", vb[2]); clone.setAttribute("height", vb[3]);
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(clone));
@@ -985,5 +987,8 @@
     if (iso) W.state.selected = iso;
     if (W.state.view === "rank") { V.built = null; W.render(); } else W.setView("rank");
   }
-  window.WV = { init, showRank, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
+  // for the Back button: the chart settings as plain data, and back again
+  function snapshot() { const { built, ...rest } = V; return JSON.parse(JSON.stringify(rest)); }
+  function restore(o) { if (!o) return; stopPlay(); Object.assign(V.cmp, o.cmp); Object.assign(V.rank, o.rank); Object.assign(V.trend, o.trend); V.task = o.task || ""; }
+  window.WV = { init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
 })();

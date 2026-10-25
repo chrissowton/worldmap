@@ -1228,10 +1228,9 @@ window.MENU_LABELS = {
 window.FILTER_GROUPS.push("Mountains & relief", "Landforms", "Rivers & lakes", "Ice", "Plates", "Volcanoes", "Earthquakes", "Biomes", "Coasts & oceans", "Hazards");
 window.PHYS_THEMES = [
   { id: "landscape", label: "Landscape", groups: ["Mountains & relief", "Landforms"] },
-  { id: "water", label: "Water & ice", groups: ["Rivers & lakes", "Ice"] },
+  { id: "water", label: "Water, ice & coasts", groups: ["Rivers & lakes", "Ice", "Coasts & oceans"] },
   { id: "tectonics", label: "Tectonics", groups: ["Plates", "Volcanoes", "Earthquakes"] },
   { id: "biomes", label: "Climate & biomes", groups: ["Climate", "Biomes"] },
-  { id: "coasts", label: "Coasts & oceans", groups: ["Coasts & oceans"] },
   { id: "hazards", label: "Hazards", groups: ["Hazards"] },
 ];
 const PHYS_LANDFORMS = ["Mountain range", "Plateau", "Desert", "Plain", "Basin", "Delta", "Tundra", "Valley", "Lowland", "Wetland", "Depression", "Gorge", "Foothills", "Peninsula", "Isthmus"];

@@ -24,6 +24,10 @@ def main():
     fonts = re.search(r'<link rel="stylesheet" href="(https://fonts[^"]+)">', html).group(1)
     cdn = re.findall(r'<script src="(https://cdnjs[^"]+)"></script>', html)
     css = read("style.css")
+    # the flag font goes inside the file too
+    import base64
+    font = base64.b64encode(open(os.path.join(ROOT, "TwemojiCountryFlags.woff2"), "rb").read()).decode()
+    css = css.replace('url("TwemojiCountryFlags.woff2")', f'url("data:font/woff2;base64,{font}")')
     data = read("countries.json")
     world = read("world-50m.json")
     cities = read("cities.json")
@@ -35,7 +39,7 @@ def main():
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
     inline = (
         f"<script>window.__COUNTRIES__={data};window.__WORLD__={world};window.__CITIES__={cities};window.__FLOWS__={flows};window.__TIMESERIES__={timeseries};window.__FEATURES__={features};window.__PYRAMIDS__={pyramids};window.__PHYSICAL__={physical};</script>\n"
-        f"<script>{read('filters.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('factfile.js')}</script>"
+        f"<script>{read('filters.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('factfile.js')}</script>"
     )
     head = (
         f"<title>Which Countries?</title>\n"

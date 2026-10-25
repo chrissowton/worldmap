@@ -85,7 +85,9 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `index.html` | Page structure |
 | `style.css` | All styling, including the dark theme |
 | `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
-| `app.js` | Map (including the map styles), filtering logic, results list, URL state |
+| `app.js` | Map (including the map styles), filtering logic, results list, URL state, and the Back / Home / Clear all dock |
+| `picker.js` | The two-level measure picker: any `<select data-pick>` becomes a button that opens categories on the left and their measures on the right, with a search box |
+| `TwemojiCountryFlags.woff2` | A small font that draws flag emojis, so flags appear on Windows (which otherwise shows two letters) |
 | `quiz.js` | The quiz: builds the question bank from the data, checks typed answers and makes the multiple-choice options |
 | `physical.js` | The physical side: feature layers, base maps, feature lists and profiles |
 | `physical.json` | Physical map layers: peaks, landforms, rivers, lakes, ice, plates and boundaries, volcanoes, earthquakes, trenches, deltas, waterfalls, biomes, climate zones (built by `make_physical.py`) |
@@ -216,8 +218,6 @@ The compiled `countries.json` inherits the ODbL (share-alike) from the base coun
 ## Ideas for next steps
 
 - Swap in Pew's 2020 religion data.
-- A scatter plot view: pick any two measures (e.g. HDI against fertility) to see correlations.
-- Compare two countries side by side; export the map as an image and the results as a spreadsheet.
 - A "why" note per country for surprising results (e.g. why Equatorial Guinea has Portuguese as an official language).
 - "Countries like mine": pick a country and find the most similar ones.
 - Poster export of the current map.
@@ -225,3 +225,5 @@ The compiled `countries.json` inherits the ODbL (share-alike) from the base coun
 ## Licence
 
 Code: MIT (see `LICENSE`). Data: see the table above.
+
+Flags: `TwemojiCountryFlags.woff2` comes from [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT); the flag pictures are from [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc. and other contributors, licensed CC BY 4.0.

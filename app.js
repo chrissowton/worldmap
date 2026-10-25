@@ -3,7 +3,9 @@
   "use strict";
 
   // ---------- Load data ----------
-  const loadJSON = (url) => fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
+  // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
+  const DATA_VERSION = "16";
+  const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
   const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
     window.__WORLD__ || loadJSON("world-50m.json"),
@@ -656,7 +658,6 @@
 
     renderTimebar();
     if (openTheme && typeof showTheme === "function") showTheme(openTheme);
-    $("#mapClear").hidden = !(state.filters.length || state.flow || state.year || state.selected || state.mapStyle !== "std" || state.popSized);
     renderMapStyle();
     renderViews();
     renderModes();
@@ -670,6 +671,8 @@
     if (state.selected) renderDetail(); else renderResults(matches, act, res);
     if (state.view !== "map") window.WV?.render();
     saveURL();
+    trackHistory();
+    renderDock();
   }
 
   function renderChips(act) {
@@ -938,13 +941,13 @@
       const { key, sp, from, to } = changeYears();
       const yrs = d3.range(sp[0], sp[1] + 1);
       const yo = (sel) => yrs.map((y) => `<option ${y === sel ? "selected" : ""}>${y}</option>`).join("");
-      body = `<label class="fld">Measure <select id="mmCk">${measureOptions(key, true)}</select></label>
+      body = `<label class="fld">Measure <select id="mmCk" data-pick>${measureOptions(key, true)}</select></label>
         <div class="fld2"><label class="fld">From <select id="mmFrom">${yo(from)}</select></label><label class="fld">To <select id="mmTo">${yo(to)}</select></label></div>
         <label class="tog"><input type="checkbox" id="mmPct" ${state.mm.pct ? "checked" : ""}> Show as % change</label>
         <p class="hint">${state.filters.length ? "Only countries that match your filters are coloured. " : ""}Red: went up. Blue: went down.</p>`;
     } else if (st === "bi") {
-      body = `<label class="fld">Across (colours get redder) <select id="mmBx">${measureOptions(state.mm.bx || "gdp_per_capita")}</select></label>
-        <label class="fld">Up (colours get bluer) <select id="mmBy">${measureOptions(state.mm.by || "co2_per_capita")}</select></label>
+      body = `<label class="fld">Across (colours get redder) <select id="mmBx" data-pick>${measureOptions(state.mm.bx || "gdp_per_capita")}</select></label>
+        <label class="fld">Up (colours get bluer) <select id="mmBy" data-pick>${measureOptions(state.mm.by || "co2_per_capita")}</select></label>
         <p class="hint">Each measure is split into thirds: low, middle and high. Dark purple means high on both.</p>`;
     } else {
       body = `<p class="hint">Colour shows the countries that match your filters, shaded by a number if you choose one.</p>`;
@@ -1374,11 +1377,11 @@
         <div class="count"><span class="n num">${matches.length}</span><span class="of">of ${total} ${noun} match</span></div>
         <div class="controls">
           <label><input type="checkbox" id="terr" ${state.territories ? "checked" : ""}> Include territories</label>
-          <span class="sortctl"><label for="sortSel">Sort</label>
+          <span class="sortctl"><span class="lbl">Sort</span>
             ${sortButtons(!!sf, dir)}
-            <select id="sortSel" aria-label="Sort by"><option value="__name">Name</option>
+            <select id="sortSel" aria-label="Sort by" data-pick><option value="__name">Name</option>
             ${groupedOptions(sortKey)}</select></span>
-          <label>Shade by <select id="colSel"><option value="">Automatic</option><option value="none" ${state.colourBy === "none" ? "selected" : ""}>Single colour</option>
+          <label>Shade by <select id="colSel" aria-label="Shade by" data-pick><option value="">Automatic</option><option value="none" ${state.colourBy === "none" ? "selected" : ""}>Single colour</option>
             ${groupedOptions(state.colourBy)}</select></label>
         </div>
       </div>
@@ -1669,6 +1672,7 @@
       }).join("")}</div>
       <p class="mkey">${state.mode === "physical" ? "" : `${CLOCK}<span>Has data for past years: use the year slider under the map.</span>`} <span class="mtick">✓</span><span>Added</span> <span class="mhint">${touch.matches ? "Tap a filter to see what it means." : "Hover over a filter to see what it means."}</span></p>`;
     renderThemeBar();
+    placePanel(panel, t);
     panel.querySelectorAll(".tp-tabs button").forEach((b) => (b.onclick = () => showTheme(b.dataset.theme)));
     panel.querySelector(".tp-tabs button.on")?.scrollIntoView({ block: "nearest", inline: "center" });
     panel.querySelector(".tp-close").onclick = closeThemes;
@@ -1684,6 +1688,17 @@
       b.onfocus = () => { if (!touch.matches) showCard(e, b); };
       b.onblur = () => { if (!touch.matches) hideCard(); };
     });
+  }
+  // Sit the panel under its theme button, with as many columns as it has groups (up to 3)
+  function placePanel(panel, t) {
+    panel.style.setProperty("--cols", Math.min(3, t.groups.length));
+    panel.style.left = "";
+    if (getComputedStyle(panel).position === "fixed") return;
+    const btn = document.querySelector(`.theme-btn[data-theme="${t.id}"]`), host = panel.offsetParent;
+    if (!btn || !host) return;
+    const hb = host.getBoundingClientRect(), bb = btn.getBoundingClientRect();
+    const w = panel.offsetWidth, room = hb.width - 16;
+    panel.style.left = Math.max(16, Math.min(bb.left - hb.left - 12, room - w)) + "px";
   }
   function closeThemes() {
     openTheme = null;
@@ -1828,6 +1843,82 @@
     render();
   }
 
+  // ---------- Back, Home and Clear all (the floating dock) ----------
+  // Every settled change to what's on screen is remembered, so Back can step through them.
+  const SNAP_KEYS = ["filters", "territories", "colourBy", "sort", "sortDir", "selected", "tab", "flow", "year", "view", "mode", "feat", "mapStyle", "popSized", "mm"];
+  const past = [];
+  let committed = null, trackT = 0, restoring = false;
+  function snapshot() {
+    const s = {};
+    for (const k of SNAP_KEYS) s[k] = state[k];
+    return JSON.stringify({ s, fbm: filtersByMode, v: window.WV?.snapshot?.(), pb: window.WP ? { ...window.WP.style } : null });
+  }
+  function trackHistory() {
+    if (restoring) return;
+    if (committed === null) { committed = snapshot(); return; }
+    clearTimeout(trackT);
+    trackT = setTimeout(() => {
+      const now = snapshot();
+      if (now === committed) return;
+      past.push(committed);
+      if (past.length > 60) past.shift();
+      committed = now;
+      renderDock();
+    }, 450);
+  }
+  function restoreSnap(str) {
+    const o = JSON.parse(str);
+    restoring = true;
+    stopPlay();
+    const yearBefore = state.year;
+    Object.assign(state, o.s, { open: null });
+    filtersByMode.human = o.fbm.human; filtersByMode.physical = o.fbm.physical;
+    window.WV?.restore?.(o.v);
+    if (o.pb && window.WP) Object.assign(window.WP.style, o.pb);
+    if (state.year !== yearBefore) applyYear(state.year);
+    if (openTheme) closeThemes();
+    $("#mmCard").hidden = true;
+    render();
+    committed = snapshot();
+    restoring = false;
+    renderDock();
+  }
+  function goBack() {
+    clearTimeout(trackT);
+    const now = snapshot();
+    if (now !== committed) return restoreSnap(committed);  // a change still settling: undo it
+    if (past.length) restoreSnap(past.pop());
+  }
+  function goHome() {
+    if (state.mode !== "human") { filtersByMode[state.mode] = []; setMode("human"); }
+    filtersByMode.human = []; filtersByMode.physical = [];
+    state.view = "map"; state.territories = false; state.starterHidden = false;
+    if (openTheme) closeThemes();
+    $("#mmCard").hidden = true;
+    clearAll();
+  }
+  function somethingToClear() {
+    return !!(state.filters.length || state.flow || state.year || state.selected || state.mapStyle !== "std" || state.popSized || state.colourBy || state.sort || state.feat);
+  }
+  function renderDock() {
+    const d = $("#dock");
+    if (!d) return;
+    d.querySelector("[data-a=back]").disabled = !past.length && snapshot() === committed;
+    d.querySelector("[data-a=home]").disabled = state.mode === "human" && state.view === "map" && !somethingToClear();
+    d.querySelector("[data-a=clear]").disabled = !somethingToClear();
+  }
+  {
+    const d = document.createElement("nav");
+    d.id = "dock"; d.className = "dock"; d.setAttribute("aria-label", "Back, home and clear");
+    d.innerHTML = `<button type="button" data-a="back" title="Go back one step"><span aria-hidden="true">←</span> Back</button>
+      <button type="button" data-a="home" title="Back to the start: the world map with no filters"><span aria-hidden="true">⌂</span> Home</button>
+      <button type="button" data-a="clear" class="clr" title="Remove every filter and setting on this page"><span aria-hidden="true">✕</span> Clear all</button>`;
+    document.body.appendChild(d);
+    d.querySelector("[data-a=back]").onclick = goBack;
+    d.querySelector("[data-a=home]").onclick = goHome;
+    d.querySelector("[data-a=clear]").onclick = clearAll;
+  }
+
   // ---------- About ----------
   function openAbout() {
     const el = $("#about");
@@ -1847,7 +1938,6 @@
     el.onclick = (e) => { if (e.target === el) el.hidden = true; };
   }
   if ($("#aboutBtn")) $("#aboutBtn").onclick = openAbout;
-  $("#mapClear").onclick = clearAll;
 
   // ---------- Shareable URL ----------
   function encodeState() {
