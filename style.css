@@ -1015,3 +1015,28 @@ body[data-mode="physical"] #map path:not(.match):not(.near):not(.styled) { fill:
 .ff-terrain { font-size: 11px; margin: 4px 0 8px; }
 /* keep the header on one line on wide screens */
 @media (min-width: 1200px) { .top .add { flex: 1 1 120px; min-width: 120px; max-width: 300px; } .top .theme-btn { padding-left: 9px; padding-right: 9px; } }
+
+/* Physical: earthquakes canvas, feature labels, show-all switches */
+.quakecanvas { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; }
+.quakecanvas[hidden] { display: none; }
+#map .labels .lbl.feat text { font-weight: 600; fill: var(--ink); }
+#map .labels .lbl.f-quake text { fill: #8f1d1d; }
+#map .labels .lbl.f-volcano text { fill: #9c3412; }
+#map .labels .lbl.f-peak text, #map .labels .lbl.f-range text, #map .labels .lbl.f-desert text, #map .labels .lbl.f-landform text { fill: #6b4423; font-style: italic; }
+#map .labels .lbl.f-river text, #map .labels .lbl.f-lake text, #map .labels .lbl.f-waterfall text, #map .labels .lbl.f-trench text, #map .labels .lbl.f-delta text { fill: #1f5f99; font-style: italic; }
+#map .labels .lbl.f-boundary text { fill: var(--muted); font-style: italic; }
+:root[data-theme="dark"] #map .labels .lbl.f-quake text { fill: #ff9b9b; }
+:root[data-theme="dark"] #map .labels .lbl.f-volcano text { fill: #ffb08a; }
+:root[data-theme="dark"] #map .labels .lbl.f-peak text, :root[data-theme="dark"] #map .labels .lbl.f-range text, :root[data-theme="dark"] #map .labels .lbl.f-desert text, :root[data-theme="dark"] #map .labels .lbl.f-landform text { fill: #e2bf95; }
+:root[data-theme="dark"] #map .labels .lbl.f-river text, :root[data-theme="dark"] #map .labels .lbl.f-lake text, :root[data-theme="dark"] #map .labels .lbl.f-waterfall text, :root[data-theme="dark"] #map .labels .lbl.f-trench text, :root[data-theme="dark"] #map .labels .lbl.f-delta text { fill: #8cc4f0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #map .labels .lbl.f-quake text { fill: #ff9b9b; }
+  :root:not([data-theme="light"]) #map .labels .lbl.f-volcano text { fill: #ffb08a; }
+  :root:not([data-theme="light"]) #map .labels .lbl.f-peak text, :root:not([data-theme="light"]) #map .labels .lbl.f-range text, :root:not([data-theme="light"]) #map .labels .lbl.f-desert text, :root:not([data-theme="light"]) #map .labels .lbl.f-landform text { fill: #e2bf95; }
+  :root:not([data-theme="light"]) #map .labels .lbl.f-river text, :root:not([data-theme="light"]) #map .labels .lbl.f-lake text, :root:not([data-theme="light"]) #map .labels .lbl.f-waterfall text, :root:not([data-theme="light"]) #map .labels .lbl.f-trench text, :root:not([data-theme="light"]) #map .labels .lbl.f-delta text { fill: #8cc4f0; }
+}
+#map .pfeat path.fl-range, #map .pfeat path.fl-desert { opacity: .9; stroke: #6b4423; stroke-width: 1.2; }
+.mmcard .showall { display: grid; grid-template-columns: 1fr; gap: 3px; }
+.mmcard { max-height: calc(100% - 70px); overflow: auto; }
+.results .rhead + .count { padding: 8px 16px 2px; display: flex; align-items: baseline; gap: 8px; }
+.results .rhead + .count + p.sub { margin: 0 16px 6px !important; }

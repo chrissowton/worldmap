@@ -14,6 +14,8 @@
   const T = {
     peak: { one: "peak", many: "peaks", sort: "peak_elev", value: (it) => fmtM(it.peak_elev) },
     landform: { one: "landform", many: "landforms", sort: "landform_area", value: (it) => `${it.landform_kind}` },
+    range: { one: "mountain range", many: "mountain ranges", sort: "range_area", value: (it) => (it.top_m ? `top ${n0(it.top_m)} m` : "") },
+    desert: { one: "desert", many: "deserts", sort: "desert_area", value: (it) => `${n0(it.area)} km²` },
     river: { one: "river", many: "rivers", sort: "river_km", value: (it) => (it.river_km ? `${n0(it.river_km)} km` : "") },
     lake: { one: "lake", many: "lakes", sort: "lake_km2", value: (it) => `${n0(it.lake_km2)} km²` },
     waterfall: { one: "waterfall", many: "waterfalls", sort: "waterfall_m", value: (it) => fmtM(it.waterfall_m) },
@@ -43,8 +45,11 @@
     const ids = (arr, t) => arr.map((it, i) => Object.assign(it, { _t: t, _i: i }));
     items.peak = ids((L.peak || []).map((p) => ({ ...p, peak_elev: p.elev })), "peak");
     items.landform = ids((L.landform || []).map((l) => ({ ...l, landform_kind: l.kind, landform_area: l.area })), "landform");
-    items.river = ids((L.river || []).map((r) => ({ ...r, river_km: r.km, river_to: r.to ? [r.to] : [], river_countries: (r.iso || []).length })), "river");
-    items.lake = ids((L.lake || []).map((l) => ({ ...l, lake_km2: l.km2, lake_kind: l.kind })), "lake");
+    // mountain ranges and deserts as their own kinds of feature, so each shows as its own shape
+    items.range = ids((L.landform || []).filter((l) => l.kind === "Mountain range").map((l) => ({ ...l, range_name: [l.name], range_area: l.area, range_top: l.top_m })), "range");
+    items.desert = ids((L.landform || []).filter((l) => l.kind === "Desert").map((l) => ({ ...l, desert_name: [l.name], desert_area: l.area })), "desert");
+    items.river = ids((L.river || []).map((r) => ({ ...r, river_name: [r.name], river_km: r.km, river_to: r.to ? [r.to] : [], river_countries: (r.iso || []).length })), "river");
+    items.lake = ids((L.lake || []).map((l) => ({ ...l, lake_name: [l.name], lake_km2: l.km2, lake_kind: l.kind })), "lake");
     items.waterfall = ids((L.waterfall || []).map((w) => ({ ...w, waterfall_m: w.height })), "waterfall");
     items.delta = ids((L.delta || []).map((d) => ({ ...d, delta_shape: [d.shape || "Not usually classed by shape"] })), "delta");
     items.trench = ids((L.trench || []).map((t) => ({ ...t, trench_depth: t.depth })), "trench");
@@ -88,12 +93,14 @@
 
   // ---------- Drawing ----------
   let g = {}, proj = null, path = null, kZoom = 1, sizeF = 1;
-  function attach(layers, projection, geoPath) {
-    g = layers; proj = projection; path = geoPath;
+  function attach(layers, projection, geoPath, svgNode) {
+    g = layers; proj = projection; path = geoPath; g.svg = svgNode;
   }
   const pt = (it) => it._p || (it._p = proj([it.lon, it.lat]));
   function layout(s) {
     if (s) sizeF = s;
+    quakeTree = null;
+    drawQuakes();
     for (const t of Object.keys(items)) for (const it of items[t]) delete it._p;
     baseKey = "";
     if (g.feat) g.feat.selectAll("path.fl").attr("d", (d) => path(d.g));
@@ -110,32 +117,100 @@
     const feat = lastEval.feat || new Map();
     const sel = state.feat;
     // one group per kind of feature, in a fixed order (areas under lines under points)
-    const order = ["landform", "lake", "boundary", "river", "quake", "volcano", "peak", "waterfall", "delta", "trench"];
+    const order = ["landform", "desert", "range", "lake", "boundary", "river", "volcano", "peak", "waterfall", "delta", "trench"];
+    // the background fades while features are picked out, so their shapes stand out
+    g.base.attr("opacity", phys && feat.size ? 0.35 : null);
+    g.over.attr("opacity", phys && feat.size ? 0.6 : null);
     const groups = g.feat.selectAll("g.ft").data(order, (d) => d).join("g").attr("class", (d) => "ft ft-" + d);
     groups.each(function (t) {
       const list = (phys && feat.get(t)) || [];
       const gg = d3.select(this);
-      if (["landform", "lake", "river", "boundary"].includes(t)) {
+      if (["landform", "desert", "range", "lake", "river", "boundary"].includes(t)) {
         const withShape = list.filter((it) => it.g);
         gg.selectAll("path.fl").data(withShape, (d) => d._i).join("path")
           .attr("class", (d) => `fl fl-${t}${sel && sel.t === t && sel.i === d._i ? " sel" : ""}`)
           .attr("data-feat", (d) => `${t}:${d._i}`).attr("d", (d) => path(d.g))
-          .style("fill", (d) => (t === "landform" ? LANDFORM_COL[d.landform_kind] || "#bbb" : t === "lake" ? null : "none"))
+          .style("fill", (d) => (["landform", "desert", "range"].includes(t) ? LANDFORM_COL[d.kind] || "#bbb" : t === "lake" ? null : "none"))
           .style("stroke", (d) => (t === "boundary" ? css(MARGIN_COL[d.margin] || "--muted") : null))
           .style("stroke-width", (d) => (t === "river" ? Math.max(1.4, Math.min(4, (d.river_km || 800) / 1600)) + "px" : null));
         // points for rivers/lakes with no shape aren't drawn; they still appear in the list
       } else {
-        const pts = (t === "quake" ? list.slice(0, MAX_POINTS) : list).filter((it) => pt(it));
-        const sel2 = gg.selectAll(".fp").data(pts, (d) => d._i).join((en) => (t === "quake" || t === "waterfall" ? en.append("circle") : en.append("path")))
+        const pts = list.filter((it) => pt(it));
+        const sel2 = gg.selectAll(".fp").data(pts, (d) => d._i).join((en) => (t === "waterfall" ? en.append("circle") : en.append("path")))
           .attr("class", (d) => `fp fp-${t}${sel && sel.t === t && sel.i === d._i ? " sel" : ""}`)
           .attr("data-feat", (d) => `${t}:${d._i}`);
-        if (t === "quake" || t === "waterfall") sel2.attr("cx", (d) => pt(d)[0]).attr("cy", (d) => pt(d)[1]).attr("r", (d) => radius(d) / kZoom)
-          .style("fill", (d) => (t === "quake" ? quakeColour(d) : null));
+        if (t === "waterfall") sel2.attr("cx", (d) => pt(d)[0]).attr("cy", (d) => pt(d)[1]).attr("r", (d) => radius(d) / kZoom);
         else sel2.attr("d", SYMBOL[t]).attr("transform", (d) => `translate(${pt(d)[0]},${pt(d)[1]}) scale(${((t === "volcano" ? volcScale(d) : 1) * sizeF) / kZoom})`)
           .style("fill", (d) => (t === "volcano" ? volcColour(d) : null));
       }
     });
     g.feat.attr("display", phys ? null : "none");
+    // earthquakes go on a canvas: there can be over 14,000 of them
+    quakeList = (phys && feat.get("quake")) || [];
+    quakeSel = sel && sel.t === "quake" ? sel.i : null;
+    quakeTree = null;
+    drawQuakes();
+  }
+
+  // ---------- Earthquakes on a canvas ----------
+  let canvas = null, quakeList = [], quakeSel = null, quakeTree = null, T0 = d3.zoomIdentity, rafQ = 0;
+  function ensureCanvas() {
+    if (canvas || !g.svg) return;
+    canvas = document.createElement("canvas");
+    canvas.className = "quakecanvas";
+    canvas.setAttribute("aria-hidden", "true");
+    g.svg.parentNode.insertBefore(canvas, g.svg.nextSibling);
+  }
+  function drawQuakes() {
+    cancelAnimationFrame(rafQ);
+    rafQ = requestAnimationFrame(() => {
+      ensureCanvas();
+      if (!canvas) return;
+      const box = g.svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const vb = (g.svg.getAttribute("viewBox") || "0 0 1 1").split(" ").map(Number);
+      const s = box.width / vb[2];   // css pixels per map unit
+      if (canvas.width !== Math.round(box.width * dpr) || canvas.height !== Math.round(box.height * dpr)) {
+        canvas.width = Math.round(box.width * dpr); canvas.height = Math.round(box.height * dpr);
+        canvas.style.width = box.width + "px"; canvas.style.height = box.height + "px";
+      }
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, box.width, box.height);
+      canvas.hidden = !quakeList.length;
+      if (!quakeList.length) return;
+      const cols = { s: css("--c-asia"), m: css("--c-europe"), d: css("--s1") }, ring = css("--surface"), ink = css("--ink");
+      ctx.lineWidth = 0.8;
+      for (let i = quakeList.length - 1; i >= 0; i--) {    // smallest first, so big ones sit on top
+        const d = quakeList[i], p = pt(d);
+        if (!p) continue;
+        const x = (p[0] * T0.k + T0.x) * s, y = (p[1] * T0.k + T0.y) * s;
+        if (x < -20 || y < -20 || x > box.width + 20 || y > box.height + 20) continue;
+        const r = radius(d) * s;
+        const z = d.quake_depth ?? 30;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, 6.2832);
+        ctx.globalAlpha = 0.72;
+        ctx.fillStyle = z < 70 ? cols.s : z < 300 ? cols.m : cols.d;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = d._i === quakeSel ? ink : ring;
+        ctx.lineWidth = d._i === quakeSel ? 2.5 : 0.8;
+        ctx.stroke();
+      }
+    });
+  }
+  // the earthquake under the pointer, if any
+  function hit(evt) {
+    if (!quakeList.length || !g.svg) return null;
+    const box = g.svg.getBoundingClientRect();
+    const vb = g.svg.getAttribute("viewBox").split(" ").map(Number);
+    const s = box.width / vb[2];
+    const mx = ((evt.clientX - box.left) / s - T0.x) / T0.k, my = ((evt.clientY - box.top) / s - T0.y) / T0.k;
+    if (!quakeTree) quakeTree = d3.quadtree(quakeList.filter((d) => pt(d)), (d) => pt(d)[0], (d) => pt(d)[1]);
+    const d = quakeTree.find(mx, my, 14 / T0.k);
+    if (!d) return null;
+    const dist = Math.hypot(pt(d)[0] - mx, pt(d)[1] - my) * T0.k;
+    return dist <= radius(d) + 3 ? `quake:${d._i}` : null;
   }
   const radius = (d) => (d._t === "quake" ? 1.6 + Math.max(0, d.quake_mag - 6) * 2.2 : 4.5) * sizeF;
   const volcScale = (d) => (d.volcano_last === "Since 2000" ? 1.15 : 0.9);
@@ -146,8 +221,11 @@
   function volcColour(d) {
     return d.volcano_last === "Since 2000" || d.volcano_last === "1900–1999" ? css("--c-asia") : css("--muted");
   }
-  function zoomed(k) {
+  function zoomed(t) {
+    const k = t.k;
+    T0 = t;
     kZoom = k;
+    drawQuakes();
     if (!g.feat) return;
     g.feat.selectAll("circle.fp").attr("r", (d) => radius(d) / k);
     g.feat.selectAll("path.fp").attr("transform", (d) => `translate(${pt(d)[0]},${pt(d)[1]}) scale(${((d._t === "volcano" ? volcScale(d) : 1) * sizeF) / k})`);
@@ -191,6 +269,8 @@
         .style("stroke", (d) => css(MARGIN_COL[d.margin] || "--muted"));
     }
   }
+  const SHOW_ALL = [["quake", "Earthquakes (magnitude 6+ since 1900)"], ["volcano", "Volcanoes"], ["peak", "Mountain peaks"], ["range", "Mountain ranges"],
+    ["desert", "Deserts"], ["river", "Rivers"], ["lake", "Lakes"], ["boundary", "Plate boundaries (by type)"], ["trench", "Ocean trenches"], ["waterfall", "Waterfalls"], ["delta", "River deltas"]];
   function styleCard(card, rerender) {
     const B = [["landforms", "Landforms"], ["biomes", "Biomes"], ["climate", "Climate zones"], ["plates", "Tectonic plates"], ["none", "Plain"]];
     card.innerHTML = `<div class="mmhead"><h3>Physical map</h3><button type="button" class="iconbtn" id="mmClose" aria-label="Close">×</button></div>
@@ -199,11 +279,14 @@
       <label class="tog"><input type="checkbox" id="ovB" ${style.boundaries ? "checked" : ""}> Plate boundaries</label>
       <label class="tog"><input type="checkbox" id="ovR" ${style.rivers ? "checked" : ""}> Major rivers</label>
       <label class="tog"><input type="checkbox" id="ovI" ${style.ice ? "checked" : ""}> Ice sheets and glaciers</label>
+      <div class="fld"><span>Show all on the map</span></div>
+      <div class="showall">${SHOW_ALL.map(([t, l]) => `<label class="tog"><input type="checkbox" data-t="${t}" ${W.hasFeature(t) ? "checked" : ""}> ${l}</label>`).join("")}</div>
       <p class="hint">${style.base === "biomes" ? "Biomes here are worked out from climate zones, so they show the natural vegetation the climate supports." : style.base === "plates" ? "Plates from the PB2002 model, which includes many small plates." : "The background is hidden while country filters are on, so the matching countries stand out."}</p>`;
     card.querySelectorAll("[data-b]").forEach((b) => (b.onclick = () => { style.base = b.dataset.b; baseKey = ""; rerender(); }));
     card.querySelector("#ovB").onchange = (e) => { style.boundaries = e.target.checked; baseKey = ""; rerender(); };
     card.querySelector("#ovR").onchange = (e) => { style.rivers = e.target.checked; baseKey = ""; rerender(); };
     card.querySelector("#ovI").onchange = (e) => { style.ice = e.target.checked; baseKey = ""; rerender(); };
+    card.querySelectorAll(".showall input").forEach((c) => (c.onchange = () => W.toggleFeature(c.dataset.t, c.checked)));
     return { name: B.find(([v]) => v === style.base)?.[1] };
   }
   function legendHTML(state, lastEval) {
@@ -219,10 +302,67 @@
     const feat = lastEval.feat || new Map();
     if (feat.has("quake")) {
       const n = feat.get("quake").length;
-      h += `<div class="lrow lwrap"><span class="li"><span class="sw dot" style="background:${css("--c-asia")}"></span>Shallow (under 70 km)</span><span class="li"><span class="sw dot" style="background:${css("--c-europe")}"></span>70–300 km</span><span class="li"><span class="sw dot" style="background:${css("--s1")}"></span>Deep</span>${n > MAX_POINTS ? `<span class="li">Showing the ${n0(MAX_POINTS)} largest</span>` : ""}</div>`;
+      h += `<div class="lrow lwrap"><span class="li"><span class="sw dot" style="background:${css("--c-asia")}"></span>Shallow (under 70 km)</span><span class="li"><span class="sw dot" style="background:${css("--c-europe")}"></span>70–300 km</span><span class="li"><span class="sw dot" style="background:${css("--s1")}"></span>Deep</span><span class="li">${n0(n)} shown</span></div>`;
     }
     if (feat.has("volcano")) h += `<div class="lrow"><span class="li"><span class="sym volc act"></span>Erupted since 1900</span><span class="li"><span class="sym volc"></span>Earlier</span></div>`;
     return h;
+  }
+
+  // ---------- Labels: the most important features are named first, more appear as you zoom in ----------
+  const LABEL = {
+    quake: { base: 18, w: (d) => d.quake_mag, text: (d) => `M${d.quake_mag.toFixed(1)} · ${d.quake_year}` },
+    volcano: { base: 28, w: (d) => (d.last >= 1900 ? 2 : 0) + (d.vei ?? 0) / 3 + (d.elev ?? 0) / 3000 + (d.n1900 ? 1 : 0), text: (d) => d.name },
+    peak: { base: 26, w: (d) => d.peak_elev, text: (d) => `${d.name} ${n0(d.peak_elev)} m` },
+    waterfall: { base: 20, w: (d) => d.waterfall_m, text: (d) => d.name },
+    delta: { base: 20, w: () => 1, text: (d) => d.name },
+    trench: { base: 20, w: (d) => d.depth, text: (d) => d.name },
+    range: { base: 18, w: (d) => d.area, text: (d) => d.name, area: true },
+    desert: { base: 18, w: (d) => d.area, text: (d) => d.name, area: true },
+    landform: { base: 20, w: (d) => d.area, text: (d) => d.name, area: true },
+    lake: { base: 18, w: (d) => d.lake_km2, text: (d) => d.name, area: true },
+    river: { base: 18, w: (d) => d.river_km || 0, text: (d) => d.name, line: true },
+    boundary: { base: 10, w: (d) => d.km, text: (d) => d.name, line: true },
+  };
+  function midOf(geom) {
+    const lines = geom.type === "LineString" ? [geom.coordinates] : geom.type === "MultiLineString" ? geom.coordinates : [];
+    const longest = lines.reduce((a, b) => (b.length > a.length ? b : a), []);
+    return longest.length ? longest[Math.floor(longest.length / 2)] : null;
+  }
+  function labels(kk, inView) {
+    if (!loaded) return [];
+    const out = [];
+    for (const [t, list] of last) {
+      const L = LABEL[t];
+      if (!L || !list.length) continue;
+      const max = Math.min(400, Math.round(L.base * kk * kk));
+      const seenNames = new Set();
+      const cands = [];
+      for (const d of list) {
+        if (t === "boundary" && (!d.name || seenNames.has(d.name))) continue;
+        let p = null;
+        if (L.line) { if (d.g) { d._mid ||= midOf(d.g); p = d._mid && proj(d._mid); } }
+        else if (L.area) p = d.lat != null ? proj([d.lon, d.lat]) : null;
+        else p = pt(d);
+        if (!p || !inView(p)) continue;
+        if (t === "boundary") seenNames.add(d.name);
+        cands.push({ d, p });
+      }
+      cands.sort((a, b) => L.w(b.d) - L.w(a.d));
+      cands.slice(0, max).forEach(({ d, p }, i) => out.push({
+        text: L.text(d), x: p[0], y: p[1], cls: `feat f-${t}`, pri: 1.5, area: 1e9 - i, side: !L.area && !L.line, fref: `${t}:${d._i}`,
+      }));
+    }
+    return out;
+  }
+  // Natural Earth's own place names that would repeat a feature's label
+  function suppressed() {
+    const s = new Set();
+    if (last.has("peak")) s.add("peak");
+    if (last.has("range") || last.has("landform")) s.add("range");
+    if (last.has("desert") || last.has("landform")) s.add("desert");
+    if (last.has("landform")) ["plateau", "basin", "plain", "delta", "tundra", "valley", "lowland", "peninsula"].forEach((x) => s.add(x));
+    if (last.has("lake")) s.add("lake");
+    return s;
   }
 
   // ---------- Tooltips ----------
@@ -232,6 +372,7 @@
   function facts(it) {
     switch (it._t) {
       case "peak": return [["Height", fmtM(it.peak_elev)], ["Range", it.range], ["Country", clist(it.iso)]];
+      case "range": case "desert":
       case "landform": return [["Type", it.kind], ["Area", `about ${n0(it.area)} km²`], ["Highest peak", it.top ? `${it.top} (${fmtM(it.top_m)})` : ""], ["Countries", clist(it.iso, 6)]];
       case "river": return [["Length", it.river_km ? `${n0(it.river_km)} km` : ""], ["Flows into", it.to], ["Basin", it.basin ? `${n0(it.basin)} km²` : ""],
         ["Rises in", clist(it.src)], ["Mouth in", clist(it.mouth)], ["Countries", clist(it.iso, 8)]];
@@ -254,7 +395,7 @@
   }
   function sub(it) {
     if (it._t === "quake") return it.name;
-    return { peak: "Mountain peak", landform: it.kind, river: "River", lake: it.lake_kind, waterfall: "Waterfall", delta: "River delta", trench: "Ocean trench", volcano: "Volcano", boundary: "Plate boundary" }[it._t] || "";
+    return { peak: "Mountain peak", range: "Mountain range", desert: "Desert", landform: it.kind, river: "River", lake: it.lake_kind, waterfall: "Waterfall", delta: "River delta", trench: "Ocean trench", volcano: "Volcano", boundary: "Plate boundary" }[it._t] || "";
   }
   function byRef(ref) {
     const [t, i] = ref.split(":");
@@ -294,7 +435,7 @@
       <button type="button" class="ghost" id="fzoom">Zoom to it on the map</button>
       <p class="sub src">Source: ${esc(SRC[it._t] || "")}</p></div>`;
   }
-  const SRC = { peak: "Natural Earth", landform: "Natural Earth", river: "CIA World Factbook (lengths), Natural Earth (map)", lake: "Natural Earth, CIA World Factbook",
+  const SRC = { peak: "Natural Earth", range: "Natural Earth", desert: "Natural Earth", landform: "Natural Earth", river: "CIA World Factbook (lengths), Natural Earth (map)", lake: "Natural Earth, CIA World Factbook",
     waterfall: "compiled by hand from Wikipedia", delta: "compiled by hand", trench: "Wikipedia (depths); positions approximate", volcano: "Smithsonian Global Volcanism Program",
     quake: "USGS earthquake catalogue", boundary: "PB2002 model (Bird, 2003)" };
   function bounds(it) {
@@ -335,7 +476,7 @@
   }
 
   window.WP = {
-    load, items: itemsOf, evaluate, attach, draw, layout, zoomed, styleCard, legendHTML, tipHTML, baseTip, tabs, listHTML, detailHTML, byRef,
+    load, items: itemsOf, evaluate, hit, labels, suppressed, attach, draw, layout, zoomed, styleCard, legendHTML, tipHTML, baseTip, tabs, listHTML, detailHTML, byRef,
     bounds, profileHTML, title, sub, facts, isFeatKey, T, style, BIOME_COL, LANDFORM_COL, MARGIN_COL,
     get loaded() { return loaded; }, setW(w) { W = w; },
   };

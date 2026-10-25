@@ -370,7 +370,8 @@
       cityPart = `<b>${m.toLocaleString()} ${m === 1 ? "city" : "cities"}</b>${cp.length ? ` where ${esc(andList(cp))}` : ""}`;
     }
     for (const [t, list] of lastEval?.feat || []) {
-      const fp = state.filters.filter((fl) => F[fl.key].target === t && isActive(fl)).map(phrase).filter(Boolean);
+      // a feature filter left at "no limit" just puts that kind of feature on the map, so it isn't described
+      const fp = state.filters.filter((fl) => F[fl.key].target === t && isActive(fl) && (F[fl.key].type !== "range" || isLimited(fl))).map(phrase).filter(Boolean);
       const m = list.length, T = window.WP.T[t];
       const part = `<b>${m.toLocaleString()} ${m === 1 ? T.one : T.many}</b>${fp.length ? ` where ${esc(andList(fp))}` : ""}`;
       cityPart = cityPart ? `${cityPart}; ${part}` : part;
@@ -426,13 +427,13 @@
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
-    gLabels.selectAll("text").attr("font-size", (d) => d.fs / k).attr("stroke-width", 3 / k).attr("x", (d) => (d.isCity ? 5 / k : 0));
-    gLabels.selectAll("circle").attr("r", (d) => (d.c.city_capital ? 3 : 2.2) / k);
+    gLabels.selectAll("text").attr("font-size", (d) => d.fs / k).attr("stroke-width", 3 / k).attr("x", (d) => (d.side ? 8 / k : d.isCity ? 5 / k : 0));
+    gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
-    window.WP?.zoomed(k);
+    window.WP?.zoomed(e.transform);
   });
   svg.call(zoom).on("dblclick.zoom", null);
   $("#zin").onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1.6);
@@ -446,7 +447,7 @@
   const gBase = gRoot.insert("g", () => gPhys.node()).attr("class", "pbase");
   const gOver = gRoot.insert("g", () => gPhys.node()).attr("class", "pover");
   const gFeat = gRoot.insert("g", () => gDots.node()).attr("class", "pfeat");
-  window.WP?.attach({ base: gBase, over: gOver, feat: gFeat }, projection, path);
+  window.WP?.attach({ base: gBase, over: gOver, feat: gFeat }, projection, path, svg.node());
   const gLabels = gRoot.append("g").attr("class", "labels");
   let rivers = [], lakes = [];
   if (features) {
@@ -494,19 +495,22 @@
     const [W, H] = [vb[2], vb[3]];
     const inView = ([x, y]) => { const sx = x * kk + t.x, sy = y * kk + t.y; return sx > -20 && sx < W + 20 && sy > -10 && sy < H + 10; };
     const cand = [];
-    for (const l of physLabels) if (z + 0.25 >= l.min && (!state.popSized || l.cls === "water")) { const p = physPoint(l); if (p && inView(p)) cand.push({ ...l, x: p[0], y: p[1] }); }
+    const physMode = state.mode === "physical" && window.WP;
+    const hideTypes = physMode ? window.WP.suppressed() : new Set();
+    if (physMode) for (const l of window.WP.labels(kk, inView)) cand.push(l);
+    for (const l of physLabels) if (z + 0.25 >= l.min && (!state.popSized || l.cls === "water") && !hideTypes.has(l.type)) { const p = physPoint(l); if (p && inView(p)) cand.push({ ...l, x: p[0], y: p[1] }); }
     // countries drawn as circles carry their own names
     if (!state.popSized) for (const l of countryLabels) if (l.width * kk > l.text.length * 6.6 + 10 && inView([l.x, l.y])) cand.push(l);
     if (!state.flow && !state.popSized) for (const l of cityLabels) if (kk >= l.minK) { const p = cityPoint(l.c); if (p && inView(p)) cand.push({ ...l, x: p[0], y: p[1] }); }
     cand.sort((a, b) => a.pri - b.pri || (b.area || b.pop || 0) - (a.area || a.pop || 0));
     // keep labels that don't overlap ones already placed (checked in screen space)
-    const SIZE = { country: 12.5, water: 12, land: 11.5, city: 11.5, peak: 10.5 };
+    const SIZE = { country: 12.5, water: 12, land: 11.5, city: 11.5, peak: 10.5, feat: 11.5 };
     const placed = [], boxes = [];
     for (const l of cand) {
       const fs = l.type === "ocean" ? 14 : SIZE[l.cls.split(" ")[0]];
       const w = l.text.length * fs * 0.56 + 6, h = fs + 3;
       const sx = l.x * kk + t.x, sy = l.y * kk + t.y;
-      const isCity = l.cls.startsWith("city");
+      const isCity = l.cls.startsWith("city") || !!l.side;
       const b = isCity ? [sx + 4, sy - h / 2, sx + 6 + w, sy + h / 2] : [sx - w / 2, sy - h / 2, sx + w / 2, sy + h / 2];
       if (boxes.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1])) continue;
       boxes.push(b); placed.push({ ...l, fs, isCity });
@@ -514,14 +518,14 @@
     }
     const sel = gLabels.selectAll("g.lbl").data(placed, (d) => d.cls + d.text + d.x).join((en) => {
       const g = en.append("g").attr("class", (d) => "lbl " + d.cls);
-      g.filter((d) => d.isCity).append("circle");
+      g.filter((d) => d.isCity && !d.side).append("circle");
       g.append("text");
       return g;
     });
     sel.attr("transform", (d) => `translate(${d.x},${d.y})`);
-    sel.select("circle").attr("r", (d) => (d.c.city_capital ? 3 : 2.2) / kk);
+    sel.select("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / kk);
     sel.select("text").text((d) => d.text)
-      .attr("x", (d) => (d.isCity ? 5 / kk : 0)).attr("dy", "0.35em")
+      .attr("x", (d) => (d.side ? 8 / kk : d.isCity ? 5 / kk : 0)).attr("dy", "0.35em")
       .attr("text-anchor", (d) => (d.isCity ? "start" : "middle"))
       .attr("font-size", (d) => d.fs / kk).attr("stroke-width", 3 / kk);
   }
@@ -1524,7 +1528,7 @@
   svg.on("pointermove", (evt) => {
     if (evt.pointerType === "touch") return;
     const t = evt.target;
-    const fref = t.getAttribute && t.getAttribute("data-feat");
+    const fref = (t.getAttribute && t.getAttribute("data-feat")) || (state.mode === "physical" && window.WP?.hit(evt));
     if (fref && window.WP) { paths.classed("hover", false); tip.innerHTML = window.WP.tipHTML(fref); return placeTip(evt); }
     const cid = t.getAttribute && t.getAttribute("data-city");
     if (cid) { paths.classed("hover", false); return showCityTip(evt, cities[+cid]); }
@@ -1537,7 +1541,7 @@
   }).on("pointerleave", () => { tip.hidden = true; paths.classed("hover", false); });
   svg.on("click", (evt) => {
     const t = evt.target;
-    const fref = t.getAttribute && t.getAttribute("data-feat");
+    const fref = (t.getAttribute && t.getAttribute("data-feat")) || (state.mode === "physical" && window.WP?.hit(evt));
     if (fref) { const [ft, fi] = fref.split(":"); state.feat = { t: ft, i: +fi }; state.selected = null; state.tab = "feat:" + ft; return render(); }
     const cid = t.getAttribute && t.getAttribute("data-city");
     const iso = cid ? cities[+cid].iso3 : t.getAttribute && t.getAttribute("data-iso");
@@ -1751,11 +1755,27 @@
       input.placeholder = state.mode === "physical" ? "Search: try “volcano”, “river” or “plates”" : "Search filters: try “religion”, “coast” or “HDI”";
     }
   }
+  // "Show all on the map" switches in the physical map style card
+  function hasFeature(t) { return state.filters.some((x) => F[x.key].target === t); }
+  function toggleFeature(t, on) {
+    if (on && !hasFeature(t)) {
+      const f = FILTERS.find((x) => x.target === t && !x.hidden);
+      const fl = makeFilter(f.key);
+      if (f.type === "range") { fl.min = f.dmin; fl.max = f.dmax; }
+      state.filters.push(fl);
+      state.tab = "feat:" + t; state.feat = null;
+    } else if (!on) {
+      state.filters = state.filters.filter((x) => F[x.key].target !== t);
+      if (state.tab === "feat:" + t) { state.tab = "countries"; state.feat = null; }
+      if (state.open && !state.filters.some((x) => x.key === state.open)) state.open = null;
+    }
+    render();
+  }
   // show one physical feature: make sure its kind is on the map, open its profile and zoom to it
   function showFeature(t, i) {
     if (state.mode !== "physical") setMode("physical");
     if (!state.filters.some((x) => F[x.key].target === t)) {
-      const f = FILTERS.find((x) => x.target === t);
+      const f = FILTERS.find((x) => x.target === t && !x.hidden);
       const fl = makeFilter(f.key);
       if (f.type === "range") { fl.min = f.dmin; fl.max = f.dmax; }
       state.filters.push(fl);
@@ -1904,7 +1924,7 @@
   window.WC = {
     F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
     applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
-    pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
+    pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
     get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; },
     render: (o) => render(o), setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
     mapSVG: () => svg.node(), clearAll: () => clearAll(),
@@ -1923,6 +1943,7 @@
     },
   };
   $("#ffBtn")?.addEventListener("click", () => window.openFactfile?.(state.selected));
+  window.WP?.setW(window.WC);
   window.WV?.init();
   window.WQ?.init();
 

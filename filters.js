@@ -1270,12 +1270,25 @@ window.FILTERS.push(
     keywords: "mountains mountainous ranges relief highland",
   }),
   {
-    key: "ranges", type: "multi", group: "Mountains & relief", label: "Mountain ranges", short: "Range",
+    key: "ranges", type: "multi", group: "Mountains & relief", label: "Mountain ranges in the country", short: "Range", hidden: true,
     say: (v) => `it includes part of the ${v}`, sayNot: (v) => `it doesn't include the ${v}`, modes: true,
     source: "naturalearth", yearText: "Natural Earth",
     info: "Named mountain ranges covering a noticeable part of the country (Natural Earth).",
     keywords: "mountain range alps andes himalayas rockies atlas",
   },
+  {
+    key: "range_name", type: "multi", group: "Mountains & relief", label: "Mountain ranges", short: "Ranges", target: "range",
+    say: (v) => `it is the ${v}`,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Shows the outline of each mountain range on the map. Tick one or more, or leave them all unticked to see every range.",
+    keywords: "mountain range alps andes himalayas rockies atlas urals",
+  },
+  num("range_top", "Mountains & relief", "Height of a range's highest peak", {
+    target: "range", short: "Range height", format: "m", step: 100, source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `its highest peak is ${b}`,
+    info: "Shows mountain ranges by the height of their highest named peak (Natural Earth).",
+    keywords: "mountain range height highest peak",
+  }),
   num("peak_elev", "Mountains & relief", "Mountain peaks", {
     target: "peak", short: "Peaks", format: "m", step: 100, source: "naturalearth", yearText: "Natural Earth",
     say: (b) => `the peak is ${b} high`,
@@ -1291,12 +1304,25 @@ window.FILTERS.push(
     keywords: "landform terrain plateau plain basin desert tundra valley lowland relief",
   },
   {
-    key: "deserts", type: "multi", group: "Landforms", label: "Deserts", short: "Desert",
+    key: "deserts", type: "multi", group: "Landforms", label: "Deserts in the country", short: "Desert", hidden: true,
     say: (v) => `it includes part of the ${v}`, sayNot: (v) => `it doesn't include the ${v}`, modes: true,
     source: "naturalearth", yearText: "Natural Earth",
     info: "Named deserts covering a noticeable part of the country.",
     keywords: "desert sahara gobi kalahari namib atacama arabian",
   },
+  {
+    key: "desert_name", type: "multi", group: "Landforms", label: "Deserts", short: "Deserts", target: "desert",
+    say: (v) => `it is the ${v}`,
+    source: "naturalearth", yearText: "Natural Earth",
+    info: "Shows the extent of each desert on the map, not the countries it touches. Tick one or more, or leave them unticked to see every desert.",
+    keywords: "desert sahara gobi kalahari namib atacama arabian",
+  },
+  num("desert_area", "Landforms", "Desert size", {
+    target: "desert", short: "Desert size", format: "km2", scale: "log", source: "naturalearth", yearText: "Natural Earth",
+    say: (b) => `it covers ${b}`,
+    info: "Shows deserts by the area they cover (approximate, from Natural Earth's outlines). Polar deserts such as Antarctica aren't included.",
+    keywords: "desert size area largest",
+  }),
   {
     key: "landform_kind", type: "multi", group: "Landforms", label: "Landform features", short: "Landforms", target: "landform", order: PHYS_LANDFORMS,
     say: (v) => `it is ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`, sayNot: (v) => `it isn't ${/^[AEIOU]/.test(v) ? "an" : "a"} ${v.toLowerCase()}`,
@@ -1311,6 +1337,20 @@ window.FILTERS.push(
     keywords: "size area largest desert biggest plateau",
   }),
   // ---------------- Rivers & lakes ----------------
+  {
+    key: "river_name", type: "multi", group: "Rivers & lakes", label: "Rivers", short: "Rivers", target: "river",
+    say: (v) => `it is the ${v}`,
+    source: "factbook", yearText: "CIA World Factbook 2026 and Natural Earth",
+    info: "Shows the course of each river on the map. Tick one or more, or leave them unticked to see every major river.",
+    keywords: "river nile amazon danube rhine ganges mekong mississippi",
+  },
+  {
+    key: "lake_name", type: "multi", group: "Rivers & lakes", label: "Lakes", short: "Lakes", target: "lake",
+    say: (v) => `it is ${v}`,
+    source: "naturalearth", yearText: "Natural Earth and CIA World Factbook",
+    info: "Shows each lake's outline on the map. Tick one or more, or leave them unticked to see every large lake.",
+    keywords: "lake victoria baikal superior caspian titicaca",
+  },
   num("river_km", "Rivers & lakes", "River length", {
     target: "river", short: "River length", format: "kmlen", step: 50, scale: "log", source: "factbook", yearText: "CIA World Factbook 2026",
     say: (b) => `the river is ${b} long`,
@@ -1332,7 +1372,7 @@ window.FILTERS.push(
     keywords: "international shared transboundary river countries",
   }),
   {
-    key: "rivers", type: "multi", group: "Rivers & lakes", label: "Rivers", short: "River",
+    key: "rivers", type: "multi", group: "Rivers & lakes", label: "Rivers through the country", short: "River", hidden: true,
     say: (v) => `the ${v} flows through it`, sayNot: (v) => `the ${v} doesn't flow through it`,
     source: "factbook", yearText: "CIA World Factbook 2026",
     info: "Major rivers that flow through the country (CIA World Factbook).",
@@ -1353,7 +1393,7 @@ window.FILTERS.push(
     keywords: "drainage basin watershed ocean endorheic",
   },
   {
-    key: "lakes", type: "multi", group: "Rivers & lakes", label: "Lakes", short: "Lake",
+    key: "lakes", type: "multi", group: "Rivers & lakes", label: "Lakes in the country", short: "Lake", hidden: true,
     say: (v) => `it has part of ${v}`, sayNot: (v) => `it doesn't have part of ${v}`,
     source: "naturalearth", yearText: "Natural Earth and CIA World Factbook",
     info: "Large lakes in or on the border of the country.",
@@ -1495,7 +1535,6 @@ window.FILTERS.push(
   num("quake_mag", "Earthquakes", "Earthquakes (magnitude)", {
     target: "quake", short: "Quake magnitude", format: "mag", step: 0.1, bounds: [6, 9.5], source: "usgsquakes", yearText: "1900–2026",
     say: (b) => `its magnitude is ${b}`,
-    initial: { min: 7 },
     info: "Shows earthquakes of magnitude 6 or more since 1900 on the map. Each step up in magnitude means about 32 times more energy.",
     keywords: "earthquake magnitude quake richter seismic",
   }),
