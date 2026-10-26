@@ -157,7 +157,7 @@
   function render() {
     if (!W) return;
     const view = W.state.view;
-    if (view === "map") { stopPlay(); V.built = null; return; }
+    if (view === "map") { stopPlay(); V.built = null; V.list = null; return; }
     if (V.built !== view) build(view);
     if (view === "compare") drawCompare();
     if (view === "rank") drawRank();
@@ -239,6 +239,10 @@
       const z = fz ? val(r, c.size, year) : null;
       pts.push({ r, iso: r.iso3, x, y, z: z ?? 0, m: !ms || ms.has(r.iso3) });
     }
+    // the list in the results pane
+    V.list = { title: year ? `Figures for ${year}` : "Latest figures", cols: [fy, fx], rows: pts.filter((p) => p.m).map((p) => ({ iso: p.iso, vals: [p.y, p.x] })),
+      pinned: c.pins, note: "Click a country to follow its path through the years.", max: 8,
+      toggle: (iso) => { c.pins = c.pins.includes(iso) ? c.pins.filter((x) => x !== iso) : c.pins.concat(iso).slice(-8); } };
     const { w, h } = size();
     // no animation when the chart has just changed size, so bubbles never lag behind the axes
     if (drawCompare.size !== w + "x" + h) { dur = 0; drawCompare.size = w + "x" + h; }
@@ -412,10 +416,14 @@
     $("#rOnlyL").hidden = !ms;
     $("#rOnly").checked = k.only;
     const year = sp ? k.year : null;
+    k.pins ||= [];
     let pts = W.pool().map((r) => ({ r, iso: r.iso3, v: val(r, k.key, year), m: !ms || ms.has(r.iso3) })).filter((p) => p.v != null && (!k.only || p.m));
     const asc = f.format === "rank";
     pts.sort((a, b) => (asc ? a.v - b.v : b.v - a.v) || a.r.name.localeCompare(b.r.name));
     pts.forEach((p, i) => (p.rank = i + 1));
+    V.list = { title: year ? `Figures for ${year}` : `Latest figures`, cols: [f], rows: pts.filter((p) => p.m).map((p) => ({ iso: p.iso, vals: [p.v] })), asc,
+      pinned: k.pins, note: "Click a country to pick it out in the chart.", max: 20,
+      toggle: (iso) => { k.pins = k.pins.includes(iso) ? k.pins.filter((x) => x !== iso) : k.pins.concat(iso).slice(-20); } };
     const world = d3.median(W.rows.filter((r) => r.sovereign).map((r) => val(r, k.key, year)).filter((v) => v != null));
     $("#rLeg").innerHTML = CONTINENTS.map((c) => `<span class="lg"><span class="sw" style="background:${contColour(c)}"></span>${c}</span>`).join("") +
       (ms && !k.only ? `<span class="lg"><span class="sw" style="background:var(--land)"></span>Doesn't match</span>` : "") +
@@ -437,11 +445,11 @@
     const svg = d3.select("#vsvg").attr("viewBox", `0 0 ${w} ${h}`).attr("width", w).attr("height", h).attr("aria-label", `Countries ranked by ${f.label}`);
     svg.selectAll("*").remove();
     const ink = css("--ink"), muted = css("--muted"), land = css("--land");
-    const sel = W.state.selected;
+    const sel = W.state.selected, pinS = new Set(V.rank.pins || []);
     const g = svg.selectAll("g.br").data(pts).join("g").attr("class", "br").attr("data-iso", (p) => p.iso).attr("transform", (p, i) => `translate(0,${M.t + i * rowH})`);
-    g.append("rect").attr("class", "hit").attr("x", 0).attr("width", w).attr("height", rowH).attr("fill", (p) => (p.iso === sel ? css("--accent-soft") : "transparent"));
+    g.append("rect").attr("class", "hit").attr("x", 0).attr("width", w).attr("height", rowH).attr("fill", (p) => (p.iso === sel || pinS.has(p.iso) ? css("--accent-soft") : "transparent"));
     g.append("text").attr("x", 4).attr("y", rowH / 2).attr("dy", "0.35em").attr("font-size", 11).attr("fill", muted).attr("class", "num").text((p) => p.rank);
-    g.append("text").attr("x", mob ? 26 : 32).attr("y", rowH / 2).attr("dy", "0.35em").attr("font-size", 12).attr("fill", ink).attr("font-weight", (p) => (p.iso === sel ? 700 : 400))
+    g.append("text").attr("x", mob ? 26 : 32).attr("y", rowH / 2).attr("dy", "0.35em").attr("font-size", 12).attr("fill", ink).attr("font-weight", (p) => (p.iso === sel || pinS.has(p.iso) ? 700 : 400))
       .text((p) => { const n = `${p.r.flag || ""} ${p.r.name}`; const lim = mob ? 15 : 21; return n.length > lim + 3 ? n.slice(0, lim + 2) + "…" : n; });
     g.append("rect").attr("x", (p) => sx(Math.min(0, p.v))).attr("y", 3).attr("height", rowH - 6).attr("rx", 3)
       .attr("width", (p) => Math.max(1, Math.abs(sx(p.v) - sx(0)))).attr("fill", (p) => (p.m ? contColour(p.r.region) : land));
@@ -485,13 +493,13 @@
       row.append("text").attr("x", 4).attr("y", cy + 15).attr("font-size", 10.5).attr("fill", muted).text(`median ${fmtShort(f, med)}`);
       row.append("line").attr("x1", sx(med)).attr("x2", sx(med)).attr("y1", cy - rowH / 2 + 4).attr("y2", cy + rowH / 2 - 4).attr("stroke", contColour(cName)).attr("stroke-width", 3).attr("opacity", 0.9);
       row.selectAll("circle").data(ps).join("circle").attr("cx", (p) => p.x).attr("cy", (p) => p.y).attr("r", 4.6).attr("data-iso", (p) => p.iso)
-        .attr("fill", (p) => (p.m ? contColour(cName) : land)).attr("stroke", (p) => (p.iso === sel ? ink : surface)).attr("stroke-width", (p) => (p.iso === sel ? 2 : 1))
+        .attr("fill", (p) => (p.m ? contColour(cName) : land)).attr("stroke", (p) => (p.iso === sel || (V.rank.pins || []).includes(p.iso) ? ink : surface)).attr("stroke-width", (p) => (p.iso === sel || (V.rank.pins || []).includes(p.iso) ? 2 : 1))
         .style("cursor", "pointer")
         .on("pointermove", (evt, p) => { if (evt.pointerType !== "touch") tipShow(evt, `<strong>${p.r.flag || ""} ${esc(p.r.name)}</strong><span class="st">${esc(cName)} · rank ${p.rank} of ${pts.length}</span><dl><dt>${esc(f.short || f.label)}</dt><dd>${esc(fmtShort(f, p.v))}</dd></dl>`); })
         .on("pointerleave", tipHide).on("click", (evt, p) => W.select(p.iso));
       // name the highest and lowest in each continent
       const ends = ps.length > 1 ? [d3.least(ps, (p) => p.v), d3.greatest(ps, (p) => p.v)] : ps;
-      const named = new Set(ends.map((p) => p.iso).concat(sel && ps.some((p) => p.iso === sel) ? [sel] : []));
+      const named = new Set(ends.map((p) => p.iso).concat(sel && ps.some((p) => p.iso === sel) ? [sel] : []).concat((V.rank.pins || []).filter((i) => ps.some((p) => p.iso === i))));
       row.selectAll("text.nm").data(ps.filter((p) => named.has(p.iso))).join("text").attr("class", "nm")
         .attr("x", (p) => p.x).attr("y", (p) => p.y - 8).attr("text-anchor", (p) => (p.x > w - 90 ? "end" : p.x < M.l + 40 ? "start" : "middle"))
         .attr("font-size", 10.5).attr("fill", ink).attr("stroke", surface).attr("stroke-width", 3).attr("paint-order", "stroke").attr("pointer-events", "none").text((p) => p.r.name);
@@ -507,7 +515,7 @@
   let pyramids = window.__PYRAMIDS__ || null, pyrLoading = null;
   function loadPyramids() {
     if (pyramids) return Promise.resolve(pyramids);
-    pyrLoading ||= fetch("pyramids.json?v=18").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
+    pyrLoading ||= fetch("pyramids.json?v=20").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
     return pyrLoading;
   }
   // A small line chart as an SVG string: the country against the world and continent medians

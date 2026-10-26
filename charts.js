@@ -268,9 +268,15 @@
     $("#tLeg").innerHTML = ""; $("#tYearRow").innerHTML = "";
     V.csv = null;
     const w = why(t.type, key);
-    if (w) { explain(t.type, w); pinsUI(); return; }
+    if (w) { explain(t.type, w); pinsUI(); V.list = null; return; }
     ({ line: drawLine, bar: drawBar, table: drawTable, area: drawArea, slope: drawSlope, mekko: drawMekko, mix: drawMix, sankey: drawSankey })[t.type]();
     pinsUI();
+    // the list in the results pane: every country's value in the year the chart shows
+    const ly = yearly(key) ? (t.year && yearsFor(key).includes(t.year) ? t.year : bestYear(key, "median")) : null;
+    V.list = { title: ly ? `Figures for ${ly}` : `Latest figures`, cols: [f], asc: f.format === "rank",
+      rows: W.pool().filter((r) => !ms || ms.has(r.iso3)).map((r) => ({ iso: r.iso3, vals: [value(key, r.iso3, ly)] })).filter((x) => x.vals[0] != null),
+      pinned: t.pins, note: ["area", "mekko", "sankey"].includes(t.type) ? "Countries added here show in Line, Bar, Table, Slope and Parts of a whole." : "Click a country to add it to the chart (up to 6).", max: 6,
+      toggle: (iso) => { t.pins = t.pins.includes(iso) ? t.pins.filter((x) => x !== iso) : t.pins.concat(iso).slice(-6); } };
   }
 
   function explain(type, text) {
@@ -692,7 +698,7 @@
   // ======================= SANKEY =======================
   function loadFlows() {
     if (flowData) return Promise.resolve(flowData);
-    flowLoading ||= fetch("refugee_flows_years.json?v=18").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
+    flowLoading ||= fetch("refugee_flows_years.json?v=20").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
     return flowLoading;
   }
   function drawSankey() {

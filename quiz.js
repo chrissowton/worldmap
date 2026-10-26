@@ -151,12 +151,12 @@
   const far = (r, list = big) => shuffle(list.filter((x) => x.region !== r.region));
 
   // ---------- Option builders ----------
-  // numbers: one right, two plausible (about 25–60% off), one clearly wrong (from the other end of the range)
+  // numbers: one right, two plausible (about 25–60% off), and one wrong by roughly a factor of 4 to 10 (up to one order of magnitude)
   function numberOptions(q) {
     const { v, f, int, key } = q.ans;
     if (q.ans.year) {
       const up = Math.min(2026, v + 3 + Math.floor(Math.random() * 4));
-      const ys = [v, up > v ? up : v - 2, v - 5 - Math.floor(Math.random() * 6), v - 60 - Math.floor(Math.random() * 40)];
+      const ys = [v, up > v ? up : v - 2, v - 5 - Math.floor(Math.random() * 6), v - 20 - Math.floor(Math.random() * 15)];
       return shuffle(ys.map((y, i) => ({ label: String(y), ok: i === 0 })));
     }
     const show = (x) => (q.ans.show ? q.ans.show(x) : f ? W.fmt(f, x) : n2(x));
@@ -170,19 +170,34 @@
     const labels = new Map([[show(v), true]]);
     const add = (x) => { const s = show(capPct(rnd(x))); if (!labels.has(s)) { labels.set(s, false); return true; } return false; };
     // clearly wrong
+    // wrong, but not absurd. For things that vary hugely between countries (population, GDP), 4 to 10 times too big or small;
+    // for things with a narrow range (life expectancy, median age), a value from the far end of the real range.
     let wrong;
-    if (int) wrong = v <= 20 ? v * 4 + 12 : Math.round(v / 4);
-    else if (key) {
-      const vs = withData(key).map((r) => num(r, key)).sort(d3.ascending);
-      const lo = d3.quantileSorted(vs, 0.04), hi = d3.quantileSorted(vs, 0.96), med = d3.median(vs);
-      wrong = v >= med ? lo : hi;
-      if (Math.abs(wrong - v) < Math.abs(v) * 0.6 + 1e-9) wrong = v >= med ? vs[0] : vs[vs.length - 1];
-    } else wrong = v * 4;
+    const k = 4 + Math.random() * 6;
+    const capHi = f && f.format === "pct" && !key?.includes("growth") ? 100 : Infinity;
+    const vs = key ? withData(key).map((r) => num(r, key)).sort(d3.ascending) : [];
+    if (int) wrong = v <= 3 ? v + 4 + Math.floor(Math.random() * 4) : v <= 20 ? (Math.random() < 0.5 && v >= 8 ? Math.max(1, Math.round(v / 4)) : Math.round(v * 3)) : Math.round(v / k);
+    else if (vs.length >= 10 && vs[0] > 0) {
+      const lo = d3.quantileSorted(vs, 0.05), hi = d3.quantileSorted(vs, 0.95), med = d3.median(vs);
+      const up = v < med;
+      if (hi / lo >= 20) wrong = Math.min(vs[vs.length - 1] * 1.3, Math.max(vs[0] * 0.7, up ? v * k : v / k));
+      else {
+        wrong = up ? hi : lo;
+        if (Math.abs(wrong - v) < Math.abs(v) * 0.15) wrong = up ? vs[vs.length - 1] : vs[0];
+      }
+      if (wrong > capHi) wrong = v / k;
+    } else wrong = v > 0 && v * 4 <= capHi ? v * 4 : v === 0 ? 5 : v / 4;
     add(wrong);
     const steps = shuffle([0.62, 0.75, 1.3, 1.5, 0.55, 1.7]);
     const sign = int ? shuffle([-1, 1, -1, 1]) : null;
+    // for narrow ranges, plausible answers are a few points either side, not a percentage away (no "110 years")
+    const narrow = vs.length >= 10 && vs[0] > 0 && d3.quantileSorted(vs, 0.95) / d3.quantileSorted(vs, 0.05) < 20;
+    const spread = narrow ? (d3.quantileSorted(vs, 0.95) - d3.quantileSorted(vs, 0.05)) / 2 : 0;
     for (let i = 0; labels.size < 4 && i < 30; i++) {
-      if (int) { const d = Math.max(1, Math.round(v * (0.15 + 0.1 * (i % 3)))) * (sign[i % 4]) * (1 + Math.floor(i / 4)); add(v + d); }
+      if (narrow && !int) {
+        const d = spread * (0.25 + 0.12 * (i % 4) + 0.05 * Math.floor(i / 4)) * (i % 2 ? 1 : -1) * (Math.random() < 0.5 ? 1 : -1);
+        add(Math.min(vs[vs.length - 1] * 1.05, Math.max(vs[0] * 0.95, v + d)));
+      } else if (int) { const d = Math.max(1, Math.round(v * (0.15 + 0.1 * (i % 3)))) * (sign[i % 4]) * (1 + Math.floor(i / 4)); add(v + d); }
       else add(v * steps[i % steps.length] * (1 + Math.floor(i / 6) * 0.15));
     }
     return shuffle([...labels].map(([label, ok]) => ({ label, ok })));
@@ -1085,6 +1100,7 @@
     const s = $("#qzScore");
     if (s) s.innerHTML = score.asked ? `<b>${score.right}</b> / ${score.asked} right${score.streak >= 2 ? ` · 🔥 ${score.streak} in a row` : ""}` : "";
   }
+  let always = !!store.get("wcq-mc", false);
   function ask() {
     const q = nextQuestion();
     Q.cur = q; Q.mc = false; Q.picked = null; Q.done = false;
@@ -1112,14 +1128,21 @@
         <div class="qz-opts" id="qzOpts" hidden></div>
         <div class="qz-row"><button type="submit" class="primary" id="qzSubmit">Submit guess</button>
           <button type="button" class="linkbtn" id="qzMC">${nOpts === 2 ? "Show the two options" : `Show ${nOpts} options`}</button>
-          <button type="button" class="linkbtn qz-skip" id="qzSkip">Skip</button></div>
+          <button type="button" class="linkbtn qz-skip" id="qzSkip">Skip</button>
+          <label class="qz-always"><input type="checkbox" id="qzAlways" ${always ? "checked" : ""}> Always show options</label></div>
         <p class="qz-msg" id="qzMsg" aria-live="polite"></p>
       </form>
       <div class="qz-res" id="qzRes" hidden></div>`;
     $("#qzForm").onsubmit = (e) => { e.preventDefault(); submit(); };
     $("#qzMC").onclick = showOptions;
     $("#qzSkip").onclick = () => { seen.add(q.id); store.set("wcq-seen", [...seen].slice(-6000)); ask(); };
-    if (window.matchMedia("(hover: hover)").matches) setTimeout(() => $("#qzIn")?.focus({ preventScroll: true }), 30);
+    $("#qzAlways").onchange = (e) => {
+      always = e.target.checked; store.set("wcq-mc", always);
+      if (Q.done) return;
+      if (always) showOptions(); else { Q.mc = false; Q.picked = null; drawQuestion(); }
+    };
+    if (always) showOptions();
+    else if (window.matchMedia("(hover: hover)").matches) setTimeout(() => $("#qzIn")?.focus({ preventScroll: true }), 30);
   }
   function showOptions() {
     const q = Q.cur;

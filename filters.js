@@ -571,6 +571,18 @@ window.FILTERS = [
     source: "geonames", info: "Whether the capital has more people than any other city. Compares cities themselves, not wider urban areas.",
     keywords: "primate city primacy capital largest biggest",
   },
+  num("capital_pop", "Cities", "Capital city population", {
+    short: "Capital's population", scale: "log", format: "people", source: "geonames", year: null,
+    say: (b) => `the capital city has ${b} people`,
+    info: "People living in the capital city itself (not the wider urban area), from GeoNames.",
+    keywords: "capital city population size inhabitants",
+  }),
+  num("largest_city_pop", "Cities", "Largest city population", {
+    short: "Largest city", scale: "log", format: "people", source: "geonames", year: null,
+    say: (b) => `the largest city has ${b} people`,
+    info: "People living in the country's biggest city (the city itself, not the wider urban area), from GeoNames.",
+    keywords: "largest biggest city population size megacity",
+  }),
   num("cities_1m", "Cities", "Cities over 1 million", {
     short: "Million cities", format: "int", source: "geonames", year: null, clip: true,
     say: (b) => `${b} cities have over a million people`,

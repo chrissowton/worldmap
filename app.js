@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "18";
+  const DATA_VERSION = "20";
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
   const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
@@ -789,8 +789,10 @@
     renderStarter(act);
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
-    if (state.selected) renderDetail(); else renderResults(matches, act, res);
     if (state.view !== "map") window.WV?.render();
+    const chartList = state.view !== "map" && window.WV_H?.V?.list;
+    if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
+    document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
     saveURL();
     trackHistory();
     renderDock();
@@ -1482,7 +1484,7 @@
       render();
     };
     if (dr) dr.onclick = () => {
-      const isNum = state.tab === "cities" && showCities() ? state.citySort !== "name" : !!F[$("#sortSel")?.value];
+      const isNum = state.tab === "cities" && showCities() ? state.citySort !== "name" : !!F[$("#sortSel")?.value] || $("#sortSel")?.value === "__combo";
       state.sortDir = sortDirFor(isNum) === "desc" ? "asc" : "desc";
       render();
     };
@@ -1526,17 +1528,24 @@
     if (state.tab.startsWith("feat:")) state.tab = "countries";
     const el = $("#results");
     const rangeAct = act.map((fl) => F[fl.key]).filter((f) => f.type === "range");
+    if (state.sort === "__combo" && rangeAct.length < 2) state.sort = "";
     const sortKey = state.sort || colourKey() || rangeAct[0]?.key || "__name";
-    const sf = F[sortKey] || null;
+    const combo = sortKey === "__combo" ? comboScores(rangeAct) : null;
+    const sf = combo ? COMBO_F : F[sortKey] || null;
     const dir = sortDirFor(!!sf);
     const list = [...matches];
-    if (sf) list.sort((a, b) => {
+    if (combo) list.sort((a, b) => (dir === "desc" ? (combo.get(b.iso3) ?? -1) - (combo.get(a.iso3) ?? -1) : (combo.get(a.iso3) ?? 999) - (combo.get(b.iso3) ?? 999)) || a.name.localeCompare(b.name));
+    else if (sf) list.sort((a, b) => {
       const va = a[sortKey], vb = b[sortKey];
       if (va == null || vb == null) return (va == null) - (vb == null); // no data goes last
       return dir === "desc" ? vb - va : va - vb;
     });
     else list.sort((a, b) => (dir === "desc" ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)));
-    const valF = sf || (colourKey() ? F[colourKey()] : rangeAct[0]) || null;
+    const valF = combo ? null : sf || (colourKey() ? F[colourKey()] : rangeAct[0]) || null;
+    // quick sort: A–Z, each number filter, and a combined score when there are two or more
+    const qs = [["__name", "A–Z"], ...rangeAct.slice(0, 5).map((f) => [f.key, f.short || f.label]), ...(rangeAct.length >= 2 ? [["__combo", "Combined"]] : [])];
+    const qsOn = combo ? "__combo" : sf ? sortKey : "__name";
+    const qsHTML = act.length ? `<div class="qsort" role="group" aria-label="Quick sort">${qs.map(([k, l]) => `<button type="button" data-qs="${esc(k)}" class="${qsOn === k ? "on" : ""}" ${k === "__combo" ? `title="Each country's average position across your ${rangeAct.length} number filters: 100 means the highest of all countries on every one, 0 the lowest"` : ""}>${esc(l)}${qsOn === k ? (dir === "desc" ? " ↓" : " ↑") : ""}</button>`).join("")}</div>` : "";
     const groups = [...lastEval.groups.entries()].sort((a, b) => a[1].length - b[1].length);
     const total = pool().length;
     const noun = state.territories ? "places" : "countries";
@@ -1545,18 +1554,20 @@
     el.innerHTML = `
       <div class="rhead">${tabsHTML(matches.length)}
         <div class="count"><span class="n num">${matches.length}</span><span class="of">of ${total} ${noun} match</span></div>
+        ${qsHTML}
+        ${combo ? `<p class="note">Combined score: each country's average position across ${esc(rangeAct.map((f) => f.short || f.label).join(", "))}, from 0 (lowest of all countries on every one) to 100 (highest).</p>` : ""}
         <div class="controls">
           <label><input type="checkbox" id="terr" ${state.territories ? "checked" : ""}> Include territories</label>
           <span class="sortctl"><span class="lbl">Sort</span>
             ${sortButtons(!!sf, dir)}
-            <select id="sortSel" aria-label="Sort by" data-pick><option value="__name">Name</option>
+            <select id="sortSel" aria-label="Sort by" data-pick><option value="__name">Name</option>${rangeAct.length >= 2 ? `<option value="__combo" ${combo ? "selected" : ""}>Combined score</option>` : ""}
             ${groupedOptions(sortKey)}</select></span>
           <label>Shade by <select id="colSel" aria-label="Shade by" data-pick><option value="">Automatic</option><option value="none" ${state.colourBy === "none" ? "selected" : ""}>Single colour</option>
             ${groupedOptions(state.colourBy)}</select></label>
         </div>
       </div>
       <div class="rlist">
-        ${list.length ? list.map((r) => rowHTML(r, valF)).join("") : `<p class="empty">${act.length ? "No matches yet." : ""}</p>`}
+        ${list.length ? list.map((r) => rowHTML(r, valF, null, combo ? combo.get(r.iso3) : undefined)).join("") : `<p class="empty">${act.length ? "No matches yet." : ""}</p>`}
         ${groups.map(([key, list]) => {
           const fl = act.find((x) => x.key === key);
           list.sort((a, b) => a.name.localeCompare(b.name));
@@ -1570,6 +1581,12 @@
     $("#terr").onchange = (e) => { state.territories = e.target.checked; render(); };
     $("#sortSel").onchange = (e) => { state.sort = e.target.value; state.sortDir = null; render(); };
     bindSortButtons();
+    el.querySelectorAll(".qsort button").forEach((b) => (b.onclick = () => {
+      const k = b.dataset.qs;
+      if (k === qsOn) state.sortDir = dir === "desc" ? "asc" : "desc";
+      else { state.sort = k; state.sortDir = null; }
+      render();
+    }));
     $("#colSel").onchange = (e) => { state.colourBy = e.target.value; render(); };
     bindCommon(el);
     el.querySelectorAll(".more").forEach((b) => (b.onclick = () => {
@@ -1581,8 +1598,64 @@
       b.onmouseleave = () => highlight(b.dataset.iso, false);
     });
   }
-  function rowHTML(r, sf, fail) {
-    const val = sf ? `<span class="val num">${fmtShort(sf, r[sf.key])}</span>` : "";
+  // ---------- In Compare, Rankings and Charts the pane lists the chart's countries and numbers ----------
+  let listSort = { view: null, col: 0, dir: 0 };
+  function renderChartList() {
+    const L = window.WV_H.V.list, el = $("#results");
+    if (listSort.view !== state.view + L.cols.map((f) => f.key).join()) listSort = { view: state.view + L.cols.map((f) => f.key).join(), col: 0, dir: L.asc ? 1 : -1 };
+    const pinned = new Set(L.pinned || []);
+    const rows = L.rows.map((x) => ({ ...x, r: byIso.get(x.iso) })).filter((x) => x.r);
+    const c = listSort.col;
+    rows.sort((a, b) => (c < 0 ? a.r.name.localeCompare(b.r.name) * listSort.dir : ((a.vals[c] ?? -Infinity) - (b.vals[c] ?? -Infinity)) * listSort.dir) || a.r.name.localeCompare(b.r.name));
+    const scrollTop = el.querySelector(".clist")?.scrollTop || 0;
+    const head = (i, f) => `<button type="button" class="ch${c === i ? " on" : ""}" data-c="${i}" title="Sort">${esc(f ? f.short || f.label : "Country")}${c === i ? (listSort.dir > 0 ? " ↑" : " ↓") : ""}</button>`;
+    const ms = lastEval.act.length;
+    el.innerHTML = `<div class="rhead chead">
+        <div class="count"><span class="n num">${rows.length}</span><span class="of">${ms ? "matching countries" : "countries"} in this chart</span></div>
+        <p class="note">${esc(L.title)}. ${esc(L.note)}</p>
+        <button type="button" class="linkbtn" id="paneHide">Hide this list ⇥</button>
+      </div>
+      <div class="clhead" style="--ncols:${L.cols.length}">${head(-1)}${L.cols.map((f, i) => head(i, f)).join("")}</div>
+      <div class="clist" role="list" style="--ncols:${L.cols.length}">${rows.map((x) => `<div class="crow${pinned.has(x.iso) ? " on" : ""}" role="listitem" data-iso="${x.iso}">
+          <button type="button" class="cpin" aria-pressed="${pinned.has(x.iso)}" title="${pinned.has(x.iso) ? "Remove from the chart" : "Add to the chart"}"><span class="fl">${x.r.flag || ""}</span><span class="nm">${esc(x.r.name)}</span></button>
+          ${x.vals.map((v, i) => `<span class="val num">${v == null ? "–" : esc(fmtShort(L.cols[i], v))}</span>`).join("")}
+          <button type="button" class="cinfo" aria-label="${esc(x.r.name)}: open profile" title="Open the country profile">i</button></div>`).join("") || `<p class="empty">No countries with data.</p>`}</div>
+      ${footHTML()}`;
+    bindCommon(el);
+    el.querySelector(".clist").scrollTop = scrollTop;
+    $("#paneHide").onclick = () => { state.paneHidden = true; document.body.classList.add("pane-hidden"); render(); };
+    el.querySelectorAll(".clhead .ch").forEach((b) => (b.onclick = () => { const i = +b.dataset.c; listSort.dir = listSort.col === i ? -listSort.dir : i < 0 ? 1 : -1; listSort.col = i; renderChartList(); }));
+    el.querySelectorAll(".crow").forEach((row) => {
+      const iso = row.dataset.iso;
+      row.onmouseenter = () => highlight(iso, true);
+      row.onmouseleave = () => highlight(iso, false);
+      row.querySelector(".cpin").onclick = () => { L.toggle(iso); render(); };
+      row.querySelector(".cinfo").onclick = () => { state.selected = iso; render(); };
+    });
+  }
+  {
+    const b = document.createElement("button");
+    b.type = "button"; b.id = "paneShow"; b.className = "paneshow"; b.textContent = "⇤ Show list";
+    b.onclick = () => { state.paneHidden = false; document.body.classList.remove("pane-hidden"); render(); };
+    $(".main").appendChild(b);
+  }
+
+  // the combined score: the average percentile of a country across several measures (rank measures turned round so 1st = high)
+  const COMBO_F = { key: "__combo", label: "Combined score", format: "count" };
+  function comboScores(fs) {
+    const pct = fs.map((f) => {
+      const vs = pool().map((r) => r[f.key]).filter((v) => typeof v === "number").sort((x, y) => x - y);
+      return (v) => { if (typeof v !== "number" || vs.length < 2) return null; const p = d3.bisectLeft(vs, v) / (vs.length - 1); return 100 * (f.format === "rank" ? 1 - p : p); };
+    });
+    const out = new Map();
+    for (const r of pool()) {
+      const ps = fs.map((f, i) => pct[i](r[f.key])).filter((x) => x != null);
+      if (ps.length === fs.length) out.set(r.iso3, Math.round(d3.mean(ps)));
+    }
+    return out;
+  }
+  function rowHTML(r, sf, fail, override) {
+    const val = override !== undefined ? `<span class="val num" title="Combined score">${override ?? "–"}</span>` : sf ? `<span class="val num">${fmtShort(sf, r[sf.key])}</span>` : "";
     const why = fail ? `<span class="why">✕ ${esc(F[fail.key].short || F[fail.key].label)}</span>` : "";
     return `<button type="button" class="row" data-iso="${r.iso3}"><span class="fl">${r.flag || ""}</span><span class="nm">${esc(r.name)}</span>${val}${why}</button>`;
   }
@@ -1630,10 +1703,89 @@
     }));
   }
 
+  // ---------- A country seen through your filters: just the measures you're asking about ----------
+  let focusFor = null, showFull = false;
+  function rankLine(f, r) {
+    const vs = pool().map((x) => x[f.key]).filter((v) => typeof v === "number");
+    const v = r[f.key];
+    if (typeof v !== "number" || vs.length < 3) return "";
+    const asc = f.format === "rank";
+    const rank = vs.filter((x) => (asc ? x < v : x > v)).length + 1;
+    const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
+    return `${ord(rank)} of ${vs.length}${asc ? "" : ", highest first"} · world median ${fmtShort(f, d3.median(vs))}`;
+  }
+  function sdgBreakdown(r, only) {
+    if (!r.sdg_detail || !window.SDGS) return `<p class="sub">No SDG data for ${esc(r.name)}.</p>`;
+    const ST = window.SDG_STATUS;
+    const goals = window.SDGS.filter((g) => g.measures.length && (!only || only.includes(g.n)));
+    const line = (g) => {
+      const s = r[`sdg${g.n}_status`];
+      const i = ST.findIndex(([n]) => n === s);
+      const ms = (r.sdg_detail[g.n] || []).map(([key, v, y, st]) => {
+        const f = F[key], m = g.measures.find((x) => x[0] === key);
+        return `<li><span class="dot" style="background:${ST[st][1]}"></span>${esc(f ? f.label : key)}: <b>${esc(f ? fmtShort(f, v) : String(v))}</b> <small>(${y}) · target ${esc(m ? m[1].replace(/^[^:]*: /, "") : "")} · ${ST[st][0].toLowerCase()}</small></li>`;
+      }).join("");
+      return `<div class="sdgline" style="--sdg:${g.colour}"><span class="sdgnum">${g.n}</span><div><b>${esc(g.name)}</b> <span class="sdgst" ${i >= 0 ? `style="background:${ST[i][1]}"` : ""}>${esc(s || "no data")}</span>${ms ? `<ul>${ms}</ul>` : ""}</div></div>`;
+    };
+    const good = goals.filter((g) => ["Achieved", "On track"].includes(r[`sdg${g.n}_status`]));
+    const bad = goals.filter((g) => r[`sdg${g.n}_status`] && !good.includes(g));
+    const none = goals.filter((g) => !r[`sdg${g.n}_status`]);
+    if (only) return goals.map(line).join("");
+    return `<h5 class="fgood">Achieved or on track (${good.length})</h5>${good.map(line).join("") || `<p class="sub">None.</p>`}
+      <h5 class="fbad">Not on track (${bad.length})</h5>${bad.map(line).join("") || `<p class="sub">None.</p>`}
+      ${none.length ? `<p class="sub">Not enough data: ${none.map((g) => `${g.n} ${esc(g.name)}`).join(", ")}.</p>` : ""}`;
+  }
+  function focusHTML(r) {
+    const act = lastEval.act, e = lastEval.res.get(r.iso3);
+    const sdgDone = new Set();
+    return act.map((fl) => {
+      const f = F[fl.key], ok = e ? !e.fails.includes(fl) : null;
+      const mark = ok == null ? "" : ok ? `<span class="fok">✓ passes</span>` : `<span class="fno">✕ fails</span>`;
+      let body = "";
+      const sdgGoal = fl.key.match(/^sdg(\d+)_status$/);
+      if (/^sdg_(on_track|achieved|on_track_pct|goals_on_track)$/.test(fl.key)) {
+        if (sdgDone.has("all")) return "";
+        sdgDone.add("all");
+        body = `<p class="fval">${r.sdg_on_track != null ? `On track or achieved for <b>${r.sdg_on_track} of ${r.sdg_measured}</b> goals with data (${r.sdg_achieved} achieved).` : "No SDG data."}</p>${sdgBreakdown(r)}`;
+      } else if (sdgGoal) {
+        body = sdgBreakdown(r, [+sdgGoal[1]]);
+      } else if (f.type === "range") {
+        const y = f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : "";
+        body = `<p class="fval"><b>${esc(fmtFull(f, r[fl.key]))}</b>${y}</p><p class="sub">${esc(rankLine(f, r))}</p>`;
+      } else if (f.type === "bool") {
+        body = `<p class="fval"><b>${r[fl.key] == null ? "No data" : r[fl.key] ? esc(f.yes) : esc(f.no)}</b></p>`;
+      } else {
+        const v = r[fl.key];
+        const vals = Array.isArray(v) ? v : v != null ? [v] : [];
+        body = `<p class="fval">${vals.length ? vals.map((x) => `<span class="fv${fl.values.includes(x) ? " hit" : ""}">${glossFor(x) ? glTerm(x) : esc(x)}</span>`).join(" ") : "<b>No data</b>"}</p>`;
+      }
+      return `<section class="fcardx" data-g="${gslug(f.group)}"><div class="fhead"><span class="ftitle">${esc(chipLabel(fl))}</span>${mark}</div>${body}</section>`;
+    }).join("");
+  }
+
   function renderDetail() {
     const r = byIso.get(state.selected);
     const el = $("#results");
     if (!r) { state.selected = null; return render(); }
+    if (focusFor !== r.iso3) { focusFor = r.iso3; showFull = false; }
+    // with filters on, show how the country does on them first; the whole profile is one click away
+    if (lastEval.act.length && !showFull && state.view === "map") {
+      const e0 = lastEval.res.get(r.iso3);
+      el.innerHTML = `<div class="detail">
+        <button type="button" class="linkbtn back" id="back">← Back to results</button>
+        <h2><span>${r.flag || ""}</span>${esc(r.name)}</h2>
+        ${e0?.match ? `<span class="badge m">Matches every filter</span>` : e0 ? `<span class="badge">Fails ${e0.fails.length} of ${lastEval.act.length} filters</span>` : ""}
+        <h4>On your filters</h4>
+        ${focusHTML(r)}
+        <div class="fmore"><button type="button" class="ffopen" id="fullBtn">Everything about ${esc(r.name)} <span>full profile</span></button>
+        <button type="button" class="linkbtn" id="ffOpen2">📄 Country factfile</button></div>
+      </div>${footHTML()}`;
+      $("#back").onclick = () => { state.selected = null; render(); };
+      $("#fullBtn").onclick = () => { showFull = true; renderDetail(); };
+      $("#ffOpen2").onclick = () => window.openFactfile?.(r.iso3);
+      bindCommon(el);
+      return;
+    }
     const e = lastEval.res.get(r.iso3);
     const badge = !lastEval.act.length ? "" : e?.match ? `<span class="badge m">Matches every filter</span>` : e?.near ? `<span class="badge n">Near miss: fails ${esc(F[e.fails[0].key].label)}</span>` : e ? `<span class="badge">Fails ${e.fails.length} filters</span>` : `<span class="badge">Territory (hidden)</span>`;
     const val = (f) => {
@@ -1805,7 +1957,7 @@
     const raw = input.value.trim();
     if (window.WA && (raw.split(/\s+/).length >= 3 || /\d/.test(raw) || /^(how|which|what|show|compare|list|find|where|who)\b/i.test(raw))) {
       const a = window.WA.previewHTML(raw);
-      if (a.html) { items.push({ ask: a.p }); html += `<button type="button" role="option" class="item askitem" data-i="${items.length - 1}">${a.html}</button>`; }
+      if (a.html) { items.push({ ask: a.p }); html += `<div role="option" class="item askitem" tabindex="-1" data-i="${items.length - 1}">${a.html}</div>`; }
     }
     if (fs.length) html += `<h4 class="rh">Filters</h4>` + fs.slice(0, 12).map(({ f }) => row(f, f.label)).join("");
     if (vals.length) html += `<h4 class="rh">Values</h4>` + vals.slice(0, 6).map((v) => row(v.f, v.o, true)).join("");
@@ -1815,12 +1967,18 @@
     menu.hidden = false;
     input.setAttribute("aria-expanded", "true");
     markCursor();
-    menu.querySelectorAll("button").forEach((b) => (b.onmousedown = (e) => e.preventDefault()));
+    menu.querySelectorAll("button, .askitem").forEach((b) => (b.onmousedown = (e) => e.preventDefault()));
     menu.querySelectorAll("button.item").forEach((b) => (b.onclick = () => choose(items[+b.dataset.i])));
+    menu.querySelectorAll(".askitem").forEach((d) => (d.onclick = (e) => {
+      const sug = e.target.closest(".asksug");
+      const it = items[+d.dataset.i];
+      if (sug) { input.value = ""; closeMenu(); input.blur(); if (openTheme) closeThemes(); window.WA.apply(it.ask, sug.dataset.k); return; }
+      choose(it);
+    }));
   }
   function markCursor() {
-    menu.querySelectorAll("button.item").forEach((b) => b.classList.toggle("on", +b.dataset.i === cursor));
-    menu.querySelector("button.item.on")?.scrollIntoView({ block: "nearest" });
+    menu.querySelectorAll(".item").forEach((b) => b.classList.toggle("on", +b.dataset.i === cursor));
+    menu.querySelector(".item.on")?.scrollIntoView({ block: "nearest" });
   }
   function closeMenu() { menu.hidden = true; input.setAttribute("aria-expanded", "false"); }
   // ---------- Browse filters: theme bar, panels, definition cards ----------

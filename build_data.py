@@ -384,7 +384,10 @@ for rec in countries.values():
     cap = max((c for c in cs if c[5]), key=lambda c: c[4], default=None)
     if big:
         rec["largest_city"] = big[0]
+        rec["largest_city_pop"] = big[4]
         rec["capital_is_largest"] = bool(cap) and cap[0] == big[0]
+    if cap:
+        rec["capital_pop"] = cap[4]
 
 # --- 12. Yes/no lists: treaties, Security Council, nuclear weapons, sport (lists.csv, edited by hand) ---
 LISTS = {}

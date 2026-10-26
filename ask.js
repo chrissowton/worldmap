@@ -80,7 +80,10 @@
       ["un member", "bool", "un_member", true],
       ["women in parliament", "measure", "women_parliament"], ["female mp", "measure", "women_parliament"], ["women mp", "measure", "women_parliament"],
       ["seats held by women", "measure", "women_parliament"], ["female politician", "measure", "women_parliament"],
-      ["person", "measure", "population"], ["inhabitant", "measure", "population"], ["resident", "measure", "population"],
+      ["person", "measure", "population", "unit"], ["inhabitant", "measure", "population", "unit"], ["resident", "measure", "population", "unit"],
+      ["capital is the largest city", "bool", "capital_is_largest", true], ["capital is the biggest city", "bool", "capital_is_largest", true],
+      ["capital is not the largest city", "bool", "capital_is_largest", false], ["capital isn't the largest city", "bool", "capital_is_largest", false],
+      ["capital is not the biggest city", "bool", "capital_is_largest", false],
       ["gdp per capita", "measure", "gdp_per_capita"], ["income per person", "measure", "gni_ppp"], ["gni per capita", "measure", "gni_ppp"], ["rich", "measure", "gdp_per_capita"],
       ["life expectancy", "measure", "life_expectancy"], ["lifespan", "measure", "life_expectancy"], ["live in city", "measure", "urban_pct"], ["live in town", "measure", "urban_pct"],
       ["birth rate", "measure", "birth_rate"], ["death rate", "measure", "death_rate"], ["fertility", "measure", "fertility"], ["children per woman", "measure", "fertility"],
@@ -97,6 +100,10 @@
       ["sdg", "measure", "sdg_on_track"], ["sustainable development goal", "measure", "sdg_on_track"], ["population density", "measure", "density"],
       ["dense", "measure", "density"], ["electricity access", "measure", "electricity"], ["access to electricity", "measure", "electricity"],
       ["safe water", "measure", "safe_water"], ["clean water", "measure", "basic_water"], ["hunger", "measure", "undernourishment"], ["air pollution", "measure", "pm25"],
+      ["capital", "measure", "capital_pop"], ["capital city", "measure", "capital_pop"], ["capital population", "measure", "capital_pop"],
+      ["largest city", "measure", "largest_city_pop"], ["biggest city", "measure", "largest_city_pop"], ["main city", "measure", "largest_city_pop"],
+      ["a city", "measure", "largest_city_pop"], ["any city", "measure", "largest_city_pop"], ["million city", "measure", "cities_1m"],
+      ["cities of over a million", "measure", "cities_1m"], ["cities over a million", "measure", "cities_1m"],
       ["magnitude", "measure", "quake_mag"], ["highest point", "measure", "highest_m"], ["mountain", "measure", "highest_m"], ["volcano", "measure", "volcanoes"], ["earthquake", "measure", "quakes"],
       ["low income", "value", "income_group", ["Low income"]], ["middle income", "value", "income_group", ["Lower-middle income", "Upper-middle income"]],
       ["high income", "value", "income_group", ["High income"]], ["poor countries", "value", "income_group", ["Low income"]], ["rich countries", "value", "income_group", ["High income"]],
@@ -115,7 +122,7 @@
     ];
     for (const [p, kind, key, v] of A) {
       if (!F[key]) continue;
-      add(p, kind === "bool" ? { kind, key, value: v, w: 4 } : kind === "value" ? { kind, key, values: v, w: 4 } : { kind, key, w: 4 });
+      add(p, kind === "bool" ? { kind, key, value: v, w: 4 } : kind === "value" ? { kind, key, values: v, w: 4 } : { kind, key, w: 4, unit: v === "unit" });
     }
     // languages: "English-speaking", "speak French", "official language Arabic"
     if (F.official_languages?.options) for (const o of F.official_languages.options) if (/^[A-Z][a-z]+$/.test(o)) add(o, { kind: "value", key: "official_languages", values: [o], w: 1, lang: true });
@@ -325,6 +332,14 @@
       return !c.cond.pct;
     };
     const filler = /^(for|in|of|on|by|the|with|a|an|%|have|has|having|are|is|were)$/;
+    // "the capital has more than 1 million inhabitants": "inhabitants" is the unit of the capital's population,
+    // not a second measure, when another measure comes just before it
+    measures = measures.filter((h, m) => {
+      if (!h.unit || m === 0) return true;
+      const prev = measures[m - 1];
+      const between = T.slice(prev.end, h.i);
+      return !(between.length <= 8 && findCond(T, free, prev.end, h.i) && between.every((t) => filler.test(t) || /^(where|that|which|whose|more|less|fewer|than|over|under|above|below|at|least|most|between|and|to|million|thousand|billion|m|k|bn|\d.*)$/.test(t)));
+    });
     // 1. right before it: "over 40% women in parliament", "top quintile for GDP"
     for (let m = 0; m < measures.length; m++) {
       const h = measures[m];
@@ -400,6 +415,20 @@
     const n = keys.filter((k) => phys.has(F[k].group)).length;
     return n > keys.length / 2 ? "physical" : "human";
   }
+  // filters whose names or keywords contain a word we didn't understand
+  function suggest(words) {
+    const out = [], seen = new Set();
+    for (const w of words) {
+      if (w.length < 3) continue;
+      const st = stem(w);
+      const hits = W.FILTERS.filter((f) => !f.hidden && !f.target && !seen.has(f.key))
+        .map((f) => { const lab = f.label.toLowerCase(), kw = (f.keywords || "").toLowerCase(); return { f, s: lab.includes(st) ? 2 : kw.split(/\s+/).some((k) => stem(k) === st) ? 1 : 0 }; })
+        .filter((x) => x.s).sort((a, b) => b.s - a.s).slice(0, 3);
+      hits.forEach((x) => { seen.add(x.f.key); out.push({ word: w, f: x.f }); });
+      if (out.length >= 5) break;
+    }
+    return out.slice(0, 5);
+  }
   function useful(p) { return p.filters.length || p.view || (p.bare.length && p.country); }
   function previewHTML(text) {
     const p = parse(text);
@@ -411,6 +440,7 @@
       const pool = W.rows.filter((r) => r.sovereign || W.state.territories);
       count = pool.filter((r) => fs.every((fl) => W.passes(r, fl))).length;
     }
+    const sug = suggest(p.unknown);
     const chips = p.filters.map((fl) => `<span class="achip" data-g="${W.gslug(F[fl.key].group)}">${esc(W.chipLabel(fl))}</span>`).join("");
     const what = p.view?.v === "compare" ? `Compare ${esc(F[p.view.y].short || F[p.view.y].label)} with ${esc(F[p.view.x].short || F[p.view.x].label)}`
       : p.view?.v === "trends" ? (p.view.type === "line" ? `Chart of ${esc(F[p.view.key].label)} over time` : `Total ${esc(F[p.view.key].label)}`)
@@ -421,11 +451,12 @@
       <div class="askhead"><span class="askq">Your question, as filters</span>${p.year ? `<span class="achip yr">${p.year}</span>` : ""}</div>
       <div class="achips">${chips || `<span class="hint">No filters</span>`}</div>
       <div class="askans"><span>${what}</span><span class="askgo">Press Enter ↵</span></div>
-      ${p.unknown.length ? `<p class="askunk">Not understood: ${p.unknown.slice(0, 6).map((u) => `“${esc(u)}”`).join(", ")}. Check the chips, then change them after.</p>` : ""}
+      ${p.unknown.length ? `<p class="askunk">Not understood: ${p.unknown.slice(0, 6).map((u) => `“${esc(u)}”`).join(", ")}.${sug.length ? " Did you mean one of these? Pick one to add it as well:" : " Check the chips: you can change them after."}</p>` : ""}
+      ${sug.length ? `<div class="asksugs">${sug.map((x) => `<button type="button" class="asksug" data-k="${x.f.key}" data-g="${W.gslug(x.f.group)}">+ ${esc(x.f.label)}</button>`).join("")}</div>` : ""}
     </div>`;
     return { p, html };
   }
-  function apply(p) {
+  function apply(p, addKey) {
     const s = W.state;
     const m = modeFor(p);
     if (m !== s.mode) W.setMode(m);
@@ -446,6 +477,12 @@
     else if (p.view?.v === "rank" && V) { V.rank.key = p.view.key; V.rank.year = p.year || null; view = "rank"; }
     else if (p.view?.v === "country" || (p.country && !p.filters.length)) s.selected = p.country;
     s.view = view;
+    // a filter picked from "Did you mean": add it and open it, so its limits can be set
+    if (addKey && F[addKey] && !s.filters.some((fl) => fl.key === addKey)) {
+      const f = F[addKey];
+      s.filters.push(f.type === "range" ? { key: addKey, min: f.dmin, max: f.dmax } : f.type === "bool" ? { key: addKey, value: true } : { key: addKey, values: [], mode: "any" });
+      s.open = addKey; s.view = "map";
+    }
     W.render();
   }
 
