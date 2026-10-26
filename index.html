@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 <!--APP-->
@@ -16,7 +16,7 @@
   <div class="brand">
     <h1>Which Countries<span>?</span></h1>
   </div>
-  <div id="modes" class="modes" role="radiogroup" aria-label="Kind of geography">
+  <div id="modes" title="Switch between human and physical geography. Your filters stay, so you can mix both." class="modes" role="radiogroup" aria-label="Kind of geography">
     <button type="button" role="radio" data-m="human" aria-checked="true">Human</button>
     <button type="button" role="radio" data-m="physical" aria-checked="false">Physical</button>
   </div>
@@ -42,6 +42,7 @@
       <button type="button" role="tab" data-v="compare" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 1.5v12.5h12.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="9.5" r="1.8" fill="currentColor"/><circle cx="10.5" cy="5.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12.5" cy="10.5" r="1.2" fill="currentColor"/></svg>Compare</button>
       <button type="button" role="tab" data-v="rank" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 3h12M2 6.5h9M2 10h6M2 13.5h3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rankings</button>
       <button type="button" role="tab" data-v="trends" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 12.5l4-4.5 3 2.5 5.5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M1.5 14.5h13" stroke="currentColor" stroke-width="1.2"/></svg>Charts</button>
+      <button type="button" role="tab" data-v="insights" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5 8l1.5-1.6L8 7.6 9.4 5.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Insights</button>
     </div>
     <button type="button" id="sbsBtn" class="ghost sm" title="Compare two or three countries side by side">⇄ Side by side</button>
     <button type="button" id="shareBtn" class="ghost sm" title="Share this view, or set a task for students">🔗 Share</button>
@@ -80,15 +81,16 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-<script src="filters.js?v=20"></script>
-<script src="glossary.js?v=20"></script>
-<script src="picker.js?v=20"></script>
-<script src="physical.js?v=20"></script>
-<script src="views.js?v=20"></script>
-<script src="charts.js?v=20"></script>
-<script src="quiz.js?v=20"></script>
-<script src="app.js?v=20"></script>
-<script src="ask.js?v=20"></script>
-<script src="factfile.js?v=20"></script>
+<script src="filters.js?v=22"></script>
+<script src="glossary.js?v=22"></script>
+<script src="picker.js?v=22"></script>
+<script src="physical.js?v=22"></script>
+<script src="views.js?v=22"></script>
+<script src="charts.js?v=22"></script>
+<script src="insights.js?v=22"></script>
+<script src="quiz.js?v=22"></script>
+<script src="app.js?v=22"></script>
+<script src="ask.js?v=22"></script>
+<script src="factfile.js?v=22"></script>
 </body>
 </html>

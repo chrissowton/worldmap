@@ -147,21 +147,83 @@
         <div class="vbody scroll" id="vbody"><svg id="vsvg" role="img"></svg></div>
         <p class="vnote" id="rNote"></p>`,
       trends: window.WCH ? window.WCH.shell() : "",
+      insights: window.WIN ? window.WIN.shell() : "",
     };
     wrap.innerHTML = (shells[view] || "") + `<div id="vtip" class="tooltip" hidden></div>`;
     if ($("#vCountries")) $("#vCountries").innerHTML = countryOptions();
     if (view === "compare") bindCompare();
     if (view === "rank") bindRank();
     if (view === "trends") window.WCH?.bind();
+    if (view === "insights") window.WIN?.bind();
   }
+  // The number filters in use, newest last. When they change, the charts switch to them,
+  // so a filter added on the map is what Compare, Rankings and Charts show.
+  const filterNums = () => W.state.filters.filter((fl) => F[fl.key]?.type === "range" && !F[fl.key].target && !F[fl.key].hidden).map((fl) => fl.key);
+  function followFilters() {
+    const nums = filterNums(), sig = nums.join("|");
+    if (V.fsig === undefined) { V.fsig = sig; return; }
+    if (sig === V.fsig) return;
+    const added = nums.filter((k) => !(V.fsig || "").split("|").includes(k));
+    V.fsig = sig;
+    if (!nums.length) return;
+    const last = added.length ? added[added.length - 1] : nums[nums.length - 1];
+    V.rank.key = last; V.rank.year = null; V.rank.only = W.state.filters.length > 0;
+    V.trend.key = last; V.trend.agg = null; V.trend.year = null; V.trend.from = null; V.trend.log = null;
+    V.cmp.y = last; V.cmp.logy = null; V.cmp.year = null;
+    const other = nums.filter((k) => k !== last);
+    if (other.length) { V.cmp.x = other[other.length - 1]; V.cmp.logx = null; }
+    else if (V.cmp.x === last) V.cmp.x = last === "gdp_per_capita" ? "life_expectancy" : "gdp_per_capita";
+  }
+  // "Source: …" for the measures a chart shows, on screen and in downloads
+  function sourceText(keys, extra = []) {
+    const S = window.SOURCES || {};
+    const seen = new Map();
+    for (const k of keys) {
+      const f = F[k];
+      if (!f || !S[f.source]) continue;
+      const yl = W.yearLabel(f);
+      const s = seen.get(f.source) || { name: S[f.source].name, years: new Set() };
+      if (yl) s.years.add(yl);
+      seen.set(f.source, s);
+    }
+    for (const id of extra) if (S[id] && !seen.has(id)) seen.set(id, { name: S[id].name, years: new Set() });
+    if (!seen.size) return "";
+    return "Source: " + [...seen.values()].map((s) => s.name + (s.years.size ? ` (${[...s.years].slice(0, 2).join(", ")})` : "")).join("; ") + ".";
+  }
+  function srcKeys() {
+    const view = W.state.view;
+    if (view === "compare") return { keys: [V.cmp.y, V.cmp.x, V.cmp.size].filter(Boolean) };
+    if (view === "rank") return { keys: [V.rank.key] };
+    if (view === "trends") {
+      const t = V.trend, extra = [];
+      const k = [t.key];
+      if (t.type === "sankey" && /^refugee|asylum|idps/.test(t.key)) extra.push("unhcr");
+      if (t.type === "sankey" && !/^refugee|asylum|idps/.test(t.key)) k.push("goods_exports_usd", "services_exports_usd", "exp_fuel_pct");
+      if (t.agg === "avg" || t.type === "mekko") k.push("population");
+      return { keys: k, extra };
+    }
+    if (view === "insights") return { keys: V.ins?.srcKeys || [] };
+    return { keys: [...new Set(W.state.filters.map((fl) => fl.key).concat(W.state.colourBy && W.state.colourBy !== "none" ? [W.state.colourBy] : []))] };
+  }
+  function currentSource() { const s = srcKeys(); return sourceText(s.keys, s.extra); }
+  function showSource() {
+    const wrap = $("#viewwrap");
+    let p = $("#vsrc");
+    if (!p) { p = document.createElement("p"); p.id = "vsrc"; p.className = "vsrc"; wrap.appendChild(p); }
+    p.textContent = currentSource();
+  }
+
   function render() {
     if (!W) return;
+    followFilters();
     const view = W.state.view;
     if (view === "map") { stopPlay(); V.built = null; V.list = null; return; }
     if (V.built !== view) build(view);
     if (view === "compare") drawCompare();
     if (view === "rank") drawRank();
     if (view === "trends") window.WCH?.draw();
+    if (view === "insights") window.WIN?.draw();
+    showSource();
   }
   function size() {
     const b = $("#vbody");
@@ -509,13 +571,13 @@
 
   // ======================= CHARTS (was Trends) =======================
   // The Charts view lives in charts.js; it borrows these helpers.
-  window.WV_H = { V, size, tipShow, tipHide, css, contColour, ticksFor, matchSet, isLog, findCountry, lower, CONTINENTS, PIN_VARS };
+  window.WV_H = { sourceText, V, size, tipShow, tipHide, css, contColour, ticksFor, matchSet, isLog, findCountry, lower, CONTINENTS, PIN_VARS };
 
   // ======================= Country profile: trend chart, pyramid, DTM =======================
   let pyramids = window.__PYRAMIDS__ || null, pyrLoading = null;
   function loadPyramids() {
     if (pyramids) return Promise.resolve(pyramids);
-    pyrLoading ||= fetch("pyramids.json?v=20").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
+    pyrLoading ||= fetch("pyramids.json?v=22").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
     return pyrLoading;
   }
   // A small line chart as an SVG string: the country against the world and continent medians
@@ -784,7 +846,17 @@
     const scale = 2;
     const chart = await svgToCanvas(svgEl, scale, view === "map" ? css("--ocean") : css("--surface"));
     const title = view === "map" ? (document.querySelector("#sentence")?.textContent || "World map").trim() : V.title || "";
-    const pad = 20 * scale, titleH = 44 * scale, footH = 30 * scale;
+    const pad = 20 * scale, titleH = 44 * scale;
+    const src = currentSource();
+    const footLines = [];
+    {
+      const m = document.createElement("canvas").getContext("2d");
+      m.font = `${11 * scale}px "IBM Plex Sans", Arial, sans-serif`;
+      let cur = "";
+      for (const w of src.split(" ")) { const t = cur ? cur + " " + w : w; if (m.measureText(t).width > chart.width && cur) { footLines.push(cur); cur = w; } else cur = t; }
+      if (cur) footLines.push(cur);
+    }
+    const footH = (30 + 15 * footLines.slice(0, 4).length) * scale;
     const cv = document.createElement("canvas");
     cv.width = chart.width + pad * 2; cv.height = chart.height + titleH + footH;
     const ctx = cv.getContext("2d");
@@ -799,7 +871,8 @@
     ctx.drawImage(chart, pad, titleH);
     ctx.fillStyle = css("--muted");
     ctx.font = `${11 * scale}px "IBM Plex Sans", Arial, sans-serif`;
-    ctx.fillText(`Which Countries? · ${(W.SITE?.url || location.host || "").replace(/^https?:\/\//, "")} · Data: World Bank, UNDP, UN, V-Dem, OWID and others`, pad, cv.height - 11 * scale);
+    footLines.slice(0, 4).forEach((l, i) => ctx.fillText(l, pad, titleH + chart.height + (16 + i * 15) * scale));
+    ctx.fillText(`Made with Which Countries? · ${(W.SITE?.url || location.host || "").replace(/^https?:\/\//, "")}`, pad, cv.height - 9 * scale);
     cv.toBlob((b) => download(b, `which-countries-${view}.png`), "image/png");
   }
   function dataRows() {
@@ -817,7 +890,7 @@
     m.querySelectorAll("button").forEach((b) => (b.onclick = () => {
       m.remove();
       if (b.dataset.a === "png") downloadImage().catch(() => alertMsg("Sorry, the image could not be made in this browser."));
-      else { const rows = dataRows(); if (rows) downloadCSV(rows, `which-countries-${W.state.view}.csv`); }
+      else { const rows = dataRows(); if (rows) { const s = currentSource(); downloadCSV(s ? rows.concat([[], [s]]) : rows, `which-countries-${W.state.view}.csv`); } }
     }));
     setTimeout(() => document.addEventListener("click", function off(e) { if (!m.contains(e.target) && e.target !== btn) { m.remove(); document.removeEventListener("click", off); } }), 0);
   }
@@ -848,7 +921,7 @@
       if (fl !== "wc") p.set("tf", fl || "-");
       if (V.trend.log != null) p.set("tl", V.trend.log ? "1" : "0");
       window.WCH?.encode(p);
-    }
+    } else if (st.view === "insights") window.WIN?.encode(p);
     if (V.task) p.set("task", V.task);
   }
   function decode(p) {
@@ -872,11 +945,14 @@
     if (p.get("tf")) { const t = p.get("tf"); V.trend.world = t.includes("w"); V.trend.conts = t.includes("c"); V.trend.matches = t.includes("m"); }
     if (p.get("tl")) V.trend.log = p.get("tl") === "1";
     if (p.get("v") === "trends") window.WCH?.decode(p);
+    if (p.get("v") === "insights") window.WIN?.decode(p);
     V.task = (p.get("task") || "").slice(0, 400);
   }
 
   function init() {
     W = window.WC;
+    F = W.F;
+    followFilters();
     W.SITE = window.SITE || {};
     F = W.F; TS = W.TS; TS_YEARS = W.TS_YEARS; esc = W.esc; fmtShort = W.fmtShort;
     renderTask();
@@ -909,5 +985,5 @@
   // for the Back button: the chart settings as plain data, and back again
   function snapshot() { const { built, ...rest } = V; return JSON.parse(JSON.stringify(rest)); }
   function restore(o) { if (!o) return; stopPlay(); Object.assign(V.cmp, o.cmp); Object.assign(V.rank, o.rank); Object.assign(V.trend, o.trend); V.task = o.task || ""; }
-  window.WV = { init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
+  window.WV = { currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
 })();

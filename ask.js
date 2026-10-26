@@ -104,6 +104,9 @@
       ["largest city", "measure", "largest_city_pop"], ["biggest city", "measure", "largest_city_pop"], ["main city", "measure", "largest_city_pop"],
       ["a city", "measure", "largest_city_pop"], ["any city", "measure", "largest_city_pop"], ["million city", "measure", "cities_1m"],
       ["cities of over a million", "measure", "cities_1m"], ["cities over a million", "measure", "cities_1m"],
+      ["desert", "value", "landforms", ["Desert"]], ["mountain range", "value", "landforms", ["Mountain range"]], ["plateau", "value", "landforms", ["Plateau"]],
+      ["tundra", "value", "landforms", ["Tundra"]], ["wetland", "value", "landforms", ["Wetland"]], ["delta", "value", "landforms", ["Delta"]],
+      ["glacier", "measure", "glacier_pct"], ["ice", "measure", "glacier_pct"], ["active volcano", "measure", "volcanoes_active"],
       ["magnitude", "measure", "quake_mag"], ["highest point", "measure", "highest_m"], ["mountain", "measure", "highest_m"], ["volcano", "measure", "volcanoes"], ["earthquake", "measure", "quakes"],
       ["low income", "value", "income_group", ["Low income"]], ["middle income", "value", "income_group", ["Lower-middle income", "Upper-middle income"]],
       ["high income", "value", "income_group", ["High income"]], ["poor countries", "value", "income_group", ["Low income"]], ["rich countries", "value", "income_group", ["High income"]],
@@ -369,6 +372,8 @@
     for (const h of measures) {
       if (byKey.has(h.key)) continue;
       const f = F[h.key];
+      if (!h.cond && ["count", "int"].includes(f.format) && /^(with|have|has|having|got)$/.test(T[h.i - 1] || "") ) h.cond = { min: 1 };
+      if (!h.cond && h.key === "glacier_pct" && /^(with|have|has|having)$/.test(T[h.i - 1] || "")) h.cond = { min: 0.1 };
       if (!h.cond) { h.bare = true; continue; }
       const fl = { key: h.key, min: f.dmin, max: f.dmax };
       if (h.cond.slice) {
@@ -413,7 +418,7 @@
     const keys = p.filters.map((fl) => fl.key).concat(p.bare || []);
     if (!keys.length) return W.state.mode;
     const n = keys.filter((k) => phys.has(F[k].group)).length;
-    return n > keys.length / 2 ? "physical" : "human";
+    return n === keys.length ? "physical" : n === 0 ? "human" : W.state.mode;
   }
   // filters whose names or keywords contain a word we didn't understand
   function suggest(words) {

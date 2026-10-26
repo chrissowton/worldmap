@@ -41,6 +41,7 @@ It's a static website: no server, no database, no accounts. All the data is in a
   - **Highest/lowest n, quartiles and quintiles**: any number filter can pick the top or bottom n countries, or one or more quartiles or quintiles, instead of a range, either from all countries or only from those that pass your other filters.
   - **Glossary**: key terms (electoral autocracy, demographic transition stages, Köppen climates, plate boundaries, volcano types and more) have a dotted underline or an ⓘ: hover or tap to see what they mean (`glossary.js`).
   - **SDG tracker**: for 14 of the 17 Sustainable Development Goals, whether each country has achieved the goal, is on track for 2030, is improving too slowly, stagnating or getting worse, from the speed of change since 2015 (a simplified version of the SDSN's method; targets are listed in `filters.js` and `build_data.py`). Filters under Politics & the world, and a goal dashboard in every country profile.
+  - **Insights** (`insights.js`): patterns found for you, using only the countries that match your filters: the strongest links between measures (rank correlations, with obvious pairs hidden), the biggest rises and falls over 5–30 years, countries changing demographic transition stage, human development group or type of government, who is next to cross a line such as 100 million people (a simple projection of the last ten years), and countries far above or below what another measure predicts.
   - **Charts**: one measure drawn many ways, chosen from a row of tabs, like Our World in Data:
     - **Line**, **Bar**, **Table** (any two years, with the change) and **Map**.
     - **Stacked area**: totals by continent over time, as amounts or as shares of the world.
@@ -110,6 +111,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `volcanoes.csv`, `earthquakes.csv` | Volcanoes (Smithsonian GVP) and magnitude 6+ earthquakes since 1900 (USGS) |
 | `trenches.csv`, `deltas.csv`, `waterfalls.csv` | Ocean trenches, river deltas and waterfalls. **Edited by hand** |
 | `physical_countries.json` | Physical facts per country, merged into `countries.json` by `build_data.py` |
+| `insights.js` | The Insights view |
 | `charts.js` | The Charts view: line, bar, table, stacked area, slope, Marimekko, parts of a whole and Sankey charts, with medians, weighted averages and totals for groups of countries |
 | `views.js` | The Compare and Rankings charts; trend charts and population pyramids in profiles and factfiles; side by side; share links and tasks; image and CSV downloads |
 | `countries.json` | One record per country (built by `build_data.py`) |

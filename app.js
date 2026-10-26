@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "20";
+  const DATA_VERSION = "22";
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
   const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
@@ -704,8 +704,9 @@
   // ---------- Colour by ----------
   const numericFilters = FILTERS.filter((f) => f.type === "range" && !f.target && !f.hidden);
   // <option>s grouped by category, for the Sort and Shade by menus
+  const byLabel = (x, y) => x.label.localeCompare(y.label, "en", { numeric: true, sensitivity: "base" });
   const groupedOptions = (selected) => window.FILTER_GROUPS.map((g) => {
-    const fs = numericFilters.filter((f) => f.group === g);
+    const fs = numericFilters.filter((f) => f.group === g).sort(byLabel);
     return fs.length ? `<optgroup label="${esc(g)}">${fs.map((f) => `<option value="${f.key}" ${selected === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}</optgroup>` : "";
   }).join("");
   // Which number to shade matching countries by: the user's choice, else the last number filter added
@@ -909,7 +910,7 @@
   // <select> options for measures, grouped by category; onlyYearly limits them to measures with yearly data
   function measureOptions(selected, onlyYearly) {
     return window.FILTER_GROUPS.map((g) => {
-      const fs = numericFilters.filter((f) => f.group === g && (!onlyYearly || yearlyNumeric(f)));
+      const fs = numericFilters.filter((f) => f.group === g && (!onlyYearly || yearlyNumeric(f))).sort(byLabel);
       return fs.length ? `<optgroup label="${esc(g)}">${fs.map((f) => `<option value="${f.key}" ${selected === f.key ? "selected" : ""}>${esc(f.label)}${f.time && !onlyYearly ? " ◷" : ""}</option>`).join("")}</optgroup>` : "";
     }).join("");
   }
@@ -1567,7 +1568,7 @@
         </div>
       </div>
       <div class="rlist">
-        ${list.length ? list.map((r) => rowHTML(r, valF, null, combo ? combo.get(r.iso3) : undefined)).join("") : `<p class="empty">${act.length ? "No matches yet." : ""}</p>`}
+        ${list.length ? list.map((r, i) => rowHTML(r, valF, null, combo ? combo.get(r.iso3) : undefined, sf ? i + 1 : null)).join("") : `<p class="empty">${act.length ? "No matches yet." : ""}</p>`}
         ${groups.map(([key, list]) => {
           const fl = act.find((x) => x.key === key);
           list.sort((a, b) => a.name.localeCompare(b.name));
@@ -1615,8 +1616,8 @@
         <p class="note">${esc(L.title)}. ${esc(L.note)}</p>
         <button type="button" class="linkbtn" id="paneHide">Hide this list ⇥</button>
       </div>
-      <div class="clhead" style="--ncols:${L.cols.length}">${head(-1)}${L.cols.map((f, i) => head(i, f)).join("")}</div>
-      <div class="clist" role="list" style="--ncols:${L.cols.length}">${rows.map((x) => `<div class="crow${pinned.has(x.iso) ? " on" : ""}" role="listitem" data-iso="${x.iso}">
+      <div class="clhead" style="--ncols:${L.cols.length}"><span class="rk">#</span>${head(-1)}${L.cols.map((f, i) => head(i, f)).join("")}</div>
+      <div class="clist" role="list" style="--ncols:${L.cols.length}">${rows.map((x, i) => `<div class="crow${pinned.has(x.iso) ? " on" : ""}" role="listitem" data-iso="${x.iso}"><span class="rk num">${i + 1}</span>
           <button type="button" class="cpin" aria-pressed="${pinned.has(x.iso)}" title="${pinned.has(x.iso) ? "Remove from the chart" : "Add to the chart"}"><span class="fl">${x.r.flag || ""}</span><span class="nm">${esc(x.r.name)}</span></button>
           ${x.vals.map((v, i) => `<span class="val num">${v == null ? "–" : esc(fmtShort(L.cols[i], v))}</span>`).join("")}
           <button type="button" class="cinfo" aria-label="${esc(x.r.name)}: open profile" title="Open the country profile">i</button></div>`).join("") || `<p class="empty">No countries with data.</p>`}</div>
@@ -1654,10 +1655,10 @@
     }
     return out;
   }
-  function rowHTML(r, sf, fail, override) {
+  function rowHTML(r, sf, fail, override, pos) {
     const val = override !== undefined ? `<span class="val num" title="Combined score">${override ?? "–"}</span>` : sf ? `<span class="val num">${fmtShort(sf, r[sf.key])}</span>` : "";
     const why = fail ? `<span class="why">✕ ${esc(F[fail.key].short || F[fail.key].label)}</span>` : "";
-    return `<button type="button" class="row" data-iso="${r.iso3}"><span class="fl">${r.flag || ""}</span><span class="nm">${esc(r.name)}</span>${val}${why}</button>`;
+    return `<button type="button" class="row" data-iso="${r.iso3}">${pos ? `<span class="rk num">${pos}</span>` : ""}<span class="fl">${r.flag || ""}</span><span class="nm">${esc(r.name)}</span>${val}${why}</button>`;
   }
   function highlight(iso, on) {
     paths.filter((d) => d.rec?.iso3 === iso).classed("hover", on).raise();
@@ -1932,12 +1933,14 @@
       items.push({ key: f.key, value: isValue ? label : undefined });
       const added = used.has(f.key) && !isValue;
       const fam = famOf[f.key];
-      const where = isValue ? (MENU_LABELS[f.key] || f.label) : fam ? `${fam.short} · ${f.group}` : f.group;
+      const other = !modeGroups().has(f.group) ? (state.mode === "physical" ? " · Human" : " · Physical") : "";
+      const where = (isValue ? (MENU_LABELS[f.key] || f.label) : fam ? `${fam.short} · ${f.group}` : f.group) + other;
       const right = added ? `<span class="added-tag">✓ Added</span>` : `<span class="gtag">${esc(where)}</span>`;
       return `<button type="button" role="option" class="item${added ? " added" : ""}" data-g="${gslug(f.group)}" data-i="${items.length - 1}"><span>${!isValue && f.time ? CLOCK : ""}${esc(label)}</span>${right}</button>`;
     };
     const mg = modeGroups();
-    const visible = FILTERS.filter((f) => !f.hidden && mg.has(f.group));
+    // every filter can be found from either side; this side's come first
+    const visible = FILTERS.filter((f) => !f.hidden).sort((x, y) => mg.has(y.group) - mg.has(x.group));
     const fs = visible.map((f) => {
       const fam = famOf[f.key];
       // a family name also finds its measures, e.g. "HDI" finds HDI rank
@@ -2000,7 +2003,8 @@
       if (fam) { if (!seenFam.has(fam.id)) { seenFam.add(fam.id); out.push({ fam, id: "fam:" + fam.id }); } }
       else out.push({ f, id: f.key });
     }
-    return out;
+    // A to Z (numbers in order: "Goal 2" before "Goal 10")
+    return out.sort((x, y) => entryLabel(x).localeCompare(entryLabel(y), "en", { numeric: true, sensitivity: "base" }));
   }
   const entryById = (id) => (id.startsWith("fam:") ? { fam: FAMILIES.find((x) => "fam:" + x.id === id), id } : { f: F[id], id });
   const entryLabel = (e) => (e.fam ? e.fam.short : MENU_LABELS[e.f.key] || e.f.label);
@@ -2044,7 +2048,7 @@
           return `<button type="button" class="fchip${added ? " added" : ""}" data-id="${esc(e.id)}" data-g="${gslug(g)}">${entryTime(e) ? CLOCK : ""}<span>${esc(entryLabel(e))}</span>${added ? `<span class="tick" aria-label="added">✓</span>` : ""}</button>`;
         }).join("")}${es.length > SHOW_FIRST ? `<button type="button" class="more-btn" data-g="${esc(g)}">${open ? "Fewer" : `${es.length - SHOW_FIRST} more…`}</button>` : ""}</div></section>`;
       }).join("")}</div>
-      <p class="mkey">${state.mode === "physical" ? "" : `${CLOCK}<span>Has data for past years: use the year slider under the map.</span>`} <span class="mtick">✓</span><span>Added</span> <span class="mhint">${touch.matches ? "Tap a filter to see what it means." : "Hover over a filter to see what it means."}</span></p>`;
+      <p class="mkey">${state.mode === "physical" ? "" : `${CLOCK}<span>Has data for past years: use the year slider under the map.</span>`} <span class="mtick">✓</span><span>Added</span> <span class="mhint">${touch.matches ? "Tap a filter to see what it means." : "Hover over a filter to see what it means."} Filters stay when you switch between Human and Physical, so you can mix them.</span></p>`;
     renderThemeBar();
     placePanel(panel, t);
     panel.querySelectorAll(".tp-tabs button").forEach((b) => (b.onclick = () => showTheme(b.dataset.theme)));
@@ -2123,12 +2127,13 @@
 
   // ---------- Human / physical geography switch ----------
   const filtersByMode = { human: [], physical: [] };
+  // Filters are shared by both sides: switching only changes the menus, the base map and the quiz,
+  // so "countries with deserts and over 20 million people" mixes a physical and a human filter.
   function setMode(m) {
     if (m === state.mode) return;
-    filtersByMode[state.mode] = state.filters;
-    state.filters = filtersByMode[m] || [];
     state.mode = m;
-    state.open = null; state.feat = null; state.tab = "countries"; state.colourBy = ""; state.sort = ""; state.sortDir = null;
+    state.open = null; state.feat = null;
+    if (state.tab.startsWith("feat:") && !state.filters.some((x) => F[x.key].target === state.tab.slice(5))) state.tab = "countries";
     if (m === "physical") { state.mapStyle = "std"; state.popSized = false; }
     if (openTheme) closeThemes(); else renderThemeBar();
     $("#mmCard").hidden = true;
@@ -2368,7 +2373,7 @@
     if (out.some(isCity) && !out.some((fl) => !isCity(fl))) state.tab = "cities";
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";
-    if (["compare", "rank", "trends"].includes(p.get("v"))) state.view = p.get("v");
+    if (["compare", "rank", "trends", "insights"].includes(p.get("v"))) state.view = p.get("v");
     if (p.get("m") === "p") { state.mode = "physical"; if (window.WP && ["biomes", "climate", "plates", "none"].includes(p.get("pb"))) window.WP.style.base = p.get("pb"); }
     if (p.get("ms") === "change" && F[p.get("mc")]) {
       state.mapStyle = "change"; state.mm.ck = p.get("mc"); state.mm.from = +p.get("mf") || null; state.mm.to = +p.get("mt") || null; state.mm.pct = p.get("mp") === "1";

@@ -698,7 +698,7 @@
   // ======================= SANKEY =======================
   function loadFlows() {
     if (flowData) return Promise.resolve(flowData);
-    flowLoading ||= fetch("refugee_flows_years.json?v=20").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
+    flowLoading ||= fetch("refugee_flows_years.json?v=22").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
     return flowLoading;
   }
   function drawSankey() {

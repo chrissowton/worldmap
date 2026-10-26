@@ -31,6 +31,7 @@
     for (const el of sel.children) {
       if (el.tagName === "OPTGROUP") {
         const items = [...el.children].map((o) => ({ v: o.value, t: clean(o.textContent), clock: hasClock(o.textContent), dis: o.disabled }));
+        items.sort((x, y) => x.t.localeCompare(y.t, "en", { numeric: true, sensitivity: "base" }));
         if (items.length) cats.push({ g: el.label, items });
       } else if (el.tagName === "OPTION") top.push({ v: el.value, t: clean(el.textContent), clock: false, dis: el.disabled });
     }
