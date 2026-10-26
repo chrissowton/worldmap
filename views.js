@@ -1,7 +1,7 @@
 /* Which Countries? — chart views and tools that sit alongside the map:
  *   Compare   a Gapminder-style bubble chart of any two measures, animated through the years
  *   Rankings  every country in order, as bars or grouped by continent
- *   Trends    a measure over time: world and continent medians, and any countries you add
+ *   Charts    one measure drawn many ways (charts.js): line, bar, table, stacked area, slope, Marimekko, parts of a whole, Sankey
  * plus trend charts and population pyramids in country profiles, a side-by-side country
  * comparison, share links with a task for students, and image / CSV downloads.
  * Loaded before app.js; everything here waits for window.WC (set up by app.js). */
@@ -23,7 +23,7 @@
   const V = {
     cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: false, focus: null },
     rank: { key: "", mode: "bars", year: null, only: false },
-    trend: { key: "life_expectancy", pins: [], conts: true, world: true, matches: false, log: null },
+    trend: { key: "life_expectancy", pins: [], conts: true, world: true, matches: false, group: true, log: null, type: "line", agg: null, year: null, from: null, share: false, sk: "" },
     task: "",
     built: null,
   };
@@ -146,24 +146,13 @@
         <div class="vlegend vlegend-top" id="rLeg"></div>
         <div class="vbody scroll" id="vbody"><svg id="vsvg" role="img"></svg></div>
         <p class="vnote" id="rNote"></p>`,
-      trends: `<div class="vhead"><div class="vctrls">
-          <label class="fld"><span>Measure</span><select id="tK" data-pick></select></label>
-          <label class="tog"><input type="checkbox" id="tW"> World median</label>
-          <label class="tog"><input type="checkbox" id="tC"> Continent medians</label>
-          <label class="tog" id="tML"><input type="checkbox" id="tM"> Matching countries</label>
-          <label class="tog"><input type="checkbox" id="tLog"> Log scale</label>
-        </div></div>
-        <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg></div>
-        <div class="vfoot"><div class="vopts">
-          <span class="vfind"><input id="tFind" list="vCountries" placeholder="Add a country…" aria-label="Add a country"><datalist id="vCountries"></datalist></span>
-          <span class="pins" id="tPins"></span></div>
-          <p class="vnote" id="tNote"></p></div>`,
+      trends: window.WCH ? window.WCH.shell() : "",
     };
     wrap.innerHTML = (shells[view] || "") + `<div id="vtip" class="tooltip" hidden></div>`;
     if ($("#vCountries")) $("#vCountries").innerHTML = countryOptions();
     if (view === "compare") bindCompare();
     if (view === "rank") bindRank();
-    if (view === "trends") bindTrends();
+    if (view === "trends") window.WCH?.bind();
   }
   function render() {
     if (!W) return;
@@ -172,7 +161,7 @@
     if (V.built !== view) build(view);
     if (view === "compare") drawCompare();
     if (view === "rank") drawRank();
-    if (view === "trends") drawTrends();
+    if (view === "trends") window.WCH?.draw();
   }
   function size() {
     const b = $("#vbody");
@@ -220,6 +209,7 @@
     $("#cPlay").textContent = "❚❚";
   }
   function stopPlay() {
+    window.WCH?.stop();
     if (!playTimer) return;
     clearInterval(playTimer); playTimer = null;
     const b = $("#cPlay"); if (b) b.textContent = "▶";
@@ -509,96 +499,15 @@
     if (world != null) svg.append("line").attr("x1", sx(world)).attr("x2", sx(world)).attr("y1", M.t).attr("y2", h - M.b).attr("stroke", ink).attr("stroke-dasharray", "4 3").attr("opacity", 0.6).attr("pointer-events", "none");
   }
 
-  // ======================= TRENDS =======================
-  function bindTrends() {
-    const t = V.trend;
-    if (!F[t.key] || !TS[t.key] || W.CAT_TS[t.key]) t.key = "life_expectancy";
-    $("#tK").innerHTML = W.measureOptions(t.key, true);
-    $("#tK").onchange = (e) => { t.key = e.target.value; t.log = null; W.render(); };
-    $("#tW").onchange = (e) => { t.world = e.target.checked; W.render(); };
-    $("#tC").onchange = (e) => { t.conts = e.target.checked; W.render(); };
-    $("#tM").onchange = (e) => { t.matches = e.target.checked; W.render(); };
-    $("#tLog").onchange = (e) => { t.log = e.target.checked; W.render(); };
-    $("#tFind").onchange = (e) => { const r = findCountry(e.target.value); e.target.value = ""; if (r && !t.pins.includes(r.iso3)) { if (!t.pins.length) t.conts = false; t.pins = t.pins.concat(r.iso3).slice(-6); W.render(); } };
-  }
-  function drawTrends() {
-    const t = V.trend, f = F[t.key];
-    if (!f) return;
-    $("#tK").value = t.key;
-    $("#tW").checked = t.world; $("#tC").checked = t.conts;
-    const ms = matchSet();
-    $("#tML").hidden = !ms; $("#tM").checked = t.matches;
-    const log = isLog(t.key, t.log);
-    $("#tLog").checked = log;
-    const sp = W.span(t.key) || [TS_YEARS[0], TS_YEARS[TS_YEARS.length - 1]];
-    const years = d3.range(sp[0], sp[1] + 1);
-    const series = [];
-    const raw = (iso) => years.map((y) => { const s = TS[t.key][iso]; const v = s ? s[y - TS_YEARS[0]] : null; return v; });
-    const fromMed = (arr) => years.map((y) => arr[y - TS_YEARS[0]]);
-    const pins = t.pins.filter((iso) => W.byIso.has(iso));
-    if (t.world) series.push({ id: "world", name: "World median", vals: fromMed(medianSeries(t.key)), colour: css("--ink"), dash: "6 4", width: 2.4, label: true });
-    if (t.conts) CONTINENTS.forEach((c) => series.push({ id: c, name: `${c} median`, vals: fromMed(medianSeries(t.key, c)), colour: pins.length ? css("--muted") : contColour(c), dash: pins.length ? "2 3" : null, width: pins.length ? 1.4 : 2.2, label: true }));
-    if (ms && t.matches) for (const iso of ms) if (!pins.includes(iso) && TS[t.key][iso]) series.push({ id: iso, name: W.byIso.get(iso).name, vals: raw(iso), colour: css("--match"), width: 1, opacity: 0.55, thin: true });
-    pins.forEach((iso, i) => series.push({ id: iso, name: W.byIso.get(iso).name, vals: raw(iso), colour: css(PIN_VARS[i % PIN_VARS.length]), width: 2.8, label: true, pin: true }));
-    const { w, h } = size();
-    const mob = w < 560;
-    const M = { t: 26, r: mob ? 92 : 150, b: 30, l: mob ? 44 : 56 };
-    const all = series.flatMap((s) => s.vals).filter((v) => v != null && (!log || v > 0));
-    const svg = d3.select("#vsvg").attr("viewBox", `0 0 ${w} ${h}`).attr("width", w).attr("height", h).attr("aria-label", `${f.label} over time`);
-    svg.selectAll("*").remove();
-    if (!all.length) { $("#tNote").textContent = "No data to show."; return; }
-    const ext = d3.extent(all);
-    if (!log && f.format !== "dec3" && ext[0] > 0 && ext[0] < ext[1] * 0.35) ext[0] = 0;
-    const sx = d3.scaleLinear().domain([sp[0], sp[1]]).range([M.l, w - M.r]);
-    const sy = (log ? d3.scaleLog() : d3.scaleLinear()).domain(ext).range([h - M.b, M.t]).nice();
-    const ink = css("--ink"), muted = css("--muted"), line = css("--line"), surface = css("--surface");
-    const ty = ticksFor(sy, log, mob ? 4 : 6), tx = sx.ticks(mob ? 4 : 8).filter(Number.isInteger);
-    svg.append("g").selectAll("line").data(ty).join("line").attr("x1", M.l).attr("x2", w - M.r).attr("y1", sy).attr("y2", sy).attr("stroke", line);
-    svg.append("g").selectAll("text").data(ty).join("text").attr("x", M.l - 6).attr("y", sy).attr("dy", "0.35em").attr("text-anchor", "end").attr("font-size", 11).attr("fill", muted).text((v) => fmtShort(f, v));
-    svg.append("g").selectAll("text").data(tx).join("text").attr("x", sx).attr("y", h - M.b + 17).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", muted).text((v) => v);
-    svg.append("line").attr("x1", M.l).attr("x2", w - M.r).attr("y1", h - M.b).attr("y2", h - M.b).attr("stroke", muted);
-    svg.append("text").attr("x", M.l - (mob ? 38 : 50)).attr("y", 14).attr("font-size", 12.5).attr("font-weight", 600).attr("fill", ink).text(`↑ ${f.label}${log ? " (log scale)" : ""}`);
-    const ln = d3.line().defined((v) => v != null && (!log || v > 0)).x((v, i) => sx(years[i])).y((v) => sy(v));
-    const order = series.slice().sort((a, b) => (a.thin ? 0 : 1) - (b.thin ? 0 : 1));
-    svg.append("g").selectAll("path").data(order).join("path").attr("d", (s) => ln(s.vals)).attr("fill", "none")
-      .attr("stroke", (s) => s.colour).attr("stroke-width", (s) => s.width).attr("stroke-dasharray", (s) => s.dash).attr("opacity", (s) => s.opacity ?? 1)
-      .attr("stroke-linejoin", "round").attr("stroke-linecap", "round");
-    // labels at the end of each line, nudged apart
-    const ends = series.filter((s) => s.label).map((s) => {
-      let i = s.vals.length - 1; while (i >= 0 && (s.vals[i] == null || (log && s.vals[i] <= 0))) i--;
-      return i < 0 ? null : { s, x: sx(years[i]), y: sy(s.vals[i]), v: s.vals[i] };
-    }).filter(Boolean).sort((a, b) => a.y - b.y);
-    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
-    const over = ends.length ? ends[ends.length - 1].y - (h - M.b) : 0;
-    if (over > 0) ends.forEach((e) => (e.y -= over));
-    svg.append("g").selectAll("text").data(ends).join("text").attr("x", w - M.r + 6).attr("y", (e) => e.y).attr("dy", "0.35em")
-      .attr("font-size", 11).attr("font-weight", (e) => (e.s.pin || e.s.id === "world" ? 600 : 400)).attr("fill", ink)
-      .text((e) => { const n = e.s.name; const lim = mob ? 11 : 19; return n.length > lim + 2 ? n.slice(0, lim) + "…" : n; });
-    svg.append("g").selectAll("line").data(ends).join("line").attr("x1", (e) => e.x).attr("x2", w - M.r + 3).attr("y1", (e) => sy(e.v)).attr("y2", (e) => e.y).attr("stroke", (e) => e.s.colour).attr("stroke-width", 1).attr("opacity", 0.6);
-    // hover: a line across the chart at the nearest year, with every labelled value
-    const rule = svg.append("line").attr("y1", M.t).attr("y2", h - M.b).attr("stroke", muted).attr("opacity", 0);
-    svg.append("rect").attr("x", M.l).attr("y", M.t).attr("width", w - M.l - M.r).attr("height", h - M.t - M.b).attr("fill", "transparent")
-      .on("pointermove", (evt) => {
-        const [mx] = d3.pointer(evt);
-        const y = Math.round(sx.invert(mx)), i = y - sp[0];
-        if (i < 0 || i >= years.length) return;
-        rule.attr("x1", sx(y)).attr("x2", sx(y)).attr("opacity", 0.8);
-        const rowsT = series.filter((s) => s.label && s.vals[i] != null).sort((a, b) => b.vals[i] - a.vals[i]);
-        tipShow(evt, `<strong>${y}</strong><dl>${rowsT.map((s) => `<dt><span class="sw" style="background:${s.colour}"></span> ${esc(s.name)}</dt><dd>${esc(fmtShort(f, s.vals[i]))}</dd>`).join("")}</dl>`);
-      }).on("pointerleave", () => { rule.attr("opacity", 0); tipHide(); });
-    $("#tPins").innerHTML = pins.map((iso, i) => `<span class="pin"><span class="sw" style="background:${css(PIN_VARS[i % PIN_VARS.length])}"></span>${esc(W.byIso.get(iso).name)}<button type="button" data-iso="${iso}" aria-label="Remove ${esc(W.byIso.get(iso).name)}">×</button></span>`).join("") +
-      (!pins.length ? `<span class="hint">Add countries to compare them with the medians.</span>` : "");
-    $$("#tPins button").forEach((b) => (b.onclick = () => { t.pins = t.pins.filter((x) => x !== b.dataset.iso); W.render(); }));
-    $("#tNote").innerHTML = `The median is the middle country: half are above it and half below. Medians are shown only for years with enough data (20 countries for the world, 5 per continent). ${f.info ? esc(f.info) : ""}`;
-    V.csv = () => [["Year", ...series.map((s) => s.name)], ...years.map((y, i) => [y, ...series.map((s) => s.vals[i] ?? "")])];
-    V.title = `${f.label}, ${sp[0]}–${sp[1]}`;
-  }
+  // ======================= CHARTS (was Trends) =======================
+  // The Charts view lives in charts.js; it borrows these helpers.
+  window.WV_H = { V, size, tipShow, tipHide, css, contColour, ticksFor, matchSet, isLog, findCountry, lower, CONTINENTS, PIN_VARS };
 
   // ======================= Country profile: trend chart, pyramid, DTM =======================
   let pyramids = window.__PYRAMIDS__ || null, pyrLoading = null;
   function loadPyramids() {
     if (pyramids) return Promise.resolve(pyramids);
-    pyrLoading ||= fetch("pyramids.json?v=16").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
+    pyrLoading ||= fetch("pyramids.json?v=18").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
     return pyrLoading;
   }
   // A small line chart as an SVG string: the country against the world and continent medians
@@ -682,7 +591,7 @@
     return `${keys.length ? `<h4 data-g="development">Changes over time</h4>
       <div class="ptrend"><select id="ptKey" aria-label="Measure to show over time">${ordered.map((k) => `<option value="${k}" ${k === profKey ? "selected" : ""}>${esc(F[k].label)}</option>`).join("")}</select>
       <div id="ptChart" class="ptchart"></div><div class="lkey">${lineKey({ regionName: r.region })}</div>
-      <button type="button" class="linkbtn" id="ptOpen">Open in Trends to compare with other countries →</button></div>` : ""}
+      <button type="button" class="linkbtn" id="ptOpen">Open in Charts to compare with other countries →</button></div>` : ""}
       <h4 data-g="population">Population structure</h4>
       <div class="ppyr" id="ppyr"><p class="sub">Loading…</p></div>
       ${dtm ? `<p class="sub dtm"><b>Demographic transition:</b> ${esc(dtm)}${r.natural_increase != null ? ` (births ${esc(String(W.latest(r, "birth_rate")))}, deaths ${esc(String(W.latest(r, "death_rate")))} per 1,000 people)` : ""}.</p>` : ""}`;
@@ -693,7 +602,7 @@
       const draw = () => { ch.innerHTML = lineChartSVG(r.iso3, profKey, { w: 300, h: 150 }) || `<p class="sub">Not enough data.</p>`; };
       draw();
       $("#ptKey", el).onchange = (e) => { profKey = e.target.value; draw(); };
-      $("#ptOpen", el).onclick = () => { V.trend.key = profKey; if (!V.trend.pins.includes(r.iso3)) { if (!V.trend.pins.length) V.trend.conts = false; V.trend.pins = V.trend.pins.concat(r.iso3).slice(-6); } W.setView("trends"); };
+      $("#ptOpen", el).onclick = () => { V.trend.key = profKey; V.trend.type = "line"; V.trend.agg = null; if (!V.trend.pins.includes(r.iso3)) { if (!V.trend.pins.length) V.trend.conts = false; V.trend.pins = V.trend.pins.concat(r.iso3).slice(-6); } W.setView("trends"); };
     }
     const box = $("#ppyr", el);
     loadPyramids().then((P) => {
@@ -930,6 +839,7 @@
       const fl = (V.trend.world ? "w" : "") + (V.trend.conts ? "c" : "") + (V.trend.matches ? "m" : "");
       if (fl !== "wc") p.set("tf", fl || "-");
       if (V.trend.log != null) p.set("tl", V.trend.log ? "1" : "0");
+      window.WCH?.encode(p);
     }
     if (V.task) p.set("task", V.task);
   }
@@ -953,6 +863,7 @@
     if (p.get("tp")) V.trend.pins = p.get("tp").split(".").filter((x) => /^[A-Z]{3}$/.test(x)).slice(0, 6);
     if (p.get("tf")) { const t = p.get("tf"); V.trend.world = t.includes("w"); V.trend.conts = t.includes("c"); V.trend.matches = t.includes("m"); }
     if (p.get("tl")) V.trend.log = p.get("tl") === "1";
+    if (p.get("v") === "trends") window.WCH?.decode(p);
     V.task = (p.get("task") || "").slice(0, 400);
   }
 

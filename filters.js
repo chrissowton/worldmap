@@ -37,10 +37,48 @@ window.SITE = {
   url: "https://chrissowton.github.io/worldmap/",  // the site's address, used in share links and on downloaded images
 };
 
+// The 17 Sustainable Development Goals, with the measures and 2030 targets the SDG tracker uses (see build_data.py)
+window.SDGS = [
+  { n: 1, name: "No poverty", colour: "#E5243B", aim: "End poverty in all its forms everywhere.", keywords: "poverty poor",
+    measures: [["extreme_poverty", "people in extreme poverty: under 3%"]] },
+  { n: 2, name: "Zero hunger", colour: "#DDA63A", aim: "End hunger and all forms of malnutrition.", keywords: "hunger food nutrition",
+    measures: [["undernourishment", "undernourishment: 7.5% or less"], ["stunting", "stunting in children under 5: 7.5% or less"]] },
+  { n: 3, name: "Good health and well-being", colour: "#4C9F38", aim: "Healthy lives and well-being for all at all ages.", keywords: "health",
+    measures: [["maternal_mortality", "maternal deaths: 70 or fewer per 100,000 births"], ["under5_mortality", "child deaths: 25 or fewer per 1,000"],
+      ["neonatal_mortality", "newborn deaths: 12 or fewer per 1,000"], ["tb_incidence", "tuberculosis: 10 or fewer new cases per 100,000"],
+      ["life_expectancy", "life expectancy: 80 years or more"], ["adolescent_births", "teenage births: 25 or fewer per 1,000 girls"]] },
+  { n: 4, name: "Quality education", colour: "#C5192D", aim: "Quality education and lifelong learning for all.", keywords: "education school",
+    measures: [["primary_completion", "finishing primary school: 95% or more"], ["lower_secondary_completion", "finishing lower secondary school: 90% or more"]] },
+  { n: 5, name: "Gender equality", colour: "#FF3A21", aim: "Equality for women and girls.", keywords: "gender women",
+    measures: [["women_parliament", "women in parliament: 40% or more"]] },
+  { n: 6, name: "Clean water and sanitation", colour: "#26BDE2", aim: "Water and sanitation for all.", keywords: "water sanitation toilets",
+    measures: [["basic_water", "basic drinking water: 98% or more"], ["basic_sanitation", "basic sanitation: 95% or more"]] },
+  { n: 7, name: "Affordable and clean energy", colour: "#FCC30B", aim: "Affordable, reliable, sustainable and modern energy for all.", keywords: "energy electricity cooking",
+    measures: [["electricity", "access to electricity: 98% or more"], ["clean_cooking", "clean cooking: 85% or more"]] },
+  { n: 8, name: "Decent work and economic growth", colour: "#A21942", aim: "Decent work for all and sustainable growth.", keywords: "work jobs unemployment",
+    measures: [["unemployment", "unemployment: 5% or less"]] },
+  { n: 9, name: "Industry, innovation and infrastructure", colour: "#FD6925", aim: "Resilient infrastructure, industry and innovation.", keywords: "internet research innovation",
+    measures: [["internet", "internet users: 80% or more"], ["rnd_pct", "research and development: 1.5% of GDP or more"]] },
+  { n: 10, name: "Reduced inequalities", colour: "#DD1367", aim: "Less inequality within and between countries.", keywords: "inequality gini",
+    measures: [["gini", "income inequality (Gini): 30 or less"]] },
+  { n: 11, name: "Sustainable cities and communities", colour: "#FD9D24", aim: "Safe, resilient and sustainable cities.", keywords: "cities air pollution",
+    measures: [["pm25", "PM2.5 air pollution: 10 or less"]] },
+  { n: 12, name: "Responsible consumption and production", colour: "#BF8B2E", aim: "Sustainable consumption and production.", keywords: "", measures: [] },
+  { n: 13, name: "Climate action", colour: "#3F7E44", aim: "Urgent action on climate change.", keywords: "climate co2 emissions",
+    measures: [["co2_per_capita", "CO₂ emissions: 2 tonnes per person or less"]] },
+  { n: 14, name: "Life below water", colour: "#0A97D9", aim: "Conserve the oceans, seas and marine life.", keywords: "", measures: [] },
+  { n: 15, name: "Life on land", colour: "#56C02B", aim: "Protect forests, land and wildlife.", keywords: "nature protected land biodiversity",
+    measures: [["protected_land_pct", "protected land: 30% or more (the “30 by 30” target)"]] },
+  { n: 16, name: "Peace, justice and strong institutions", colour: "#00689D", aim: "Peaceful societies, justice and effective institutions.", keywords: "peace murder violence",
+    measures: [["homicides", "murders: 1.5 or fewer per 100,000 people"]] },
+  { n: 17, name: "Partnerships for the goals", colour: "#19486A", aim: "Work together to reach the goals.", keywords: "", measures: [] },
+];
+window.SDG_STATUS = [["Achieved", "#1a7f4b"], ["On track", "#6cbf4a"], ["Improving too slowly", "#e8b02a"], ["Stagnating", "#ec7d2b"], ["Getting worse", "#d23b3b"]];
+
 window.FILTER_GROUPS = [
   "Development", "Population", "Health", "Gender", "Work & money", "Trade", "Global links", "Refugees",
   "Cities", "Culture", "Tourism", "Technology", "Politics", "UN & treaties", "Military", "Sport",
-  "Geography", "Climate", "Energy & resources", "Environment",
+  "Geography", "Climate", "Energy & resources", "Environment", "SDGs",
 ];
 
 // Helper for number filters. `say` gets a phrase like "at least 50%".
@@ -144,6 +182,36 @@ window.FILTERS = [
     info: "Share of people with clean drinking water at home, available when needed.",
     keywords: "water drinking sanitation clean safe",
   }),
+  num("basic_water", "Development", "Basic drinking water", {
+    short: "Basic water", format: "pct", bounds: [0, 100],
+    say: (b) => `${b} of people have at least basic drinking water`,
+    info: "Share of people who can get clean drinking water from a protected source within a 30-minute round trip. One of the SDG 6 measures.",
+    keywords: "water drinking clean sdg 6 sanitation access",
+  }),
+  num("basic_sanitation", "Development", "Basic sanitation", {
+    short: "Sanitation", format: "pct", bounds: [0, 100],
+    say: (b) => `${b} of people have at least basic sanitation`,
+    info: "Share of people with a toilet or latrine that is not shared with other households and keeps waste away from people. One of the SDG 6 measures.",
+    keywords: "sanitation toilets latrine hygiene sdg 6",
+  }),
+  num("clean_cooking", "Development", "Clean cooking", {
+    short: "Clean cooking", format: "pct", bounds: [0, 100],
+    say: (b) => `${b} of people cook with clean fuels`,
+    info: "Share of people who cook mainly with clean fuels and stoves (electricity, gas, biogas), rather than wood, charcoal, dung or kerosene, whose smoke harms health. One of the SDG 7 measures.",
+    keywords: "cooking fuel wood charcoal smoke indoor air pollution energy sdg 7",
+  }),
+  num("primary_completion", "Development", "Finishing primary school", {
+    short: "Primary completion", format: "pct", bounds: [0, 110], clip: true,
+    say: (b) => `the primary school completion rate is ${b}`,
+    info: "Children finishing the last year of primary school, as a share of all children of that age. It can be above 100% when older children also finish. One of the SDG 4 measures.",
+    keywords: "education school primary completion children sdg 4",
+  }),
+  num("lower_secondary_completion", "Development", "Finishing lower secondary school", {
+    short: "Lower secondary", format: "pct", bounds: [0, 110], clip: true,
+    say: (b) => `the lower secondary completion rate is ${b}`,
+    info: "Young people finishing lower secondary school (about age 15), as a share of all young people of that age. One of the SDG 4 measures.",
+    keywords: "education school secondary completion teenagers sdg 4",
+  }),
   num("education_spend", "Development", "Spending on education", {
     short: "Education spend", step: 0.5, format: "pct", clip: true,
     say: (b) => `government education spending is ${b} of GDP`,
@@ -199,8 +267,9 @@ window.FILTERS = [
     label: "Demographic transition stage", short: "DTM stage",
     order: ["Stage 1 · High birth and death rates", "Stage 2 · Death rate falling, birth rate high", "Stage 3 · Birth rate falling",
       "Stage 4 · Low birth and death rates", "Stage 5 · Deaths outnumber births"],
-    say: (v) => `it is at ${v.split(" · ")[0].toLowerCase()} of the demographic transition model`,
-    sayNot: (v) => `it is not at ${v.split(" · ")[0].toLowerCase()} of the demographic transition model`,
+    article: Object.fromEntries([1, 2, 3, 4, 5].map((n) => [["High birth and death rates", "Death rate falling, birth rate high", "Birth rate falling", "Low birth and death rates", "Deaths outnumber births"][n - 1], n]).map(([d, n]) => [`Stage ${n} · ${d}`, `stage ${n}`])),
+    say: (v) => `it is at ${v} of the demographic transition model`,
+    sayNot: (v) => `it is not at ${v} of the demographic transition model`,
     source: "worldbank", year: "dtm_stage_year",
     info: "A simple guide worked out on this site from birth and death rates per 1,000 people. Stage 1: births 35+ and deaths 20+. Stage 2: births 28+. Stage 3: births 15–28. Stage 4: births under 15 but above deaths. Stage 5: deaths above births. Real countries don't always fit neatly.",
     keywords: "demographic transition model dtm stage birth death population",
@@ -254,6 +323,30 @@ window.FILTERS = [
     say: (b) => `child deaths are ${b}`,
     info: "Children who die before age 5, per 1,000 born alive.",
     keywords: "child mortality under five deaths health",
+  }),
+  num("neonatal_mortality", "Health", "Newborn deaths", {
+    short: "Newborn deaths", format: "per1000birth",
+    say: (b) => `${b} babies in every 1,000 die in their first 28 days`,
+    info: "Babies who die in their first 28 days, per 1,000 born alive. The SDG target is 12 or fewer by 2030.",
+    keywords: "newborn neonatal baby deaths mortality health sdg 3",
+  }),
+  num("undernourishment", "Health", "Undernourishment", {
+    short: "Hunger", format: "pct", bounds: [0, 60], clip: true,
+    say: (b) => `${b} of people are undernourished`,
+    info: "Share of people who don't regularly eat enough food for a normal, active and healthy life (UN Food and Agriculture Organization estimate). The lowest value reported is 2.5%.",
+    keywords: "hunger food undernourishment famine malnutrition sdg 2",
+  }),
+  num("stunting", "Health", "Stunting in children", {
+    short: "Stunting", format: "pct", bounds: [0, 60], clip: true,
+    say: (b) => `${b} of children under 5 are stunted`,
+    info: "Share of children under 5 who are too short for their age, a sign of long-term poor nutrition and illness. One of the SDG 2 measures.",
+    keywords: "stunting malnutrition children growth hunger sdg 2",
+  }),
+  num("tb_incidence", "Health", "Tuberculosis", {
+    short: "TB cases", format: "per100k", scale: "log",
+    say: (b) => `there are ${b} new tuberculosis cases a year`,
+    info: "New cases of tuberculosis (TB) each year, per 100,000 people. TB is a bacterial lung disease that is curable but still kills over a million people a year. One of the SDG 3 measures.",
+    keywords: "tuberculosis tb disease infection health sdg 3",
   }),
   num("health_spend", "Health", "Spending on health", {
     short: "Health spend", step: 0.5, format: "pct", clip: true,
@@ -321,6 +414,12 @@ window.FILTERS = [
     info: "Value of everything the economy produces in a year, divided by population, in US dollars.",
     keywords: "rich poor wealth economy gdp money",
   }),
+  num("gdp_usd", "Work & money", "GDP (whole economy)", {
+    short: "GDP", scale: "log", format: "usd", sum: true,
+    say: (b) => `the economy (GDP) is worth ${b} a year`,
+    info: "Value of everything the economy produces in a year, in US dollars. Big countries have big economies, so this measures size, not how rich people are.",
+    keywords: "gdp economy size total output biggest economies",
+  }),
   num("emp_agriculture", "Work & money", "Jobs in farming", {
     short: "Farming jobs", format: "pct", bounds: [0, 100],
     say: (b) => `${b} of workers are in farming, forestry or fishing`,
@@ -338,6 +437,18 @@ window.FILTERS = [
     say: (b) => `${b} of workers are in services`,
     info: "Share of workers in services such as shops, offices, health, education and tourism (the tertiary sector and beyond).",
     keywords: "services tertiary quaternary sector employment jobs clark fisher",
+  }),
+  num("unemployment", "Work & money", "Unemployment", {
+    short: "Unemployment", format: "pct", bounds: [0, 40], clip: true,
+    say: (b) => `unemployment is ${b}`,
+    info: "Share of people in the labour force (working or looking for work) who have no job but are looking for one (International Labour Organization estimate). One of the SDG 8 measures.",
+    keywords: "unemployment jobs work jobless labour sdg 8",
+  }),
+  num("tax_revenue_pct", "Work & money", "Tax revenue", {
+    short: "Tax revenue", format: "pct", clip: true,
+    say: (b) => `tax revenue is ${b} of GDP`,
+    info: "Taxes collected by the central government, as a share of GDP. Taxes collected by states and local governments are not included, so countries with strong regions (like the US or Germany) look low.",
+    keywords: "tax revenue government income public finance",
   }),
   {
     key: "currencies", type: "multi", group: "Work & money",
@@ -773,6 +884,18 @@ window.FILTERS = [
     info: "Total value of goods and services exported in a year, in US dollars.",
     keywords: "exports value dollars trade size",
   }),
+  num("goods_exports_usd", "Trade", "Goods exports (US$)", {
+    short: "Goods exports $", scale: "log", format: "usd", sum: true,
+    say: (b) => `goods worth ${b} are exported a year`,
+    info: "Value of physical goods sold to other countries in a year (things like oil, cars, food and phones), in US dollars.",
+    keywords: "exports goods merchandise trade value",
+  }),
+  num("services_exports_usd", "Trade", "Services exports (US$)", {
+    short: "Services exports $", scale: "log", format: "usd", sum: true,
+    say: (b) => `services worth ${b} are exported a year`,
+    info: "Value of services sold to other countries in a year (such as tourism, transport, banking and software), in US dollars.",
+    keywords: "exports services tourism banking finance trade value",
+  }),
   ...[
     ["exp_fuel_pct", "Fuel exports", "Fuel", "fuels (oil, gas, coal)"],
     ["exp_metals_pct", "Ore and metal exports", "Ores & metals", "ores and metals"],
@@ -983,16 +1106,25 @@ window.FILTERS = [
     ["low_carbon_elec_pct", "Electricity from low-carbon sources", "Low-carbon electricity", "low-carbon sources (renewables and nuclear)"],
     ["fossil_elec_pct", "Electricity from fossil fuels", "Fossil electricity", "fossil fuels (coal, oil and gas)"],
     ["coal_elec_pct", "Electricity from coal", "Coal power", "coal"],
+    ["gas_elec_pct", "Electricity from gas", "Gas power", "natural gas"],
+    ["oil_elec_pct", "Electricity from oil", "Oil power", "oil"],
     ["nuclear_elec_pct", "Electricity from nuclear", "Nuclear power", "nuclear power"],
     ["hydro_elec_pct", "Electricity from hydropower", "Hydropower", "hydropower"],
     ["wind_elec_pct", "Electricity from wind", "Wind power", "wind"],
     ["solar_elec_pct", "Electricity from solar", "Solar power", "solar"],
+    ["other_renew_elec_pct", "Electricity from other renewables", "Other renewables", "other renewables, such as bioenergy (burning wood and crops) and geothermal"],
   ].map(([key, label, short, what]) => num(key, "Energy & resources", label, {
     short, format: "pct", bounds: [0, 100], source: "owidenergy",
     say: (b) => `${b} of electricity comes from ${what}`,
     info: `Share of the country's electricity generated from ${what}.`,
     keywords: "electricity power generation energy mix " + label.toLowerCase(),
   })),
+  num("elec_twh", "Energy & resources", "Electricity generated", {
+    short: "Electricity made", scale: "log", format: "twh", source: "owidenergy", sum: true,
+    say: (b) => `${b} of electricity is generated a year`,
+    info: "All the electricity the country generates in a year, in terawatt-hours (TWh). One TWh is roughly what a million European homes use in three months.",
+    keywords: "electricity generation power total twh",
+  }),
   ...[
     ["oil_twh", "Oil production", "Oil", "oil"],
     ["gas_twh", "Natural gas production", "Gas", "natural gas"],
@@ -1058,6 +1190,59 @@ window.FILTERS = [
     info: "Fresh water taken each year as a share of the water that is naturally replenished. Above 25% is stress; above 100% means using more than nature replaces.",
     keywords: "water stress scarcity shortage drought resources",
   }),
+  num("pm25", "Environment", "Air pollution (PM2.5)", {
+    short: "Air pollution", format: "dec1", scale: "log",
+    say: (b) => `the average PM2.5 air pollution is ${b} micrograms per cubic metre`,
+    info: "Average yearly level of fine particles (PM2.5, smaller than 2.5 thousandths of a millimetre) in the air people breathe, in micrograms per cubic metre. They come from traffic, industry, burning fuel and dust. The WHO guideline is 5. One of the SDG 11 measures.",
+    keywords: "air pollution pm2.5 smog particles health cities sdg 11",
+  }),
+  num("protected_land_pct", "Environment", "Protected land", {
+    short: "Protected land", format: "pct", bounds: [0, 100],
+    say: (b) => `${b} of land is protected`,
+    info: "Share of land in national parks, nature reserves and other protected areas. In 2022 countries agreed to protect 30% of land by 2030 (“30 by 30”). One of the SDG 15 measures.",
+    keywords: "protected areas national parks nature reserves biodiversity conservation sdg 15 30x30",
+  }),
+  num("homicides", "Politics", "Murder rate", {
+    short: "Murders", format: "per100k", scale: "log",
+    say: (b) => `there are ${b} murders a year`,
+    info: "Intentional homicides (murders) each year per 100,000 people, from the UN Office on Drugs and Crime. One of the SDG 16 measures.",
+    keywords: "murder homicide violence crime safety peace sdg 16",
+  }),
+
+  // ---------------- SDGs (the tracker is worked out in build_data.py) ----------------
+  num("sdg_on_track", "SDGs", "SDGs on track", {
+    short: "SDGs on track", format: "count", bounds: [0, 14], source: "sdgtracker", yearText: "2026",
+    say: (b) => `${b} of the 14 goals we track are achieved or on track for 2030`,
+    info: "How many of the 14 Sustainable Development Goals we can track the country has already achieved or is on track to achieve by 2030, at the speed it has changed since 2015. Open a country to see each goal.",
+    keywords: "sdg sdgs sustainable development goals 2030 agenda on track progress tracker un",
+  }),
+  num("sdg_achieved", "SDGs", "SDGs achieved", {
+    short: "SDGs achieved", format: "count", bounds: [0, 14], source: "sdgtracker", yearText: "2026",
+    say: (b) => `${b} of the 14 goals we track are already achieved`,
+    info: "How many of the 14 Sustainable Development Goals we track the country has already reached the 2030 target for, on every measure.",
+    keywords: "sdg sdgs sustainable development goals achieved met",
+  }),
+  num("sdg_on_track_pct", "SDGs", "Share of SDGs on track", {
+    short: "% SDGs on track", format: "pct", bounds: [0, 100], source: "sdgtracker", yearText: "2026",
+    say: (b) => `${b} of the goals with data are achieved or on track`,
+    info: "Goals achieved or on track, as a share of the goals there is enough data to judge for the country (some countries are missing data for a few goals).",
+    keywords: "sdg sdgs sustainable development goals share percent on track",
+  }),
+  {
+    key: "sdg_goals_on_track", type: "multi", group: "SDGs", label: "On track for goal…", short: "On track for",
+    modes: true, order: window.SDGS.filter((g) => g.measures.length).map((g) => `${g.n} · ${g.name}`), source: "sdgtracker", yearText: "2026",
+    say: (v, many) => `the country is achieved or on track for ${many ? "goals" : "goal"} ${v}`,
+    sayNot: (v) => `the country is not on track for goal ${v}`,
+    info: "Pick goals to find countries that have achieved them or are on track to by 2030.",
+    keywords: "sdg goal on track achieved",
+  },
+  ...window.SDGS.filter((g) => g.measures.length).map((g) => ({
+    key: `sdg${g.n}_status`, type: "cat", group: "SDGs", label: `Goal ${g.n}: ${g.name}`, short: `SDG ${g.n}`,
+    order: ["Achieved", "On track", "Improving too slowly", "Stagnating", "Getting worse"], source: "sdgtracker", yearText: "2026",
+    say: (v) => `its progress on goal ${g.n} (${g.name.toLowerCase()}) is “${v.toLowerCase()}”`,
+    info: `${g.aim} Measured here by: ${g.measures.map((m) => m[1]).join("; ")}. A goal is only as good as its weakest measure.`,
+    keywords: `sdg sdgs goal ${g.n} ${g.name.toLowerCase()} ${g.keywords}`,
+  })),
 ];
 
 window.SOURCES = {
@@ -1129,6 +1314,8 @@ window.PUZZLES = [
  *   variants  [key, picker label] pairs; the first is chosen when added
  */
 window.FAMILIES = [
+  { id: "sdggoals", label: "Progress on each goal", short: "Goal progress", info: "For each Sustainable Development Goal: achieved, on track, improving too slowly, stagnating or getting worse, from the speed of change since 2015.",
+    variants: window.SDGS.filter((g) => g.measures.length).map((g) => [`sdg${g.n}_status`, `${g.n} ${g.name.split(/,| and /)[0]}`]) },
   { id: "hdi", label: "Human Development Index", short: "HDI", info: "A score from 0 to 1 combining life expectancy, schooling and income. Choose the score, world rank, or how much inequality lowers it.",
     variants: [["hdi", "Score"], ["hdi_rank", "World rank"], ["ihdi", "Adjusted for inequality"], ["hdi_loss", "Lost to inequality"]] },
   { id: "education", label: "Education", short: "Education", info: "Literacy, years in school and government spending on education.",
@@ -1148,7 +1335,7 @@ window.FAMILIES = [
   { id: "jobs", label: "Jobs by sector", short: "Jobs by sector", info: "Share of workers in farming (primary), industry (secondary) or services (tertiary): the Clark–Fisher model.",
     variants: [["emp_agriculture", "Farming"], ["emp_industry", "Industry"], ["emp_services", "Services"]] },
   { id: "tradesize", label: "Trade", short: "Trade", info: "How much a country trades: exports, imports, both together, the trade balance, or total exports in dollars.",
-    variants: [["trade_pct", "Exports + imports"], ["exports_pct", "Exports"], ["imports_pct", "Imports"], ["trade_balance_pct", "Balance"], ["exports_usd", "Exports (US$)"]] },
+    variants: [["trade_pct", "Exports + imports"], ["exports_pct", "Exports"], ["imports_pct", "Imports"], ["trade_balance_pct", "Balance"], ["exports_usd", "Exports (US$)"], ["goods_exports_usd", "Goods (US$)"], ["services_exports_usd", "Services (US$)"]] },
   { id: "exportmix", label: "What exports are made of", short: "Export types", info: "Share of goods exported that are fuels, ores and metals, food, farm raw materials or manufactured goods.",
     variants: [["exp_fuel_pct", "Fuel"], ["exp_metals_pct", "Ores & metals"], ["exp_food_pct", "Food"], ["exp_agri_raw_pct", "Farm materials"], ["exp_manuf_pct", "Manufactures"]] },
   { id: "migration", label: "Migration", short: "Migration", info: "People born abroad, net migration, and money sent home by migrants.",
@@ -1190,7 +1377,7 @@ window.FAMILIES = [
   { id: "energyuse", label: "Energy use", short: "Energy use", info: "Energy used per person, and the share of all energy that is renewable.",
     variants: [["energy_per_capita", "Per person"], ["renewables_pct", "Renewable share"]] },
   { id: "electricity", label: "Where electricity comes from", short: "Electricity sources", info: "Share of electricity generated from renewables, low-carbon sources, fossil fuels, coal, nuclear, hydro, wind or solar.",
-    variants: [["renewables_elec_pct", "Renewables"], ["low_carbon_elec_pct", "Low-carbon"], ["fossil_elec_pct", "Fossil fuels"], ["coal_elec_pct", "Coal"], ["nuclear_elec_pct", "Nuclear"], ["hydro_elec_pct", "Hydro"], ["wind_elec_pct", "Wind"], ["solar_elec_pct", "Solar"]] },
+    variants: [["renewables_elec_pct", "Renewables"], ["low_carbon_elec_pct", "Low-carbon"], ["fossil_elec_pct", "Fossil fuels"], ["coal_elec_pct", "Coal"], ["gas_elec_pct", "Gas"], ["oil_elec_pct", "Oil"], ["nuclear_elec_pct", "Nuclear"], ["hydro_elec_pct", "Hydro"], ["wind_elec_pct", "Wind"], ["solar_elec_pct", "Solar"], ["other_renew_elec_pct", "Other renewables"]] },
   { id: "fossilprod", label: "Fossil fuel production", short: "Oil, gas & coal", info: "Energy content of the oil, natural gas or coal a country produces each year.",
     variants: [["oil_twh", "Oil"], ["gas_twh", "Gas"], ["coal_twh", "Coal"]] },
   { id: "resourceincome", label: "Income from natural resources", short: "Resource income", info: "Profit from all natural resources, from oil, or from mining, as a share of GDP.",
@@ -1201,7 +1388,7 @@ window.FAMILIES = [
 window.THEMES = [
   { id: "people", label: "People", groups: ["Population", "Health", "Gender", "Culture", "Sport"] },
   { id: "wealth", label: "Wealth & work", groups: ["Development", "Work & money", "Trade", "Tourism", "Technology"] },
-  { id: "world", label: "Politics & the world", groups: ["Politics", "UN & treaties", "Global links", "Refugees", "Military"] },
+  { id: "world", label: "Politics & the world", groups: ["Politics", "UN & treaties", "SDGs", "Global links", "Refugees", "Military"] },
   { id: "places", label: "Places", groups: ["Geography", "Cities"] },
   { id: "planet", label: "Planet", groups: ["Climate", "Energy & resources", "Environment"] },
 ];
@@ -1657,5 +1844,6 @@ Object.assign(window.SOURCES, {
   gvp: { name: "Smithsonian Global Volcanism Program, Volcanoes of the World (via the volcanoes R package)", url: "https://volcano.si.edu/", licence: "Free to use with citation" },
   usgsquakes: { name: "USGS earthquake catalogue (magnitude 6+, 1900–2026)", url: "https://earthquake.usgs.gov/earthquakes/search/", licence: "Public domain" },
   biomes: { name: "Biomes worked out from Köppen–Geiger climate zones (kgc package)", url: "https://github.com/cran/kgc", licence: "BSD 2-clause" },
+  sdgtracker: { name: "SDG tracker worked out on this site from World Bank, UN and Our World in Data figures (method based on SDSN's Sustainable Development Report)", url: "https://dashboards.sdgindex.org/", licence: "CC BY 4.0" },
   handlists: { name: "Compiled by hand from Wikipedia and other references", url: "https://en.wikipedia.org/wiki/Oceanic_trench", licence: "CC0" },
 });

@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "16";
+  const DATA_VERSION = "18";
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
   const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
@@ -77,6 +77,7 @@
   }
   function compact(v) {
     const a = Math.abs(v);
+    if (a >= 1e12) return +(v / 1e12).toPrecision(3) + "tn";
     if (a >= 1e9) return +(v / 1e9).toPrecision(3) + "bn";
     if (a >= 1e6) return +(v / 1e6).toPrecision(3) + "M";
     if (a >= 1e3) return +(v / 1e3).toPrecision(3) + "k";
@@ -119,7 +120,8 @@
       case "year": return String(Math.round(v));
       case "mt": return (a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v))) + " Mt";
       case "degc": return v.toFixed(3) + "°C";
-      case "twh": case "kwh": return compact(v);
+      case "twh": return compact(v) + " TWh";
+      case "kwh": return compact(v) + " kWh";
       case "permillion": case "per100": return String(a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v)));
       case "count": return d3.format(",")(Math.round(v));
       default: return String(Math.round(v));
@@ -241,7 +243,9 @@
     const f = F[key];
     if (f.type === "range") {
       const init = f.initial || {};
-      return { key, min: preset.min ?? init.min ?? f.dmin, max: preset.max ?? init.max ?? f.dmax };
+      const fl = { key, min: preset.min ?? init.min ?? f.dmin, max: preset.max ?? init.max ?? f.dmax };
+      if (preset.slice) { fl.slice = preset.slice; fl.min = f.dmin; fl.max = f.dmax; }
+      return fl;
     }
     if (f.type === "bool") return { key, value: preset.value ?? true };
     return { key, values: preset.values ? [...preset.values] : [], mode: preset.mode || "any" };
@@ -254,12 +258,66 @@
     if (f.type === "bool") return true;
     return fl.values.length > 0;
   }
-  const isLimited = (fl) => { const f = F[fl.key]; return fl.min > f.dmin || fl.max < f.dmax; };
+  const isLimited = (fl) => { const f = F[fl.key]; return !!fl.slice || fl.min > f.dmin || fl.max < f.dmax; };
+  // ---------- Slices: highest or lowest n, quartiles and quintiles ----------
+  // A slice is worked out from every country (or city, or feature) with data, in the year shown:
+  // { k: "top" | "bottom", n } or { k: "q", of: 4 | 5, g: [1…of] } where group 1 has the lowest values.
+  // "Life expectancy" -> "life expectancy", but names with other capitals ("Human Development Index") stay as they are
+  const lower = (s) => (/^[A-Z][^A-Z]*$/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+  const QNAMES = { 4: ["Lowest quarter", "Second quarter", "Third quarter", "Highest quarter"], 5: ["Lowest fifth", "Second fifth", "Middle fifth", "Fourth fifth", "Highest fifth"] };
+  const sliceCache = new Map();
+  // with `w` set, the slice is taken only from the countries that pass your other filters ("the 10 most populous in Africa")
+  function sliceOthers(fl) {
+    if (!fl.slice?.w || F[fl.key].target) return [];
+    return (fl._others || state.filters).filter((x) => x !== fl && x.key !== fl.key && !x.slice && !F[x.key].target && isActive(x));
+  }
+  function sliceInfo(fl) {
+    const others = sliceOthers(fl);
+    const ck = `${fl.key}|${JSON.stringify(fl.slice)}|${JSON.stringify(others.map((o) => [o.key, o.min, o.max, o.values, o.value, o.mode]))}`;
+    if (sliceCache.has(ck)) return sliceCache.get(ck);
+    const f = F[fl.key];
+    const items = (f.target ? itemsFor(f) : pool()).filter((r) => typeof r[fl.key] === "number" && others.every((o) => passes(r, o)))
+      .sort((a, b) => a[fl.key] - b[fl.key] || String(a.name).localeCompare(String(b.name)));
+    const s = fl.slice, n = items.length;
+    let pick = [];
+    // for ranks (1 = best), the "top" is the smallest numbers
+    const best = f.format === "rank" ? "low" : "high";
+    if (s.k === "top" || s.k === "bottom") {
+      const k = Math.max(1, Math.min(n, Math.round(s.n) || 10));
+      const high = (s.k === "top") === (best === "high");
+      pick = high ? items.slice(n - k) : items.slice(0, k);
+    } else if (s.k === "q") {
+      const of = s.of === 5 ? 5 : 4;
+      pick = items.filter((r, i) => s.g.includes(Math.min(of, Math.floor((i * of) / n) + 1)));
+    }
+    const vals = pick.map((r) => r[fl.key]);
+    const out = { set: new Set(pick), n: pick.length, of: n, lo: d3.min(vals), hi: d3.max(vals),
+      cuts: s.k === "q" ? d3.range(1, s.of === 5 ? 5 : 4).map((j) => items[Math.floor((j * n) / (s.of === 5 ? 5 : 4))]?.[fl.key]) : [] };
+    sliceCache.set(ck, out);
+    return out;
+  }
+  function sliceText(fl, short) {
+    const f = F[fl.key], s = fl.slice;
+    if (s.k === "top" || s.k === "bottom") {
+      if (f.format === "rank") return short ? `${s.k} ${s.n}` : `in the ${s.k} ${s.n}`;
+      const hi = s.k === "top";
+      return short ? `${hi ? "highest" : "lowest"} ${s.n}` : `among the ${s.n} ${hi ? "highest" : "lowest"}`;
+    }
+    const of = s.of === 5 ? 5 : 4, g = s.g.slice().sort((x, y) => x - y);
+    const word = of === 5 ? "fifth" : "quarter", words = of === 5 ? "fifths" : "quarters";
+    if (short) return g.length === 1 ? QNAMES[of][g[0] - 1].toLowerCase() : `${of === 5 ? "quintiles" : "quartiles"} ${g.join(", ")}`;
+    if (g.length === 1) return `in the ${QNAMES[of][g[0] - 1].toLowerCase()}`;
+    const contiguous = g.every((x, i) => !i || x === g[i - 1] + 1);
+    if (contiguous && g[0] === 1) return `in the lowest ${g.length === 2 ? "two" : g.length === 3 ? "three" : "four"} ${words}`;
+    if (contiguous && g[g.length - 1] === of) return `in the highest ${g.length === 2 ? "two" : g.length === 3 ? "three" : "four"} ${words}`;
+    return `in ${of === 5 ? "quintiles" : "quartiles"} ${g.slice(0, -1).join(", ")} and ${g[g.length - 1]} (${word} 1 is the lowest)`;
+  }
   function passes(r, fl) {
     const f = F[fl.key];
     const v = r[fl.key];
     if (f.type === "range") {
       if (typeof v !== "number") return false;
+      if (fl.slice) return sliceInfo(fl).set.has(r);
       // the ends of the slider mean "no limit"
       const lo = fl.min <= f.dmin ? -Infinity : fl.min, hi = fl.max >= f.dmax ? Infinity : fl.max;
       return v >= lo - 1e-9 && v <= hi + 1e-9;
@@ -285,6 +343,7 @@
   const showCities = () => state.filters.some(isCity);
 
   function evaluate() {
+    sliceCache.clear();
     const act = active();
     const res = new Map();
     for (const r of pool()) {
@@ -314,6 +373,66 @@
   }
   window.WP?.setW({ F, isActive, passes, byIso });
 
+  // ---------- Glossary: hover (or tap ⓘ) over key terms to see what they mean ----------
+  const GL = new Map();  // lower-case term -> { term, def }
+  const GL_TEXT = [];    // terms explained when they turn up in explanations
+  for (const [term, def, o = {}] of window.GLOSSARY || []) {
+    const e = { term, def };
+    for (const t of [term, ...(o.also || [])]) {
+      GL.set(t.toLowerCase(), e);
+      if (!o.opt) GL_TEXT.push(t);
+    }
+  }
+  GL_TEXT.sort((x, y) => y.length - x.length);
+  const GL_RE = GL_TEXT.length ? new RegExp(`(^|[^\\p{L}\\p{N}])(${GL_TEXT.map((t) => esc(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![\\p{L}\\p{N}])`, "giu") : null;
+  // the definition for a filter option: exact, or the start of it ("Stage 2 · …")
+  function glossFor(opt) {
+    const s = String(opt).toLowerCase();
+    if (GL.has(s)) return GL.get(s);
+    const m = s.match(/^(stage \d)/);
+    return m ? GL.get(m[1]) : null;
+  }
+  // mark the first use of each term in some already-escaped text
+  function glossify(html) {
+    if (!GL_RE || !html) return html;
+    const used = new Set();
+    return html.replace(GL_RE, (all, pre, t) => {
+      const e = GL.get(t.toLowerCase().replace(/&amp;/g, "&").replace(/&#39;/g, "'"));
+      if (!e || used.has(e)) return all;
+      used.add(e);
+      return `${pre}<span class="gl" tabindex="0" data-gl="${esc(e.term)}">${t}</span>`;
+    });
+  }
+  const glTerm = (opt) => { const e = glossFor(opt); return e ? `<span class="gl" data-gl="${esc(e.term)}">${esc(opt)}</span><button type="button" class="glb" data-gl="${esc(e.term)}" aria-label="What does ${esc(opt)} mean?">i</button>` : esc(opt); };
+  {
+    const tip = document.createElement("div");
+    tip.id = "gltip"; tip.className = "gltip"; tip.setAttribute("role", "tooltip"); tip.hidden = true;
+    document.body.appendChild(tip);
+    let pinned = null;
+    const show = (el) => {
+      const e = GL.get(el.dataset.gl.toLowerCase());
+      if (!e) return;
+      tip.innerHTML = `<b>${esc(e.term)}</b>${esc(e.def)}`;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect(), w = Math.min(300, innerWidth - 16);
+      tip.style.width = w + "px";
+      tip.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + "px";
+      const below = r.bottom + 8 + tip.offsetHeight < innerHeight;
+      tip.style.top = (below ? r.bottom + 6 : r.top - tip.offsetHeight - 6) + "px";
+    };
+    const hide = () => { tip.hidden = true; pinned = null; };
+    document.addEventListener("pointerover", (e) => { const el = e.target.closest?.(".gl, .glb"); if (el && e.pointerType !== "touch") show(el); });
+    document.addEventListener("pointerout", (e) => { const el = e.target.closest?.(".gl, .glb"); if (el && !pinned && e.pointerType !== "touch") hide(); });
+    document.addEventListener("focusin", (e) => { if (e.target.matches?.(".gl, .glb")) show(e.target); });
+    document.addEventListener("focusout", (e) => { if (e.target.matches?.(".gl, .glb") && !pinned) hide(); });
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest?.(".glb, .gl[tabindex]");
+      if (b) { e.preventDefault(); e.stopPropagation(); if (pinned === b) return hide(); show(b); pinned = b; return; }
+      if (pinned && !tip.contains(e.target)) hide();
+    }, true);
+    document.addEventListener("scroll", () => { if (!tip.hidden) hide(); }, true);
+  }
+
   // ---------- Text: chips and sentence ----------
   function joinOr(list) {
     if (list.length <= 1) return list.join("");
@@ -335,6 +454,7 @@
   function phrase(fl) {
     const f = F[fl.key];
     if (!isActive(fl)) return null;
+    if (f.type === "range" && fl.slice) return `${lower(f.label)} is ${sliceText(fl)}${fl.slice.w && sliceOthers(fl).length ? " of those" : ""}`;
     if (f.type === "range") return isLimited(fl) ? f.say(bound(fl)) : `there is data on ${f.label}`;
     if (f.type === "bool") return f.say(fl.value);
     // optional per-value wording, e.g. "the Commonwealth", "a liberal democracy"
@@ -348,6 +468,7 @@
     const name = f.short || f.label;
     if (f.type === "bool") return fl.value ? f.yes : f.no;
     if (f.type === "range") {
+      if (fl.slice) return `${name}: ${sliceText(fl, true)}`;
       if (!isLimited(fl)) return `${name}: all`;
       const lo = fl.min > f.dmin, hi = fl.max < f.dmax;
       if (f.format === "rank" && hi && !lo) return `${name}: top ${Math.round(fl.max)}`;
@@ -1107,7 +1228,7 @@
     el.dataset.g = gslug(f.group);
     const fam = famOf[fl.key];
     el.innerHTML = `<div class="eyebrow">${esc(f.group)}${fam ? ` · ${esc(fam.label)}` : ""}</div><header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
-      <p class="info">${esc(f.info)} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.${timeNote}</p>
+      <p class="info">${glossify(esc(f.info))} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.${timeNote}</p>
       ${famPicker(fl)}
       ${f.modes ? `<div class="seg modes" role="group" aria-label="Match">
         ${[["any", "Any of these"], ["all", "All of these"], ["none", "None of these"]].map(([m, t]) => `<button type="button" data-mode="${m}" class="${(fl.mode || "any") === m ? "on" : ""}">${t}</button>`).join("")}</div>` : ""}
@@ -1150,20 +1271,69 @@
     const maxN = d3.max(bins, (b) => b.length) || 1;
     const W = 330, H = 56;
     const x = (t) => ((t - T0) / (T1 - T0)) * W;
+    const s = fl.slice;
+    const mode = !s ? "range" : s.k === "q" ? "q" + (s.of === 5 ? 5 : 4) : s.k;
+    const noun = f.target === "city" ? "cities" : f.target ? (window.WP?.T?.[f.target]?.many || "places") : state.territories ? "places" : "countries";
+    const isRank = f.format === "rank";
     body.innerHTML = `
+      <div class="seg slicemodes" role="radiogroup" aria-label="How to choose">
+        ${[["range", "Range"], ["top", isRank ? "Top" : "Highest"], ["bottom", isRank ? "Bottom" : "Lowest"], ["q4", "Quartiles"], ["q5", "Quintiles"]].map(([m, t]) => `<button type="button" role="radio" data-sm="${m}" class="${mode === m ? "on" : ""}" aria-checked="${mode === m}">${t}</button>`).join("")}
+      </div>
       <svg class="hist" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
         ${bins.map((b) => `<rect data-a="${b.x0}" data-b="${b.x1}" x="${x(b.x0) + 0.5}" width="${Math.max(0, x(b.x1) - x(b.x0) - 1)}" y="${H - (b.length / maxN) * (H - 2)}" height="${(b.length / maxN) * (H - 2)}"></rect>`).join("")}
       </svg>
-      <div class="dual"><div class="track"></div><div class="fill"></div>
+      <div class="slicebox" ${s ? "" : "hidden"}></div>
+      <div class="dual" ${s ? "hidden" : ""}><div class="track"></div><div class="fill"></div>
         <input type="range" id="rLo" min="0" max="1000" step="1" aria-label="Minimum">
         <input type="range" id="rHi" min="0" max="1000" step="1" aria-label="Maximum">
       </div>
-      <div class="bounds">
+      <div class="bounds" ${s ? "hidden" : ""}>
         <label for="nLo">At least<input id="nLo" inputmode="decimal"></label>
         <label for="nHi">At most<input id="nHi" inputmode="decimal"></label>
       </div>
       ${UNITS[f.format] ? `<p class="info unit">Values are${esc(UNITS[f.format])}.</p>` : ""}`;
     const lo = $("#rLo"), hi = $("#rHi"), nLo = $("#nLo"), nHi = $("#nHi");
+    // switching between a range and a slice
+    body.querySelectorAll(".slicemodes button").forEach((b) => (b.onclick = () => {
+      const m = b.dataset.sm;
+      if (m === mode) return;
+      if (m === "range") { delete fl.slice; fl.min = f.dmin; fl.max = f.dmax; }
+      else if (m === "top" || m === "bottom") fl.slice = { k: m, n: s && s.n ? s.n : 10 };
+      else fl.slice = { k: "q", of: m === "q5" ? 5 : 4, g: [m === "q5" ? 5 : 4] };
+      render();
+    }));
+    if (s) {
+      const info = sliceInfo(fl);
+      const box = body.querySelector(".slicebox");
+      if (s.k === "q") {
+        const of = s.of === 5 ? 5 : 4;
+        const items = (f.target ? itemsFor(f) : pool()).filter((r) => typeof r[fl.key] === "number").length;
+        box.innerHTML = `<div class="qpick" role="group" aria-label="Which groups">${QNAMES[of].map((nm, i) => `<button type="button" data-g="${i + 1}" class="${s.g.includes(i + 1) ? "on" : ""}" aria-pressed="${s.g.includes(i + 1)}">${esc(nm)}</button>`).join("")}</div>
+          <p class="info">${of === 5 ? "Quintiles split" : "Quartiles split"} the ${items} ${noun} with data into ${of} equal groups, from the lowest values to the highest. Tick more than one to combine them.</p>`;
+        box.querySelectorAll(".qpick button").forEach((b) => (b.onclick = () => {
+          const g = +b.dataset.g;
+          s.g = s.g.includes(g) ? s.g.filter((x) => x !== g) : s.g.concat(g).sort((x, y) => x - y);
+          if (!s.g.length) s.g = [g];
+          render();
+        }));
+      } else {
+        const QUICK = [5, 10, 20, 50];
+        box.innerHTML = `<div class="topn"><label>${s.k === "top" ? (isRank ? "Top" : "Highest") : isRank ? "Bottom" : "Lowest"} <input type="number" id="sN" min="1" max="${info.of}" value="${s.n}" inputmode="numeric"></label>
+          <span class="quick">${QUICK.map((q) => `<button type="button" data-n="${q}" class="${s.n === q ? "on" : ""}">${q}</button>`).join("")}</span></div>
+          <p class="info">Out of the ${info.of} ${noun} with data${state.year && f.time ? ` in ${state.year}` : ""}${s.w ? " that pass your other filters" : ", whatever your other filters"}.</p>`;
+        const setN = (v) => { v = Math.round(+v); if (v >= 1) { s.n = Math.min(v, info.of); render(); } };
+        box.querySelector("#sN").onchange = (e) => setN(e.target.value);
+        box.querySelectorAll(".quick button").forEach((b) => (b.onclick = () => setN(b.dataset.n)));
+      }
+      if (!f.target) {
+        box.insertAdjacentHTML("beforeend", `<label class="tog slicew"><input type="checkbox" id="sW" ${s.w ? "checked" : ""}> Only among countries that pass my other filters</label>`);
+        box.querySelector("#sW").onchange = (e) => { s.w = e.target.checked; render(); };
+      }
+      box.insertAdjacentHTML("beforeend", info.n ? `<p class="sliceres">${info.n} ${noun}: ${esc(fmtShort(f, info.lo))} to ${esc(fmtShort(f, info.hi))}</p>` : "");
+      const tA = f.toT(info.lo ?? f.dmin), tB = f.toT(info.hi ?? f.dmin);
+      body.querySelectorAll(".hist rect").forEach((r) => r.classList.toggle("in", +r.dataset.b >= tA && +r.dataset.a <= tB));
+      return;
+    }
     const toPos = (v) => Math.round(((f.toT(v) - T0) / (T1 - T0)) * 1000);
     const fromPos = (p) => {
       if (p <= 0) return f.dmin;
@@ -1227,7 +1397,7 @@
       q = (q || "").toLowerCase();
       list.innerHTML = opts.filter((o) => !q || o.toLowerCase().includes(q)).slice(0, 300).map((o) => {
         const n = counts.get(o), on = fl.values.includes(o);
-        return `<label class="${!n && !on ? "zero" : ""}"><input type="checkbox" value="${esc(o)}" ${on ? "checked" : ""} ${!n && !on ? "disabled" : ""}><span>${esc(o)}</span><small>${n}</small></label>`;
+        return `<label class="${!n && !on ? "zero" : ""}"><input type="checkbox" value="${esc(o)}" ${on ? "checked" : ""} ${!n && !on ? "disabled" : ""}><span>${glTerm(o)}</span><small>${n}</small></label>`;
       }).join("") || `<p class="info">Nothing matches “${esc(q)}”.</p>`;
       list.querySelectorAll("input").forEach((c) => (c.onchange = () => {
         if (c.checked) fl.values.push(c.value); else fl.values = fl.values.filter((v) => v !== c.value);
@@ -1422,6 +1592,44 @@
   }
 
   // ---------- Country detail ----------
+  // ---------- SDG dashboard for a country ----------
+  const SDG_ICON = ["✔", "↗", "→", "–", "↘"];
+  let sdgOpen = null;
+  function sdgHTML(r) {
+    if (!r.sdg_detail || !window.SDGS) return "";
+    const ST = window.SDG_STATUS;
+    const stIndex = (s) => ST.findIndex(([n]) => n === s);
+    const tiles = window.SDGS.map((g) => {
+      const s = r[`sdg${g.n}_status`];
+      const i = s ? stIndex(s) : -1;
+      return `<button type="button" class="sdgt${i < 0 ? " none" : ""}${sdgOpen === g.n ? " open" : ""}" data-n="${g.n}" style="--sdg:${g.colour}" ${i < 0 ? "disabled" : ""}
+        title="Goal ${g.n}: ${esc(g.name)}${s ? ` · ${s}` : g.measures.length ? " · not enough data" : " · not tracked here"}">
+        <span class="sdgn">${g.n}</span><span class="sdgs" ${i >= 0 ? `style="background:${ST[i][1]}"` : ""}>${i >= 0 ? SDG_ICON[i] : ""}</span></button>`;
+    }).join("");
+    let detail = "";
+    const g = window.SDGS.find((x) => x.n === sdgOpen);
+    if (g && r.sdg_detail[g.n]) {
+      const rows = r.sdg_detail[g.n].map(([key, v, y, st]) => {
+        const f = F[key], m = g.measures.find((x) => x[0] === key);
+        return `<li><span class="dot" style="background:${ST[st][1]}"></span><span><b>${esc(f ? f.label : key)}</b>: ${esc(f ? fmtFull(f, v) : String(v))} <small>(${y})</small><br><small>Target ${esc(m ? m[1].replace(/^[^:]*: /, "") : "")} · ${ST[st][0]}</small></span></li>`;
+      }).join("");
+      detail = `<div class="sdgd" style="--sdg:${g.colour}"><b>Goal ${g.n}: ${esc(g.name)}</b> <span class="sub">${esc(g.aim)}</span><ul>${rows}</ul></div>`;
+    }
+    return `<h4 data-g="sdgs">Sustainable Development Goals</h4>
+      <p class="sub">On track or achieved for <b>${r.sdg_on_track} of ${r.sdg_measured}</b> goals with data${r.sdg_achieved ? ` (${r.sdg_achieved} already achieved)` : ""}. Tap a goal to see why.</p>
+      <div class="sdggrid">${tiles}</div>${detail}
+      <p class="sdgkey">${window.SDG_STATUS.map(([n, c], i) => `<span><span class="sdgs" style="background:${c}">${SDG_ICON[i]}</span>${n}</span>`).join("")}</p>
+      <p class="sub sdgnote">Worked out on this site from the speed of change since 2015 (the SDSN's method, simplified). Goals 12, 14 and 17 aren't tracked: there isn't good yearly data for every country.</p>`;
+  }
+  function bindSdg(el) {
+    el.querySelectorAll(".sdgt[data-n]").forEach((b) => (b.onclick = () => {
+      const n = +b.dataset.n, sc = el.querySelector(".detail")?.scrollTop || 0;
+      sdgOpen = sdgOpen === n ? null : n;
+      renderDetail();
+      const d = el.querySelector(".detail"); if (d) d.scrollTop = sc;
+    }));
+  }
+
   function renderDetail() {
     const r = byIso.get(state.selected);
     const el = $("#results");
@@ -1437,9 +1645,9 @@
     };
     const mg = modeGroups();
     const groups = window.FILTER_GROUPS.filter((g) => mg.has(g)).map((g) => {
-      const fs = FILTERS.filter((f) => f.group === g && !f.target && !f.hidden);
+      const fs = FILTERS.filter((f) => f.group === g && !f.target && !f.hidden && !/^sdg\d+_status$/.test(f.key));
       if (!fs.length) return "";
-      return `<h4 data-g="${gslug(g)}">${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
+      return `<h4 data-g="${gslug(g)}">${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${f.type === "cat" && glossFor(val(f)) ? glTerm(val(f)) : esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
     }).join("");
     el.innerHTML = `<div class="detail">
       <button type="button" class="linkbtn back" id="back">← Back to results</button>
@@ -1449,6 +1657,7 @@
       ${badge}
       ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; refugee routes and everything else show the latest figures.</p>` : ""}
       ${state.mode === "physical" ? (window.WP ? window.WP.profileHTML(r) : "") : window.WV ? window.WV.profileHTML(r) : ""}
+      ${state.mode === "physical" ? "" : sdgHTML(r)}
       ${(() => {
         const out = flows.filter((f) => f[0] === r.iso3).sort((a, b) => b[2] - a[2]);
         const inn = flows.filter((f) => f[1] === r.iso3).sort((a, b) => b[2] - a[2]);
@@ -1481,6 +1690,7 @@
     if (state.mode !== "physical") window.WV?.bindProfile(el, r);
     $("#ffOpen").onclick = () => window.openFactfile?.(r.iso3);
     el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.selected = b.dataset.iso; render(); }));
+    bindSdg(el);
     el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir }; render(); }));
   }
 
@@ -1591,9 +1801,15 @@
       vals.sort((a, b) => b.s - a.s || a.o.length - b.o.length);
     }
     let html = "";
+    // a question in plain English: show how it was understood, first in the list
+    const raw = input.value.trim();
+    if (window.WA && (raw.split(/\s+/).length >= 3 || /\d/.test(raw) || /^(how|which|what|show|compare|list|find|where|who)\b/i.test(raw))) {
+      const a = window.WA.previewHTML(raw);
+      if (a.html) { items.push({ ask: a.p }); html += `<button type="button" role="option" class="item askitem" data-i="${items.length - 1}">${a.html}</button>`; }
+    }
     if (fs.length) html += `<h4 class="rh">Filters</h4>` + fs.slice(0, 12).map(({ f }) => row(f, f.label)).join("");
     if (vals.length) html += `<h4 class="rh">Values</h4>` + vals.slice(0, 6).map((v) => row(v.f, v.o, true)).join("");
-    if (!fs.length && !vals.length) html = `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”. Try a broader word, like “religion” or “money”, or browse the themes.</p>`;
+    if (!fs.length && !vals.length && !items.length) html = `<p class="info" style="padding:8px 10px;margin:0">Nothing found for “${esc(q)}”. Try a broader word, like “religion” or “money”, or browse the themes.</p>`;
     cursor = 0;
     menu.innerHTML = html;
     menu.hidden = false;
@@ -1718,7 +1934,7 @@
     const timeKeys = fam ? fam.variants.filter(([k]) => F[k].time) : f.time ? [[f.key, f.label]] : [];
     const timeNote = timeKeys.length ? `<p class="fc-time">${CLOCK}<span>Yearly data from ${Math.min(...timeKeys.map(([k]) => timeFrom(k) || 9999))}${fam && timeKeys.length < fam.variants.length ? ` for ${timeKeys.map(([, l]) => l).join(", ")}` : ""}</span></p>` : "";
     card.dataset.g = gslug(g);
-    card.innerHTML = `<div class="fc-eyebrow">${esc(g)}</div><h5>${esc(title)}</h5><p>${esc(info)}</p>
+    card.innerHTML = `<div class="fc-eyebrow">${esc(g)}</div><h5>${esc(title)}</h5><p>${glossify(esc(info))}</p>
       ${fam ? `<p class="fc-vars">Choose from: ${fam.variants.map(([, l]) => esc(l)).join(" · ")}</p>` : ""}
       ${timeNote}
       ${touch.matches ? `<div class="fc-actions"><button type="button" class="fc-add">${entryAdded(e) ? "Add again" : "Add filter"}</button><button type="button" class="linkbtn fc-close">Close</button></div>` : ""}`;
@@ -1755,7 +1971,7 @@
     state.filters = filtersByMode[m] || [];
     state.mode = m;
     state.open = null; state.feat = null; state.tab = "countries"; state.colourBy = ""; state.sort = ""; state.sortDir = null;
-    if (m === "physical") { state.mapStyle = "std"; state.popSized = false; if (state.view === "trends") state.view = "map"; }
+    if (m === "physical") { state.mapStyle = "std"; state.popSized = false; }
     if (openTheme) closeThemes(); else renderThemeBar();
     $("#mmCard").hidden = true;
     render();
@@ -1767,7 +1983,7 @@
     if (modeShown !== state.mode) {
       modeShown = state.mode;
       if (!openTheme) renderThemeBar();
-      input.placeholder = state.mode === "physical" ? "Search: try “volcano”, “river” or “plates”" : "Search filters: try “religion”, “coast” or “HDI”";
+      input.placeholder = state.mode === "physical" ? "Search or ask: “volcanoes over 5,000 m”" : "Search or ask: “democracies with over 40% women MPs”";
     }
   }
   // "Show all on the map" switches in the physical map style card
@@ -1802,6 +2018,7 @@
 
   function choose(it) {
     if (!it) return;
+    if (it.ask) { input.value = ""; closeMenu(); input.blur(); if (openTheme) closeThemes(); window.WA.apply(it.ask); return; }
     let fl = state.filters.find((x) => x.key === it.key);
     if (!fl) { fl = makeFilter(it.key); state.filters.push(fl); }
     if (it.value && fl.values && !fl.values.includes(it.value)) fl.values.push(it.value);
@@ -1943,6 +2160,7 @@
   function encodeState() {
     const parts = state.filters.map((fl) => {
       const f = F[fl.key];
+      if (f.type === "range" && fl.slice) return `${fl.key}:${fl.slice.k === "q" ? `q${fl.slice.of}.${fl.slice.g.join(".")}` : (fl.slice.k === "top" ? "t" : "b") + fl.slice.n}${fl.slice.w ? "w" : ""}`;
       if (f.type === "range") return `${fl.key}:${fl.min}~${fl.max}`;
       if (f.type === "bool") return `${fl.key}:${fl.value ? 1 : 0}`;
       return `${fl.key}:${fl.values.map(encodeURIComponent).join("|")}${fl.mode && fl.mode !== "any" ? "~" + fl.mode : ""}`;
@@ -1970,7 +2188,10 @@
     (p.get("f") || "").split(",").filter(Boolean).forEach((part) => {
       const i = part.indexOf(":"); const key = part.slice(0, i), v = part.slice(i + 1);
       const f = F[key]; if (!f) return;
-      if (f.type === "range") { const [a, b] = v.split("~").map(Number); out.push(makeFilter(key, { min: a, max: b })); }
+      const wv = /w$/.test(v), vv = v.replace(/w$/, "");
+      if (f.type === "range" && /^[tb]\d+$/.test(vv)) out.push(makeFilter(key, { slice: { k: vv[0] === "t" ? "top" : "bottom", n: Math.min(500, +vv.slice(1)), w: wv } }));
+      else if (f.type === "range" && /^q[45](\.[1-5])+$/.test(vv)) { const [q, ...g] = vv.split("."); const of = +q.slice(1); out.push(makeFilter(key, { slice: { k: "q", of, g: [...new Set(g.map(Number).filter((x) => x <= of))], w: wv } })); }
+      else if (f.type === "range") { const [a, b] = v.split("~").map(Number); out.push(makeFilter(key, { min: a, max: b })); }
       else if (f.type === "bool") out.push(makeFilter(key, { value: v === "1" }));
       else {
         const [vs, mode] = v.split("~");

@@ -199,13 +199,16 @@ TS_WDI = ["sp_dyn_tfrt_in", "sp_dyn_le00_in", "sp_urb_totl_in_zs", "sp_dyn_imrt_
 
 
 def write_timeseries(new_rows, replace):
-    """Update timeseries.csv: drop the indicators in `replace`, add new_rows."""
-    path = os.path.join(RAW, "timeseries.csv")
+    """Update timeseries.csv.gz: drop the indicators in `replace`, add new_rows.
+    (Kept gzipped: the plain CSV is over 20 MB, too big to upload through GitHub's website.)"""
+    import gzip
+    path = os.path.join(RAW, "timeseries.csv.gz")
     keep = []
     if os.path.exists(path):
-        keep = [r for r in csv.reader(open(path, encoding="utf-8"))][1:]
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            keep = [r for r in csv.reader(f)][1:]
         keep = [r for r in keep if r[1] not in replace]
-    with open(path, "w", newline="", encoding="utf-8") as f:
+    with gzip.open(path, "wt", encoding="utf-8", newline="", compresslevel=9) as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["iso3", "indicator", "year", "value"])
         w.writerows(keep + new_rows)
@@ -278,8 +281,65 @@ AGES = ["0004", "0509", "1014", "1519", "2024", "2529", "3034", "3539", "4044", 
         "6569", "7074", "7579", "80up"]
 
 
+# ---------- Data for the Charts view: more yearly history, electricity mix and refugee flows by year ----------
+CHART_WB = {  # site field -> World Bank code
+    "exports_usd": "ne_exp_gnfs_cd", "goods_exports_usd": "tx_val_mrch_cd_wt", "services_exports_usd": "bx_gsr_nfsv_cd",
+    "exp_fuel_pct": "tx_val_fuel_zs_un", "exp_metals_pct": "tx_val_mmtl_zs_un", "exp_food_pct": "tx_val_food_zs_un",
+    "exp_agri_raw_pct": "tx_val_agri_zs_un", "exp_manuf_pct": "tx_val_manf_zs_un",
+    "armed_forces": "ms_mil_totl_p1", "military_spend_usd": "ms_mil_xpnd_cd", "tourism_receipts_usd": "st_int_rcpt_cd",
+}
+# measures for the SDG tracker (yearly, so progress since 2015 can be measured)
+SDG_WB = {
+    "undernourishment": "sn_itk_defc_zs", "stunting": "sh_sta_stnt_me_zs", "neonatal_mortality": "sh_dyn_nmrt",
+    "tb_incidence": "sh_tbs_incd", "basic_water": "sh_h2o_basw_zs", "basic_sanitation": "sh_sta_bass_zs",
+    "clean_cooking": "eg_cft_accs_zs", "primary_completion": "se_prm_cmpt_zs", "lower_secondary_completion": "se_sec_cmpt_lo_zs",
+    "unemployment": "sl_uem_totl_zs", "tax_revenue_pct": "gc_tax_totl_gd_zs", "homicides": "vc_ihr_psrc_p5",
+    "pm25": "en_atm_pm25_mc_m3", "protected_land_pct": "er_lnd_ptld_zs",
+}
+CHART_WB.update(SDG_WB)
+CHART_ENERGY = ["coal_share_elec", "gas_share_elec", "oil_share_elec", "nuclear_share_elec", "hydro_share_elec", "wind_share_elec",
+                "solar_share_elec", "other_renewables_share_elec", "fossil_share_elec", "low_carbon_share_elec", "electricity_generation"]
+
+
+def fetch_charts():
+    """Yearly history used by the Charts view (totals, mixes) and refugee flows between countries for every year."""
+    import pyreadr
+    valid = {c["cca3"] for c in json.load(open(os.path.join(RAW, "world_countries.json"), encoding="utf-8"))}
+    fix = {"XKX": "UNK"}
+    out = []
+    for code in CHART_WB.values():
+        for r in read_csv(WDI_URL.format(code)):
+            iso = fix.get(r["geo"].upper(), r["geo"].upper())
+            if r[code] and int(r["time"]) >= 1960 and iso in valid:
+                out.append([iso, code, int(r["time"]), f"{float(r[code]):.4g}"])
+    for r in read_csv(ENERGY_URL):
+        if r["iso_code"] in valid and int(r["year"]) >= 1960:
+            for col in CHART_ENERGY:
+                if r[col]:
+                    out.append([r["iso_code"], col, int(r["year"]), f"{float(r[col]):.4g}"])
+    write_timeseries(out, set(CHART_WB.values()) | set(CHART_ENERGY))
+    # refugees (and others needing international protection) by country of origin and country of asylum, every year
+    tmp = tempfile.mkdtemp()
+    try:
+        path = os.path.join(tmp, "population.rda")
+        open(path, "wb").write(get(GH + "cran/refugees/master/data/population.rda"))
+        d = list(pyreadr.read_r(path).values())[0].fillna(0)
+        d = d[(d.year >= 1960) & (d.coo_iso != d.coa_iso)]
+        d = d.assign(intl=d.refugees + d.oip)
+        g = d.groupby(["year", "coo_iso", "coa_iso"]).intl.sum()
+        with open(os.path.join(RAW, "refugee_flows_yearly.csv"), "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f, lineterminator="\n")
+            w.writerow(["year", "from", "to", "people"])
+            for (y, a, b), v in g.items():
+                if v >= 100:
+                    w.writerow([int(y), fix.get(a, a), fix.get(b, b), int(v)])
+    finally:
+        shutil.rmtree(tmp)
+    print("Updated timeseries.csv.gz and wrote refugee_flows_yearly.csv. Now run: python3 build_data.py")
+
+
 def fetch_history():
-    """Yearly history for more World Bank measures (into timeseries.csv) and population by age and sex (pyramids.csv)."""
+    """Yearly history for more World Bank measures (into timeseries.csv.gz) and population by age and sex (pyramids.csv)."""
     valid = {c["cca3"] for c in json.load(open(os.path.join(RAW, "world_countries.json"), encoding="utf-8"))}
     fix = {"XKX": "UNK"}
     out = []
@@ -312,7 +372,7 @@ def fetch_history():
             if None in m or None in fe:
                 continue
             w.writerow([iso, y, f"{fs:.3f}"] + [f"{v:.3f}" for v in m + fe])
-    print("Updated timeseries.csv and wrote pyramids.csv. Now run: python3 build_data.py")
+    print("Updated timeseries.csv.gz and wrote pyramids.csv. Now run: python3 build_data.py")
 
 
 def extract_undp(path):
@@ -338,7 +398,7 @@ def extract_undp(path):
             if m and v:
                 hist.append([r["iso3"], hist_keys[m.group(1)], int(m.group(2)), v])
     write_timeseries(hist, set(hist_keys.values()))
-    print("Wrote undp_hdr.csv and updated timeseries.csv. Now run: python3 build_data.py")
+    print("Wrote undp_hdr.csv and updated timeseries.csv.gz. Now run: python3 build_data.py")
 
 
 def fetch_unhcr():
@@ -379,6 +439,8 @@ def main():
         return fetch_unhcr()
     if "--history" in sys.argv:
         return fetch_history()
+    if "--charts" in sys.argv:
+        return fetch_charts()
     if "--undp" in sys.argv:
         return extract_undp(sys.argv[sys.argv.index("--undp") + 1])
     for name, url in FILES.items():

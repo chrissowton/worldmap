@@ -1060,6 +1060,11 @@
       <p class="qz-intro">Pick a topic, then type your guess or ask for options.</p>
       <div class="qz-topics" role="radiogroup" aria-label="Topic">${topicsNow().map((t) => `<button type="button" role="radio" class="qz-topic" data-t="${t.id}" ${t.g ? `data-g="${t.g}"` : ""} aria-checked="${curTopic() === t.id}">${esc(t.label)}</button>`).join("")}</div>
       <div class="qz-q" id="qzQ"></div>
+      <details class="qz-more qz-ask"><summary>Or ask your own question</summary>
+        <p class="qz-intro">Type a question in the search box at the top, like one of these:</p>
+        <div class="presets">${(isPhys() ? ["Volcanoes higher than 5,000 m", "Rivers longer than 3,000 km", "Earthquakes of magnitude 8 or more", "Landlocked countries with a highest point over 4,000 m"]
+          : ["Democracies with over 40% women in parliament", "The 10 most populous countries in Africa", "How has life expectancy changed since 1960?", "Countries on track for at least 10 SDGs", "Compare GDP per person and life expectancy"])
+          .map((t) => `<button type="button" class="qz-askex">${esc(t)}</button>`).join("")}</div></details>
       ${isPhys() ? "" : `<details class="qz-more"><summary>Or start from a ready-made map</summary>`}
         ${isPhys() ? "" : `<div class="presets">${(window.STARTERS || []).map((s, i) => `<button type="button" data-i="${i}">${esc(s.title)}</button>`).join("")}</div></details>`}`;
     el.querySelector(".hide").onclick = () => { Q.mode = "closed"; renderCard(); };
@@ -1068,7 +1073,11 @@
       el.querySelectorAll(".qz-topic").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
       ask();
     }));
-    el.querySelectorAll(".presets button").forEach((b) => (b.onclick = () => { minimise(); W.applyPreset(window.STARTERS[+b.dataset.i].filters); }));
+    el.querySelectorAll(".presets button[data-i]").forEach((b) => (b.onclick = () => { minimise(); W.applyPreset(window.STARTERS[+b.dataset.i].filters); }));
+    el.querySelectorAll(".qz-askex").forEach((b) => (b.onclick = () => {
+      const inp = document.querySelector("#addInput");
+      inp.value = b.textContent; inp.focus(); inp.dispatchEvent(new Event("input"));
+    }));
     showScore();
     ask();
   }

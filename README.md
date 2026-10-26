@@ -37,7 +37,19 @@ It's a static website: no server, no database, no accounts. All the data is in a
   - **Map**, with a 🎨 **Map style** button: colour by your filters, by **change over time** (any yearly measure between two years you choose, as an amount or a % change), or by **two measures at once** (each split into thirds, with a 3 × 3 colour key). Tick **Size countries by population** to draw every country as a circle sized by its population.
   - **Compare**: a Gapminder-style bubble chart of any two measures, with bubbles sized by population (or another total) and coloured by continent or income group. When both measures have yearly data, press ▶ to watch the bubbles move through the years; click a bubble to follow it and draw its path. A plain-English line says how strong the link is (and that a link isn't proof of cause), and you can add a trend line or log scales.
   - **Rankings**: every country in order as bars, or grouped by continent with each continent's median, for any year.
-  - **Trends**: any yearly measure over time, with the world and continent medians, and up to six countries you add.
+  - **Ask in plain English**: type a question such as “How many democracies have between 45 and 55% women in parliament and are at stage 4 or 5 of the demographic transition?” in the search box. It is turned into filters (shown as chips before you press Enter), plus a chart, comparison, ranking or total when the question asks for one. It runs entirely in the browser (`ask.js`), with no AI service, so some wordings won't be understood; anything it skipped is listed.
+  - **Highest/lowest n, quartiles and quintiles**: any number filter can pick the top or bottom n countries, or one or more quartiles or quintiles, instead of a range, either from all countries or only from those that pass your other filters.
+  - **Glossary**: key terms (electoral autocracy, demographic transition stages, Köppen climates, plate boundaries, volcano types and more) have a dotted underline or an ⓘ: hover or tap to see what they mean (`glossary.js`).
+  - **SDG tracker**: for 14 of the 17 Sustainable Development Goals, whether each country has achieved the goal, is on track for 2030, is improving too slowly, stagnating or getting worse, from the speed of change since 2015 (a simplified version of the SDSN's method; targets are listed in `filters.js` and `build_data.py`). Filters under Politics & the world, and a goal dashboard in every country profile.
+  - **Charts**: one measure drawn many ways, chosen from a row of tabs, like Our World in Data:
+    - **Line**, **Bar**, **Table** (any two years, with the change) and **Map**.
+    - **Stacked area**: totals by continent over time, as amounts or as shares of the world.
+    - **Slope**: two years side by side, to see who rose and who fell.
+    - **Marimekko**: bar heights show a measure (such as GDP per person) and bar widths show population, so you see how many people live at each level.
+    - **Parts of a whole**: 100% bars for mixes: where electricity comes from, jobs by sector, what exports are made of, religions and age groups.
+    - **Sankey**: refugee flows from where people fled to where they live now (by continent or country, every year since 1960), and exports by continent and type of product (goods by type, and services).
+    - Groups (the world, each continent, the countries matching your filters) can show the **median** country, the **average** (weighted by population, or by GDP, exports or electricity where that makes more sense) or the **total**. Totals are offered only for things you can add up, such as population, GDP, CO₂ emissions, exports and refugees.
+    - Chart types that don't suit a measure are dimmed; clicking one explains why and suggests measures that work.
   Your filters apply in every view: countries that don't match are greyed out.
 - **More yearly data.** 58 measures now go back in time (most from 1960), including income, inequality, poverty, schooling, child and maternal deaths, internet and mobile use, jobs by sector, trade, forest cover, women in parliament and military spending. Survey-based measures that aren't collected every year use the latest figure from up to 4 years earlier.
 - **Population pyramids and the demographic transition model.** Each country profile has a population pyramid for any year since 1960 (with an optional outline of another year), a trend chart against the world and continent medians, and the country's demographic transition stage. "DTM stage" and "Natural increase" are also filters, and change with the year slider.
@@ -86,6 +98,8 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `style.css` | All styling, including the dark theme |
 | `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
 | `app.js` | Map (including the map styles), filtering logic, results list, URL state, and the Back / Home / Clear all dock |
+| `ask.js` | Turns a question in plain English into filters and a view |
+| `glossary.js` | Definitions of key terms, shown on hover |
 | `picker.js` | The two-level measure picker: any `<select data-pick>` becomes a button that opens categories on the left and their measures on the right, with a search box |
 | `TwemojiCountryFlags.woff2` | A small font that draws flag emojis, so flags appear on Windows (which otherwise shows two letters) |
 | `quiz.js` | The quiz: builds the question bank from the data, checks typed answers and makes the multiple-choice options |
@@ -96,7 +110,8 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `volcanoes.csv`, `earthquakes.csv` | Volcanoes (Smithsonian GVP) and magnitude 6+ earthquakes since 1900 (USGS) |
 | `trenches.csv`, `deltas.csv`, `waterfalls.csv` | Ocean trenches, river deltas and waterfalls. **Edited by hand** |
 | `physical_countries.json` | Physical facts per country, merged into `countries.json` by `build_data.py` |
-| `views.js` | The Compare, Rankings and Trends charts; trend charts and population pyramids in profiles and factfiles; side by side; share links and tasks; image and CSV downloads |
+| `charts.js` | The Charts view: line, bar, table, stacked area, slope, Marimekko, parts of a whole and Sankey charts, with medians, weighted averages and totals for groups of countries |
+| `views.js` | The Compare and Rankings charts; trend charts and population pyramids in profiles and factfiles; side by side; share links and tasks; image and CSV downloads |
 | `countries.json` | One record per country (built by `build_data.py`) |
 | `cities.json` | Cities with 100,000+ people, plus every capital (built by `build_data.py`) |
 | `world-50m.json` | Country shapes (Natural Earth, 1:50m, via world-atlas) |
@@ -105,10 +120,11 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `lists.csv` | Yes/no facts, one row per country: UN treaties joined, Security Council seats, nuclear weapons, FIFA membership, World Cup / Olympics / Commonwealth Games hosts. **Edited by hand** |
 | `worldcups.csv`, `olympic_medals.csv` | World Cup titles and the Paris 2024 medal table. **Edited by hand** |
 | `refugees.csv`, `refugee_flows.csv` | UNHCR refugee totals per country, and every origin → host route with 100+ people |
-| `timeseries.csv` | Yearly values since 1960 for the year slider |
+| `timeseries.csv.gz` | Yearly values since 1960 for the year slider (gzipped, as the CSV is over 20 MB) |
 | `timeseries.json` | The yearly values for the website (built by `build_data.py`) |
 | `pyramids.csv`, `pyramids.json` | Population by 5-year age group and sex (World Bank / UN World Population Prospects); the JSON keeps every 5th year plus the latest (built by `build_data.py`) |
 | `refugee_flows.json` | The refugee routes for the website (built by `build_data.py`) |
+| `refugee_flows_years.json` | Refugee flows between countries for every year since 1960, for the Sankey chart (built by `build_data.py` from `refugee_flows_yearly.csv`) |
 | `groups.csv` | Membership of the EU, NATO, OECD, G7, G20, BRICS, ASEAN, African Union, Arab League, Commonwealth, Mercosur and OPEC. **Edited by hand**: update it when a country joins or leaves |
 | `climate_zones.csv` | Each country's Köppen climate zones and their share of its land (built by `make_climate_zones.py`) |
 | `co2_climate.csv`, `energy_latest.csv` | Latest climate and energy figures from Our World in Data |
@@ -151,7 +167,9 @@ python3 build_data.py
 node make_data_table.cjs
 ```
 
-To give another World Bank measure yearly data, add it to `TS_WB_HISTORY` in `fetch_raw.py` and to the list after `TS_CODES` in `build_data.py`. It then appears with a clock in the menus, on the year slider, in Compare, Trends and the change map automatically.
+To give another World Bank measure yearly data, add it to `TS_WB_HISTORY` in `fetch_raw.py` and to the list after `TS_CODES` in `build_data.py`. It then appears with a clock in the menus, on the year slider, in Compare, Charts and the change map automatically. If it is something you can add up (a count or an amount of money), add its key to `SUM_KEYS` in `charts.js` so Charts offers totals.
+
+The Charts view also uses `refugee_flows_years.json` (refugee flows between countries for every year) and some extra yearly series. Refresh them with `python3 fetch_raw.py --charts`, then `python3 build_data.py`.
 
 ## Data sources and licences
 

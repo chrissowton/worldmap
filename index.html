@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 <!--APP-->
@@ -24,7 +24,7 @@
   <button id="ffBtn" class="ffbtn" type="button" title="Print or download a country factfile">📄 Factfile</button>
   <div class="add">
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    <input id="addInput" type="search" autocomplete="off" placeholder="Search filters: try “religion”, “coast” or “HDI”" aria-label="Add a filter" aria-controls="addMenu" aria-expanded="false">
+    <input id="addInput" type="search" autocomplete="off" placeholder="Search or ask: “democracies with over 40% women MPs”" aria-label="Search for a filter, or ask a question" aria-controls="addMenu" aria-expanded="false">
     <div id="addMenu" class="menu" role="listbox" hidden></div>
   </div>
   <div id="tpanel" class="tpanel" role="dialog" aria-label="Filters" hidden></div>
@@ -41,7 +41,7 @@
       <button type="button" role="tab" data-v="map" aria-selected="true"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M1.8 8h12.4M8 1.7c-2.2 2.4-2.2 10.2 0 12.6M8 1.7c2.2 2.4 2.2 10.2 0 12.6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Map</button>
       <button type="button" role="tab" data-v="compare" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 1.5v12.5h12.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="9.5" r="1.8" fill="currentColor"/><circle cx="10.5" cy="5.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12.5" cy="10.5" r="1.2" fill="currentColor"/></svg>Compare</button>
       <button type="button" role="tab" data-v="rank" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 3h12M2 6.5h9M2 10h6M2 13.5h3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rankings</button>
-      <button type="button" role="tab" data-v="trends" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 12.5l4-4.5 3 2.5 5.5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M1.5 14.5h13" stroke="currentColor" stroke-width="1.2"/></svg>Trends</button>
+      <button type="button" role="tab" data-v="trends" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M1.5 12.5l4-4.5 3 2.5 5.5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M1.5 14.5h13" stroke="currentColor" stroke-width="1.2"/></svg>Charts</button>
     </div>
     <button type="button" id="sbsBtn" class="ghost sm" title="Compare two or three countries side by side">⇄ Side by side</button>
     <button type="button" id="shareBtn" class="ghost sm" title="Share this view, or set a task for students">🔗 Share</button>
@@ -80,12 +80,15 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-<script src="filters.js?v=16"></script>
-<script src="picker.js?v=16"></script>
-<script src="physical.js?v=16"></script>
-<script src="views.js?v=16"></script>
-<script src="quiz.js?v=16"></script>
-<script src="app.js?v=16"></script>
-<script src="factfile.js?v=16"></script>
+<script src="filters.js?v=18"></script>
+<script src="glossary.js?v=18"></script>
+<script src="picker.js?v=18"></script>
+<script src="physical.js?v=18"></script>
+<script src="views.js?v=18"></script>
+<script src="charts.js?v=18"></script>
+<script src="quiz.js?v=18"></script>
+<script src="app.js?v=18"></script>
+<script src="ask.js?v=18"></script>
+<script src="factfile.js?v=18"></script>
 </body>
 </html>

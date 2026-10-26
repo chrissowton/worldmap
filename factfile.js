@@ -9,7 +9,7 @@
     Development: "#3463c9", Population: "#0e8f83", Health: "#c93a57", Gender: "#8547c7", "Work & money": "#a86a0c",
     Trade: "#2a7f8f", "Global links": "#1f7fb8", Refugees: "#cc5a17", Cities: "#4c55c9", Culture: "#b23e8e",
     Tourism: "#c2407a", Technology: "#5b4fd1", Politics: "#5d6478", "UN & treaties": "#2f7a52", Military: "#7d5d3b",
-    Sport: "#a88300", Geography: "#4f7590", Climate: "#d0582e", "Energy & resources": "#8a6a16", Environment: "#3c8a22",
+    Sport: "#a88300", Geography: "#4f7590", Climate: "#d0582e", "Energy & resources": "#8a6a16", Environment: "#3c8a22", SDGs: "#19689c",
   };
   const REGION_NAME = { Americas: "Americas", Africa: "Africa", Asia: "Asia", Europe: "Europe", Oceania: "Oceania" };
   const DOCX_URL = (window.SITE && window.SITE.docxUrl) || "https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.js";

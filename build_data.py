@@ -565,9 +565,9 @@ for rec in countries.values():
     rec["border_km"] = sum(k for _, k in bl)
     rec["no_land_borders"] = not bl and not rec["landlocked"]
 
-# --- 14. Time series for the year slider (timeseries.csv + pop/gdp/co2 files) -> timeseries.json ---
+# --- 14. Time series for the year slider (timeseries.csv.gz + pop/gdp/co2 files) -> timeseries.json ---
 YEARS = list(range(1960, 2026))
-TS_CODES = {  # field on the site: indicator in timeseries.csv
+TS_CODES = {  # field on the site: indicator in timeseries.csv.gz
     "fertility": "sp_dyn_tfrt_in", "life_expectancy": "sp_dyn_le00_in", "urban_pct": "sp_urb_totl_in_zs",
     "infant_mortality": "sp_dyn_imrt_in", "pct_over65": "sp_pop_65up_to_zs", "birth_rate": "sp_dyn_cbrt_in",
     "death_rate": "sp_dyn_cdrt_in", "pop_growth": "sp_pop_grow", "hdi": "hdi", "median_age": "median_age",
@@ -581,12 +581,33 @@ TS_CODES.update({f: WB[f][0] for f in ["gni_ppp", "gini", "extreme_poverty", "un
     "migrants_pct", "remittances_pct", "emp_agriculture", "emp_industry", "emp_services", "trade_pct", "fdi_pct", "tourists",
     "forest_pct", "renewables_pct", "adolescent_births", "women_parliament", "female_labour", "military_spend_pct",
     "armed_forces_pct", "exports_pct", "imports_pct", "mobile_per100", "broadband_per100", "rnd_pct", "resource_rents_pct"]})
-series = {k: {} for k in list(TS_CODES) + ["population", "gdp_per_capita", "co2_per_capita"]}
+# Charts view: totals and mixes over time (see fetch_charts in fetch_raw.py)
+TS_CODES.update({
+    "exports_usd": "ne_exp_gnfs_cd", "goods_exports_usd": "tx_val_mrch_cd_wt", "services_exports_usd": "bx_gsr_nfsv_cd",
+    "exp_fuel_pct": "tx_val_fuel_zs_un", "exp_metals_pct": "tx_val_mmtl_zs_un", "exp_food_pct": "tx_val_food_zs_un",
+    "exp_agri_raw_pct": "tx_val_agri_zs_un", "exp_manuf_pct": "tx_val_manf_zs_un",
+    "armed_forces": "ms_mil_totl_p1", "military_spend_usd": "ms_mil_xpnd_cd", "tourism_receipts_usd": "st_int_rcpt_cd",
+    "coal_elec_pct": "coal_share_elec", "gas_elec_pct": "gas_share_elec", "oil_elec_pct": "oil_share_elec",
+    "nuclear_elec_pct": "nuclear_share_elec", "hydro_elec_pct": "hydro_share_elec", "wind_elec_pct": "wind_share_elec",
+    "solar_elec_pct": "solar_share_elec", "other_renew_elec_pct": "other_renewables_share_elec",
+    "fossil_elec_pct": "fossil_share_elec", "low_carbon_elec_pct": "low_carbon_share_elec", "elec_twh": "electricity_generation",
+})
+# SDG tracker measures (see SDG_WB in fetch_raw.py)
+SDG_WB_CODES = {
+    "undernourishment": "sn_itk_defc_zs", "stunting": "sh_sta_stnt_me_zs", "neonatal_mortality": "sh_dyn_nmrt",
+    "tb_incidence": "sh_tbs_incd", "basic_water": "sh_h2o_basw_zs", "basic_sanitation": "sh_sta_bass_zs",
+    "clean_cooking": "eg_cft_accs_zs", "primary_completion": "se_prm_cmpt_zs", "lower_secondary_completion": "se_sec_cmpt_lo_zs",
+    "unemployment": "sl_uem_totl_zs", "tax_revenue_pct": "gc_tax_totl_gd_zs", "homicides": "vc_ihr_psrc_p5",
+    "pm25": "en_atm_pm25_mc_m3", "protected_land_pct": "er_lnd_ptld_zs",
+}
+TS_CODES.update(SDG_WB_CODES)
+series = {k: {} for k in list(TS_CODES) + ["population", "gdp_per_capita", "co2_per_capita", "gdp_usd"]}
 def put(field, iso, year, value):
     if iso in countries and 1960 <= year <= 2025:
         series[field].setdefault(iso, [None] * len(YEARS))[year - 1960] = value
 code_to_field = {v: k for k, v in TS_CODES.items()}
-for row in csv.DictReader(open(raw("timeseries.csv"), encoding="utf-8")):
+import gzip
+for row in csv.DictReader(gzip.open(raw("timeseries.csv.gz"), "rt", encoding="utf-8")):
     f = code_to_field.get(row["indicator"])
     if f:
         v = float(row["value"])
@@ -597,6 +618,8 @@ for row in csv.DictReader(open(raw("gdp.csv"), encoding="utf-8")):
     iso = WB_FIX.get(row["Country Code"], row["Country Code"]); y = int(row["Year"])
     if row["Value"] and (iso, y) in pop_year and pop_year[(iso, y)] > 0:
         put("gdp_per_capita", iso, y, round(float(row["Value"]) / pop_year[(iso, y)]))
+    if row["Value"]:
+        put("gdp_usd", iso, y, float(f"{float(row['Value']):.4g}"))
 for row in csv.DictReader(open(raw("co2.csv"), encoding="utf-8")):
     if row["iso_code"] and row["co2_per_capita"]:
         put("co2_per_capita", row["iso_code"], int(row["year"]), round(float(row["co2_per_capita"]), 2))
@@ -622,9 +645,135 @@ for iso, rec in countries.items():
         rec["dtm_stage"] = DTM_STAGES[dtm_stage(rec["birth_rate"], rec["death_rate"])]
         rec["natural_increase"] = round(rec["birth_rate"] - rec["death_rate"], 1)
         rec["dtm_stage_year"] = rec["natural_increase_year"] = min(rec.get("birth_rate_year") or 0, rec.get("death_rate_year") or 0) or None
+# exports in a year with no total: goods plus services, when both are known (e.g. Nigeria)
+for iso, g in series["goods_exports_usd"].items():
+    sv = series["services_exports_usd"].get(iso)
+    if not sv:
+        continue
+    ex = series["exports_usd"].setdefault(iso, [None] * len(YEARS))
+    for i in range(len(YEARS)):
+        if ex[i] is None and g[i] is not None and sv[i] is not None:
+            ex[i] = float(f"{g[i] + sv[i]:.4g}")
+    rec = countries.get(iso)
+    if rec is not None and rec.get("exports_usd") is None:
+        for i in range(len(YEARS) - 1, -1, -1):
+            if ex[i] is not None and YEARS[i] >= 2010:
+                rec["exports_usd"] = ex[i]; rec["exports_usd_year"] = YEARS[i]
+                break
+# measures whose latest value comes from their yearly history (new with the Charts view)
+for f in ("goods_exports_usd", "services_exports_usd", "gas_elec_pct", "oil_elec_pct", "other_renew_elec_pct", "elec_twh", "gdp_usd", *SDG_WB_CODES):
+    for iso, vals in series[f].items():
+        rec = countries.get(iso)
+        if not rec:
+            continue
+        for i in range(len(vals) - 1, -1, -1):
+            if vals[i] is not None and YEARS[i] >= 2010:
+                rec[f] = vals[i]; rec[f + "_year"] = YEARS[i]
+                break
+# --- 14c. SDG tracker: is each country on track to meet each goal by 2030? ---
+# Inspired by the trend method of the Sustainable Development Report (SDSN): for each measure we compare the speed of
+# change since about 2015 with the speed needed to reach the 2030 target. Targets: official SDG targets where they are
+# numbers, otherwise the "goal achieved" thresholds used by the SDSN, or widely used ones (noted in filters.js).
+SDG_TARGETS = {  # goal: [(field, target, "max" = at most / "min" = at least)]
+    1: [("extreme_poverty", 3, "max")],
+    2: [("undernourishment", 7.5, "max"), ("stunting", 7.5, "max")],
+    3: [("maternal_mortality", 70, "max"), ("under5_mortality", 25, "max"), ("neonatal_mortality", 12, "max"),
+        ("tb_incidence", 10, "max"), ("life_expectancy", 80, "min"), ("adolescent_births", 25, "max")],
+    4: [("primary_completion", 95, "min"), ("lower_secondary_completion", 90, "min")],
+    5: [("women_parliament", 40, "min")],
+    6: [("basic_water", 98, "min"), ("basic_sanitation", 95, "min")],
+    7: [("electricity", 98, "min"), ("clean_cooking", 85, "min")],
+    8: [("unemployment", 5, "max")],
+    9: [("internet", 80, "min"), ("rnd_pct", 1.5, "min")],
+    10: [("gini", 30, "max")],
+    11: [("pm25", 10, "max")],
+    13: [("co2_per_capita", 2, "max")],
+    15: [("protected_land_pct", 30, "min")],
+    16: [("homicides", 1.5, "max")],
+}  # goals 12, 14 and 17 are left out: there is no good yearly data for every country
+SDG_NAMES = {1: "No poverty", 2: "Zero hunger", 3: "Good health and well-being", 4: "Quality education", 5: "Gender equality",
+    6: "Clean water and sanitation", 7: "Affordable and clean energy", 8: "Decent work and economic growth",
+    9: "Industry, innovation and infrastructure", 10: "Reduced inequalities", 11: "Sustainable cities and communities",
+    13: "Climate action", 15: "Life on land", 16: "Peace, justice and strong institutions"}
+SDG_STATUS = ["Achieved", "On track", "Improving too slowly", "Stagnating", "Getting worse"]
+def sdg_point(vals, lo, hi):
+    """The latest value in years lo..hi (newest first), as (year, value)."""
+    for y in range(hi, lo - 1, -1):
+        v = vals[y - YEARS[0]]
+        if v is not None:
+            return y, v
+    return None
+def sdg_status(field, iso, target, way):
+    vals = series.get(field, {}).get(iso)
+    if not vals:
+        return None
+    now = sdg_point(vals, 2015, YEARS[-1])
+    if not now:
+        return None
+    y1, v1 = now
+    good = (lambda v: v <= target) if way == "max" else (lambda v: v >= target)
+    if good(v1):
+        return 0, v1, y1
+    base = sdg_point(vals, 2010, min(2016, y1 - 3))
+    if not base:
+        return None  # not achieved, and no earlier figure to show the direction
+    y0, v0 = base
+    sign = -1 if way == "max" else 1
+    speed = sign * (v1 - v0) / (y1 - y0)            # improvement per year (positive = better)
+    needed = sign * (target - v1) / max(1, 2030 - y1)  # improvement per year still needed
+    if speed >= needed:
+        return 1, v1, y1
+    if speed >= 0.5 * needed:
+        return 2, v1, y1
+    if speed > 0:
+        return 3, v1, y1
+    return 4, v1, y1
+for iso, rec in countries.items():
+    detail, goal_status = {}, {}
+    for goal, inds in SDG_TARGETS.items():
+        sts = []
+        for field, target, way in inds:
+            r = sdg_status(field, iso, target, way)
+            if r:
+                sts.append(r[0])
+                detail.setdefault(str(goal), []).append([field, r[1], r[2], r[0]])
+        if sts:
+            goal_status[goal] = max(sts)  # a goal is only as good as its weakest measure
+    if not goal_status:
+        continue
+    for goal, st in goal_status.items():
+        rec[f"sdg{goal}_status"] = SDG_STATUS[st]
+    rec["sdg_detail"] = detail
+    rec["sdg_measured"] = len(goal_status)
+    rec["sdg_achieved"] = sum(1 for s in goal_status.values() if s == 0)
+    rec["sdg_on_track"] = sum(1 for s in goal_status.values() if s <= 1)
+    rec["sdg_on_track_pct"] = round(100 * rec["sdg_on_track"] / len(goal_status))
+    rec["sdg_goals_on_track"] = [f"{g} · {SDG_NAMES[g]}" for g, s in goal_status.items() if s <= 1]
+    for f in ("sdg_measured", "sdg_achieved", "sdg_on_track", "sdg_on_track_pct"):
+        rec[f + "_year"] = 2025
+print("SDG tracker:", sum(1 for r in countries.values() if r.get("sdg_measured")), "countries")
+# refugee flows between countries for every year (Sankey chart): {years, flows: {year: [[from, to, people], ...]}}
+if os.path.exists(raw("refugee_flows_yearly.csv")):
+    fy = {}
+    for r in csv.DictReader(open(raw("refugee_flows_yearly.csv"), encoding="utf-8")):
+        if int(r["people"]) >= 1000 and r["from"] in countries and r["to"] in countries:
+            fy.setdefault(r["year"], []).append([r["from"], r["to"], int(r["people"])])
+    with open(os.path.join(ROOT, "refugee_flows_years.json"), "w", encoding="utf-8") as f:
+        json.dump({"years": sorted(int(y) for y in fy), "flows": fy}, f, separators=(",", ":"))
+    print(f"Wrote refugee flows for {len(fy)} years")
 # refugee counts: a country with no row in a year it reports nothing for is left blank, not zero
+# written by hand so decimals stay short: 1.779e+13 rather than 17790000000000.0
+def num_json(v):
+    if v is None:
+        return "null"
+    if isinstance(v, bool) or isinstance(v, int):
+        return str(int(v))
+    t = format(v, ".4g")
+    return t.replace("e+0", "e").replace("e+", "e").replace("e-0", "e-")
 with open(os.path.join(ROOT, "timeseries.json"), "w", encoding="utf-8") as f:
-    json.dump({"years": YEARS, "series": series}, f, separators=(",", ":"))
+    f.write('{"years":' + json.dumps(YEARS, separators=(",", ":")) + ',"series":{')
+    f.write(",".join(json.dumps(k) + ":{" + ",".join(json.dumps(iso) + ":[" + ",".join(num_json(v) for v in vals) + "]" for iso, vals in s.items()) + "}" for k, s in series.items()))
+    f.write("}}")
 print("Wrote timeseries.json:", {k: len(v) for k, v in series.items()})
 
 # --- 14b. Population pyramids (World Bank / UN WPP): % of the whole population in each 5-year age group ---
