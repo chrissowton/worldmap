@@ -1205,10 +1205,10 @@
     W = window.WC; F = W.F; esc = W.esc;
     // a Quiz button next to the other tools, to bring the card back
     const b = document.createElement("button");
-    b.type = "button"; b.id = "quizBtn"; b.className = "ghost sm"; b.textContent = "🎯 Quiz";
+    b.type = "button"; b.id = "quizBtn"; b.className = "cp-tool"; b.innerHTML = `<span class="cp-ic" aria-hidden="true">🎯</span>Quiz`;
     b.title = "Test yourself with questions from the map's data";
-    const tools = $(".viewtools");
-    if (tools) tools.insertBefore(b, $("#sbsBtn"));
+    const tools = $("#cpLearn") || $(".viewtools");
+    if (tools) tools.insertBefore(b, tools.firstChild);
     b.onclick = () => {
       Q.mode = Q.mode === "open" ? "min" : "open"; Q.keepOpen = Q.mode === "open";
       if (W.state.view !== "map") W.setView("map");

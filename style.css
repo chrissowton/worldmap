@@ -1030,7 +1030,6 @@ body[data-mode="physical"] #map path:not(.match):not(.near):not(.styled) { fill:
 .ff-phys { grid-template-columns: max-content 1fr; }
 .ff-terrain { font-size: 11px; margin: 4px 0 8px; }
 /* keep the header on one line on wide screens */
-@media (min-width: 1200px) { .top .add { flex: 1 1 120px; min-width: 120px; max-width: 300px; } .top .theme-btn { padding-left: 9px; padding-right: 9px; } }
 
 /* Physical: earthquakes canvas, feature labels, show-all switches */
 .quakecanvas { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; }
@@ -1134,15 +1133,6 @@ label:has(> select.pk-native), .sortctl { position: relative; }
   .dock button { padding: 8px 14px; font-size: 14px; }
   body { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
 }
-@media (min-width: 761px) { .legend { bottom: 64px; } }
-/* keep the year slider clear of the dock: centre it in the space to the right of it */
-@media (min-width: 1151px) { .timebar { left: 284px; right: 56px; transform: none; margin: 0 auto; width: min(520px, calc(100% - 340px)); } }
-/* smaller screens: the slider sits just above the dock, across the map */
-@media (min-width: 761px) and (max-width: 1150px) {
-  .timebar { left: 12px; right: 56px; transform: none; width: auto; bottom: 62px; }
-  .legend { bottom: 140px; }
-}
-
 /* ---------- Charts view (charts.js) ---------- */
 .tchecks { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding-bottom: 4px; }
 .tchecks[hidden], .fld[hidden], .tog[hidden] { display: none !important; }
@@ -1416,3 +1406,146 @@ body.pane-hidden .paneshow { display: block; position: fixed; right: 0; top: 50%
 .tsigtext.l2 { border-left-color: #d23b3b; background: color-mix(in srgb, #d23b3b 10%, var(--surface)); }
 .tsigtext[hidden] { display: none; }
 #cSigText { margin: 0 0 4px; }
+
+/* ===================== Control panel (v26) =====================
+   Desktop: header (name, search/ask, Human/Physical), then a panel on the left holding
+   Filters, View, Learn and Share in order, with Back / Home / Clear all at its foot.
+   Phones: a tab bar along the bottom opens each part as a sheet. */
+.top { gap: 16px; flex-wrap: nowrap; padding-block: 10px; }
+.top .add { flex: 1 1 auto; max-width: 680px; margin: 0 auto; }
+.docktop { display: none; }
+.shell { flex: 1; min-height: 0; display: grid; grid-template-columns: 252px minmax(0, 1fr); position: relative; }
+.content { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.content .main { flex: 1; }
+.bar { padding-block: 8px; min-height: 22px; }
+.bar .sentence { flex: 1 1 auto; }
+
+.cpanel { display: flex; flex-direction: column; min-height: 0; background: var(--surface); border-right: 1px solid var(--line); position: relative; z-index: 30; }
+.cp-scroll { flex: 1; min-height: 0; overflow: auto; padding: 6px 0 10px; scrollbar-width: thin; }
+.cp-sec { padding: 12px 14px 14px; border-bottom: 1px solid var(--line); }
+.cp-sec:last-child { border-bottom: 0; }
+.cp-h { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.cp-n { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-family: var(--body); font-size: 11.5px; font-weight: 700; flex: none; }
+.cp-count { margin-left: auto; background: var(--match); color: #2b1d00; border-radius: 999px; font-family: var(--body); font-size: 11.5px; font-weight: 700; padding: 1px 8px; }
+.cp-sub { margin: 12px 0 6px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.cpanel .chips { flex-direction: column; align-items: stretch; gap: 5px; }
+.cpanel .chip { width: 100%; box-sizing: border-box; background: color-mix(in srgb, var(--gc, var(--accent)) 10%, var(--surface)); border-color: color-mix(in srgb, var(--gc, var(--accent)) 35%, var(--line)); }
+.cpanel .chip > button.lab { flex: 1; min-width: 0; text-align: left; white-space: normal; line-height: 1.3; padding: 6px 4px 6px 11px; }
+.cpanel .chip.open { border-color: var(--accent); }
+.cpanel #chips:empty::before { content: "None yet. Pick a theme below, or type a question in the search box."; display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; padding: 2px 0; }
+.cpanel .themes { flex-direction: column; flex-wrap: nowrap; gap: 1px; }
+.cpanel .theme-btn { width: 100%; justify-content: flex-start; gap: 9px; padding: 7px 8px; font-size: 13.5px; border-radius: 8px; text-align: left; }
+.cpanel .theme-btn .tlab { flex: 1; min-width: 0; }
+.cpanel .theme-btn .tdot { width: 9px; height: 9px; border-radius: 50%; background: var(--gc, var(--accent)); flex: none; }
+.cpanel .theme-btn .tn { background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-size: 11px; font-weight: 700; padding: 0 7px; }
+.cpanel .theme-btn .caret { font-size: 15px; transform: none; }
+.cpanel .theme-btn.on .caret { transform: none; color: var(--accent); }
+.cpanel .browse-btn { display: none; }
+.cpanel .views { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; padding: 3px; gap: 1px; }
+.cpanel .views button { width: 100%; justify-content: flex-start; gap: 10px; padding: 8px 10px; font-size: 13.5px; }
+.cp-tools { display: flex; flex-direction: column; gap: 2px; position: relative; }
+.cp-tool { display: flex; align-items: center; gap: 10px; width: 100%; border: 1px solid transparent; background: none; border-radius: 8px; padding: 7px 8px; font-size: 13.5px; font-weight: 500; text-align: left; color: var(--ink); }
+.cp-tool:hover { background: var(--bg); border-color: var(--line); }
+.cp-tool[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.cp-ic { width: 22px; text-align: center; flex: none; font-size: 15px; }
+.cp-tools .dlmenu { position: static; margin: 2px 0 4px 30px; box-shadow: none; }
+.cp-foot { border-top: 1px solid var(--line); padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--surface); }
+.cp-foot .dock { position: static; box-shadow: none; border: 0; padding: 0; background: none; border-radius: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+.cp-foot .dock button { justify-content: center; padding: 8px 4px; border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px; }
+.cp-foot .dock button:disabled { border-color: transparent; }
+.cp-foot .dock button.clr:not(:disabled) { border-color: transparent; }
+
+/* the filter flyout opens beside the panel */
+.shell > .tpanel { top: 8px; z-index: 60; }
+.shell > .tpanel:not(.sheet) { max-height: calc(100% - 16px); width: min(calc(100vw - 290px), calc(var(--cols, 3) * 290px + 24px)); }
+
+/* the map's own controls no longer have to dodge a floating dock */
+.viewwrap { padding-bottom: 16px; }
+.timebar { left: 12px; right: 60px; transform: none; margin: 0 auto; width: auto; max-width: 560px; }
+.legend { bottom: 86px; }
+body[data-mode="physical"] .legend, body.no-time .legend { bottom: 12px; }
+
+.tabbar, .sheetshade { display: none; }
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  .shell { grid-template-columns: 220px minmax(0, 1fr); }
+  .main { grid-template-columns: minmax(0, 1fr) 300px; }
+  .brand h1 { font-size: 21px; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 760px) {
+  html, body { height: 100%; }
+  body { overflow: hidden; display: flex; flex-direction: column; height: 100dvh; padding-bottom: 0; }
+  .top { flex-wrap: wrap; gap: 8px 10px; padding-block: 8px; padding-top: max(8px, env(safe-area-inset-top, 0px)); }
+  .brand h1 { font-size: 19px; }
+  .top .add { order: 3; flex: 1 1 100%; max-width: none; margin: 0; }
+  .top .modes { order: 2; margin-left: auto; }
+  .top .modes button { padding: 5px 10px; font-size: 12.5px; }
+  .docktop { display: block; order: 4; flex: 1 1 100%; }
+  .docktop .dock { position: static; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 0; border: 0; background: none; box-shadow: none; border-radius: 0; }
+  .docktop .dock button { justify-content: center; padding: 6px 4px; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; }
+  .docktop .dock button:disabled { border-color: transparent; }
+  .shell { display: block; flex: 1; min-height: 0; }
+  .content { height: 100%; }
+  .bar { padding-block: 6px; }
+  .bar .sentence { font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .content .main { display: block; flex: 1; min-height: 0; position: relative; }
+  .content .mapwrap { height: 100%; min-height: 0; }
+  .content .viewwrap { height: 100%; overflow: auto; box-sizing: border-box; padding-bottom: 76px; }
+  .zoom { bottom: 150px; }
+  .timebar { bottom: 74px; left: 8px; right: 8px; max-width: none; }
+
+  /* bottom tab bar */
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 66;
+    background: var(--surface); border-top: 1px solid var(--line); padding: 4px max(6px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -2px 12px rgba(0,0,0,.08); }
+  .tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; color: var(--muted); font-size: 11.5px; font-weight: 600; padding: 6px 2px; border-radius: 10px; }
+  .tabbar button[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+  .tb-badge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 16px; height: 16px; box-sizing: border-box; border-radius: 999px; background: var(--match); color: #2b1d00; font-size: 10.5px; line-height: 16px; padding: 0 4px; font-weight: 700; }
+  .content .main { padding-bottom: 62px; box-sizing: border-box; }
+  .sheetshade { display: block; position: fixed; inset: 0; z-index: 61; background: rgba(8, 16, 20, .35); }
+  .sheetshade[hidden] { display: none; }
+
+  /* the panel and the results list become sheets above the tab bar */
+  .cpanel, .content #results { position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 62; max-height: min(78dvh, 640px);
+    border: 1px solid var(--line); border-bottom: 0; border-radius: 16px 16px 0 0; box-shadow: 0 -8px 28px rgba(0,0,0,.18);
+    transform: translateY(calc(100% + 80px)); visibility: hidden; transition: transform .22s ease, visibility 0s .22s; }
+  .cpanel::before, .content #results::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 8px auto 0; flex: none; }
+  body[data-sheet="filters"] .cpanel, body[data-sheet="view"] .cpanel, body[data-sheet="more"] .cpanel, body[data-sheet="list"] .content #results {
+    transform: none; visibility: visible; transition: transform .22s ease; }
+  .content #results { display: flex; height: min(78dvh, 640px); border-left: 1px solid var(--line); }
+  .content #results .rlist { overflow: auto; }
+  .cp-foot { display: none; }
+  .cp-sec { display: none; border-bottom: 0; }
+  body[data-sheet="filters"] .cp-sec[data-s="filters"], body[data-sheet="view"] .cp-sec[data-s="view"],
+  body[data-sheet="more"] .cp-sec[data-s="learn"], body[data-sheet="more"] .cp-sec[data-s="share"] { display: block; }
+  body[data-sheet="more"] .cp-sec[data-s="learn"] { border-bottom: 1px solid var(--line); }
+  .cp-n { display: none; }
+  .cpanel .theme-btn { display: flex; padding: 10px 8px; font-size: 15px; }
+  .cpanel .views button, .cp-tool { padding: 11px 10px; font-size: 15px; }
+  .cpanel .themes { order: 0; flex: none; }
+  .editor { z-index: 72; }
+  .fcard.sheet { z-index: 80; }
+  body.pane-hidden .paneshow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cpanel, .content #results { transition: none !important; } }
+@media (max-width: 760px) { .quizpill { display: none !important; } }
+@media (max-width: 760px) { .shell > .tpanel { z-index: 75; top: 0; left: 0; } }
+@media (min-width: 761px) {
+  .cp-sec { padding: 10px 14px 11px; }
+  .cp-h { margin-bottom: 8px; }
+  .cpanel .theme-btn { padding: 6px 8px; }
+  .cpanel .views button { padding: 6px 10px; }
+  .cp-tool { padding: 5px 8px; }
+  .cp-sub { margin: 10px 0 4px; }
+}
+@media (min-width: 761px) {
+  .cp-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .cp-tool { border-color: var(--line); padding: 6px 7px; gap: 6px; font-size: 12.5px; }
+  .cp-tool .cp-ic { width: 18px; font-size: 14px; }
+  .cp-tools .dlmenu { grid-column: 1 / -1; margin: 0; }
+  #cpShare .cp-tool:first-child { grid-column: 1 / -1; }
+}
+@media (min-width: 1101px) { .shell { grid-template-columns: 264px minmax(0, 1fr); } }
+@media (min-width: 761px) { .cp-tool { white-space: nowrap; } }
+@media print { .cpanel, .tabbar, .sheetshade, .docktop { display: none !important; } .shell { display: block; } }

@@ -970,7 +970,7 @@
     $("#sbsBtn").onclick = () => openSideBySide(W.state.selected);
     $("#shareBtn").onclick = openShare;
     const dl = document.createElement("button");
-    dl.type = "button"; dl.id = "dlBtn"; dl.className = "ghost sm"; dl.textContent = "⬇ Download";
+    dl.type = "button"; dl.id = "dlBtn"; dl.className = "cp-tool"; dl.innerHTML = `<span class="cp-ic" aria-hidden="true">⬇</span>Download`;
     dl.title = "Download this map or chart as an image, or its data as a spreadsheet";
     $("#shareBtn").after(dl);
     dl.onclick = () => openDownloadMenu(dl);

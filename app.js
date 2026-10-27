@@ -2082,9 +2082,13 @@
     const nav = $("#themes");
     const TH = themes();
     nav.innerHTML = `<button type="button" class="browse-btn" data-theme="${TH[0].id}" aria-haspopup="dialog">Browse filters</button>` +
-      TH.map((t) => `<button type="button" class="theme-btn${openTheme === t.id ? " on" : ""}" data-theme="${t.id}" aria-expanded="${openTheme === t.id}">${esc(t.label)}<span class="caret" aria-hidden="true">▾</span></button>`).join("");
+      TH.map((t) => {
+        const n = state.filters.filter((fl) => t.groups.includes(F[fl.key].group)).length;
+        return `<button type="button" class="theme-btn${openTheme === t.id ? " on" : ""}" data-theme="${t.id}" data-g="${gslug(t.groups[0])}" aria-expanded="${openTheme === t.id}"><span class="tdot" aria-hidden="true"></span><span class="tlab">${esc(t.label)}</span>${n ? `<span class="tn" title="${n} filter${n > 1 ? "s" : ""} in use">${n}</span>` : ""}<span class="caret" aria-hidden="true">›</span></button>`;
+      }).join("");
     nav.querySelectorAll("button").forEach((b) => (b.onclick = (ev) => {
       ev.stopPropagation();
+      if (sheet) openSheet(null);  // on a phone the filter list replaces the sheet
       if (openTheme === b.dataset.theme && b.classList.contains("theme-btn")) closeThemes(); else showTheme(b.dataset.theme);
     }));
   }
@@ -2126,16 +2130,17 @@
       b.onblur = () => { if (!touch.matches) hideCard(); };
     });
   }
-  // Sit the panel under its theme button, with as many columns as it has groups (up to 3)
+  // Open the panel beside the control panel, level with its theme button, with as many columns as it has groups (up to 3)
   function placePanel(panel, t) {
     panel.style.setProperty("--cols", Math.min(3, t.groups.length));
-    panel.style.left = "";
+    panel.style.left = ""; panel.style.top = "";
     if (getComputedStyle(panel).position === "fixed") return;
-    const btn = document.querySelector(`.theme-btn[data-theme="${t.id}"]`), host = panel.offsetParent;
+    const btn = document.querySelector(`.theme-btn[data-theme="${t.id}"]`), host = panel.offsetParent, cp = $("#cpanel");
     if (!btn || !host) return;
-    const hb = host.getBoundingClientRect(), bb = btn.getBoundingClientRect();
-    const w = panel.offsetWidth, room = hb.width - 16;
-    panel.style.left = Math.max(16, Math.min(bb.left - hb.left - 12, room - w)) + "px";
+    const hb = host.getBoundingClientRect(), bb = btn.getBoundingClientRect(), pb = cp.getBoundingClientRect();
+    panel.style.left = (pb.right - hb.left + 8) + "px";
+    const h = panel.offsetHeight;
+    panel.style.top = Math.max(8, Math.min(bb.top - hb.top - 14, hb.height - h - 8)) + "px";
   }
   function closeThemes() {
     openTheme = null;
@@ -2179,7 +2184,7 @@
   document.addEventListener("click", (ev) => {
     if (!openTheme) return;
     if (!ev.target.isConnected) return; // the panel was just redrawn under the click
-    if (ev.target.closest("#tpanel, #themes, #fcard")) return;
+    if (ev.target.closest("#tpanel, #themes, #fcard, #tabbar")) return;
     closeThemes();
   });
   renderThemeBar();
@@ -2345,6 +2350,7 @@
     d.querySelector("[data-a=back]").disabled = !past.length && snapshot() === committed;
     d.querySelector("[data-a=home]").disabled = state.mode === "human" && state.view === "map" && !somethingToClear();
     d.querySelector("[data-a=clear]").disabled = !somethingToClear();
+    renderPanel();
   }
   {
     const d = document.createElement("nav");
@@ -2352,11 +2358,56 @@
     d.innerHTML = `<button type="button" data-a="back" title="Go back one step"><span aria-hidden="true">←</span> Back</button>
       <button type="button" data-a="home" title="Back to the start: the world map with no filters"><span aria-hidden="true">⌂</span> Home</button>
       <button type="button" data-a="clear" class="clr" title="Remove every filter and setting on this page"><span aria-hidden="true">✕</span> Clear all</button>`;
-    document.body.appendChild(d);
+    ($("#cpFoot") || document.body).appendChild(d);
     d.querySelector("[data-a=back]").onclick = goBack;
     d.querySelector("[data-a=home]").onclick = goHome;
     d.querySelector("[data-a=clear]").onclick = clearAll;
   }
+
+  // ---------- Control panel ----------
+  // Desktop: everything lives in the panel on the left, with Back, Home and Clear all at its foot.
+  // Phones: a tab bar along the bottom opens each part of the panel (or the results list) as a sheet,
+  // and Back, Home and Clear all move to the top.
+  const phone = window.matchMedia("(max-width: 760px)");
+  let sheet = null, lastSel = null;
+  function placeDock() {
+    const d = $("#dock"), home = phone.matches ? $("#dockTop") : $("#cpFoot");
+    if (d && home && d.parentElement !== home) home.appendChild(d);
+    if (!phone.matches) openSheet(null);
+  }
+  function openSheet(name) {
+    if (name === sheet) name = null;
+    if (name === "quiz") { openSheet(null); $("#quizBtn")?.click(); return; }
+    sheet = name;
+    document.body.dataset.sheet = name || "";
+    $("#sheetShade").hidden = !name;
+    document.querySelectorAll("#tabbar button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.t === name)));
+    if (name && openTheme) closeThemes();
+    if (name === "list") $("#results").scrollTop = 0;
+  }
+  function renderPanel() {
+    const n = state.filters.length;
+    const c = $("#cpCount"); if (c) { c.hidden = !n; c.textContent = n; }
+    const bd = document.querySelector("#tabbar .tb-badge"); if (bd) { bd.hidden = !n; bd.textContent = n; }
+    $("#cpanel").classList.toggle("nofilters", !n);
+    const q = $("#quizBtn"), tq = document.querySelector("#tabbar [data-t=quiz]");
+    if (q && tq) tq.setAttribute("aria-pressed", q.getAttribute("aria-pressed") || "false");
+    // on a phone, picking a country (on the map or in a chart) opens its profile in the list sheet
+    if (phone.matches && state.selected && state.selected !== lastSel && sheet !== "list") openSheet("list");
+    lastSel = state.selected;
+  }
+  document.querySelectorAll("#tabbar button").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openSheet(b.dataset.t); }));
+  $("#sheetShade").onclick = () => openSheet(null);
+  // a choice in the View sheet closes it, so the chart is seen straight away
+  document.querySelectorAll("#views button").forEach((b) => b.addEventListener("click", () => { if (phone.matches && sheet === "view") openSheet(null); }));
+  $("#cpanel").addEventListener("click", (e) => {
+    if (!phone.matches || sheet !== "more") return;
+    if (e.target.closest("#ffBtn, #sbsBtn, #shareBtn, #quizBtn")) openSheet(null);
+  });
+  // a sheet handle: drag or tap to close
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && sheet) openSheet(null); });
+  phone.addEventListener?.("change", placeDock);
+  placeDock();
 
   // ---------- About ----------
   function openAbout() {
@@ -2454,7 +2505,7 @@
   try { decodeState(location.search); } catch (e) { /* ignore */ }
 
   // ---------- Shared with factfile.js ----------
-  window.WC = {
+  window.WC = { openSheet: (n) => openSheet(n),
     F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
     applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
     pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },

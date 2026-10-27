@@ -13,7 +13,8 @@ It's a static website: no server, no database, no accounts. All the data is in a
 
 ## Features
 
-- **Five themes along the top** (People, Wealth & work, Politics & the world, Places, Planet). Each opens its categories as small colour-coded chips. Hover over a chip (or tap it on a phone) for a plain-English definition, then click (or tap **Add filter**) to add it. A clock marks measures with yearly data. You can also search by name.
+- **One control panel.** On a computer, everything sits in a panel on the left, in the order you use it: **1 Filters** (your active filters, then the themes to add more), **2 Show the results as** (Map, Compare, Rankings, Charts, Insights), **3 Learn & share** (Quiz, Factfile, Side by side, Share, Download), with **Back / Home / Clear all** at its foot. Search and plain-English questions go in the box at the top. On a phone, a tab bar along the bottom (Filters, View, List, Quiz, More) opens each part as a sheet, and Back / Home / Clear all sit at the top.
+- **Five themes in the panel** (People, Wealth & work, Politics & the world, Places, Planet). Each opens its categories as small colour-coded chips. Hover over a chip (or tap it on a phone) for a plain-English definition, then click (or tap **Add filter**) to add it. A clock marks measures with yearly data. You can also search by name.
 - **Related measures are grouped.** For example, one "Religion %" filter lets you switch between Muslim, Christian, Hindu and so on; "Electricity sources" switches between coal, nuclear, wind and the rest. List filters such as "Treaties joined" or "Member of" can match **any**, **all** or **none** of the ticked options.
 - **Filters as chips.** Each active filter is a chip; click it to adjust, × to remove.
 - **Smart controls.** Range sliders show a histogram of where countries sit. Option lists show how many countries each choice would give, and grey out choices that would give none.
@@ -100,7 +101,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `index.html` | Page structure |
 | `style.css` | All styling, including the dark theme |
 | `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
-| `app.js` | Map (including the map styles), filtering logic, results list, URL state, and the Back / Home / Clear all dock |
+| `app.js` | Map (including the map styles), filtering logic, results list, URL state, and the Back / Home / Clear all dock, and the control panel and phone tab bar |
 | `player.js` | Shared parts of the year players: the speed button and the amber/red “big change” years |
 | `links.js` | “Find out more” links (Wikipedia, BBC, Our World in Data, videos). Add your own favourite articles or videos to `CURATED`, by measure key, country code or SDG |
 | `ask.js` | Turns a question in plain English into filters and a view |
