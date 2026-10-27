@@ -343,7 +343,7 @@ window.FILTERS = [
     keywords: "stunting malnutrition children growth hunger sdg 2",
   }),
   num("tb_incidence", "Health", "Tuberculosis", {
-    short: "TB cases", format: "per100k", scale: "log",
+    short: "TB cases", format: "per100kpop", scale: "log",
     say: (b) => `there are ${b} new tuberculosis cases a year`,
     info: "New cases of tuberculosis (TB) each year, per 100,000 people. TB is a bacterial lung disease that is curable but still kills over a million people a year. One of the SDG 3 measures.",
     keywords: "tuberculosis tb disease infection health sdg 3",
@@ -1215,7 +1215,7 @@ window.FILTERS = [
     keywords: "protected areas national parks nature reserves biodiversity conservation sdg 15 30x30",
   }),
   num("homicides", "Politics", "Murder rate", {
-    short: "Murders", format: "per100k", scale: "log",
+    short: "Murders", format: "per100kpop", scale: "log",
     say: (b) => `there are ${b} murders a year`,
     info: "Intentional homicides (murders) each year per 100,000 people, from the UN Office on Drugs and Crime. One of the SDG 16 measures.",
     keywords: "murder homicide violence crime safety peace sdg 16",

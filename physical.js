@@ -432,6 +432,7 @@
       <dl>${fs.filter(([k]) => k !== "Countries" && k !== "Country").map(([k, v]) => `<dt>${esc(k || "Note")}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       ${it.about ? `<p class="sub">${esc(it.about)}</p>` : ""}
       ${isos.length ? `<h4 data-g="geography">${isos.length === 1 ? "Country" : "Countries"}</h4><div class="fcountries">${isos.map((i) => country(i) ? `<button type="button" class="linkbtn goto" data-iso="${i}">${country(i).flag || ""} ${esc(country(i).name)}</button>` : "").join("")}</div>` : ""}
+      ${window.WL && it._t !== "boundary" ? window.WL.html(window.WL.feature(it.name || title(it), { peak: "mountain", range: "mountains", river: "river", lake: "lake", volcano: "volcano", desert: "desert", delta: "delta", waterfall: "waterfall", trench: "ocean trench", quake: "earthquake", landform: "" }[it._t] || ""), "Find out more") : ""}
       <button type="button" class="ghost" id="fzoom">Zoom to it on the map</button>
       <p class="sub src">Source: ${esc(SRC[it._t] || "")}</p></div>`;
   }

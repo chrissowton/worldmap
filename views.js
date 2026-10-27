@@ -126,7 +126,7 @@
         </div></div>
         <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg></div>
         <div class="vfoot">
-          <div class="vyear" id="cYearRow"><button type="button" class="play" id="cPlay" aria-label="Play through the years">▶</button><input type="range" id="cYear" step="1" aria-label="Year"><span class="num vy" id="cYearLab"></span></div>
+          <div class="vyear" id="cYearRow"><button type="button" class="play" id="cPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("cSpeed") : ""}<span class="yslide"><input type="range" id="cYear" step="1" aria-label="Year"></span><span class="num vy" id="cYearLab"></span><span class="ysig" id="cSig" hidden></span></div>
           <div class="vlegend" id="cLeg"></div>
           <p class="vnote" id="cNote"></p>
           <div class="vopts">
@@ -250,6 +250,7 @@
     $("#cYear").oninput = (e) => { stopPlay(); c.year = +e.target.value; drawCompare(); };
     $("#cYear").onchange = () => W.render();
     $("#cPlay").onclick = () => (playTimer ? stopPlay() : startPlay());
+    window.WPL?.bindSpeed($("#cSpeed"));
     $("#cFind").onchange = (e) => { const r = findCountry(e.target.value); e.target.value = ""; if (r && !c.pins.includes(r.iso3)) { c.pins = c.pins.concat(r.iso3).slice(-8); W.render(); } };
   }
   function compareYears() {
@@ -258,22 +259,27 @@
     if (!TS[c.x] || !TS[c.y] || W.CAT_TS[c.x] || W.CAT_TS[c.y]) return null;
     return commonYears(keys);
   }
+  const cmpSig = () => (window.WPL ? window.WPL.merged([V.cmp.x, V.cmp.y].filter((k) => TS[k] && !W.CAT_TS[k])) : new Map());
   function startPlay() {
     const c = V.cmp, yrs = compareYears();
     if (!yrs) return;
     if (c.year == null || c.year >= yrs.to) c.year = yrs.from;
     drawCompare();
-    playTimer = setInterval(() => {
+    const sig = cmpSig();
+    const tick = () => {
       if (c.year >= yrs.to) { stopPlay(); W.render(); return; }
       c.year += 1;
-      drawCompare(500);
-    }, 520);
+      drawCompare(Math.min(500, window.WPL ? window.WPL.ms(500) : 500));
+      const s = sig.get(c.year);
+      playTimer = setTimeout(tick, (window.WPL ? window.WPL.ms(520) : 520) * (s ? (s.level === 2 ? 3 : 2) : 1));
+    };
+    playTimer = setTimeout(tick, window.WPL ? window.WPL.ms(520) : 520);
     $("#cPlay").textContent = "❚❚";
   }
   function stopPlay() {
     window.WCH?.stop();
     if (!playTimer) return;
-    clearInterval(playTimer); playTimer = null;
+    clearTimeout(playTimer); playTimer = null;
     const b = $("#cPlay"); if (b) b.textContent = "▶";
   }
   function drawCompare(dur = 250) {
@@ -292,6 +298,11 @@
     if (yrs) { range.min = yrs.from; range.max = yrs.to; range.value = year; range.disabled = false; $("#cPlay").disabled = false; }
     else { range.disabled = true; $("#cPlay").disabled = true; }
     $("#cYearLab").textContent = yrs ? year : "Latest figures";
+    if (window.WPL) {
+      const sig = yrs ? cmpSig() : new Map(); window.WPL.marks(range, sig); window.WPL.light($("#cSig"), sig, year);
+      let p = $("#cSigText"); if (!p) { p = document.createElement("p"); p.id = "cSigText"; $("#cYearRow").after(p); }
+      const st = year && sig.get(year); p.hidden = !st; if (st) { p.textContent = st.text; p.className = `tsigtext l${st.level}`; }
+    }
     // data
     const ms = matchSet();
     const pts = [];
@@ -577,7 +588,7 @@
   let pyramids = window.__PYRAMIDS__ || null, pyrLoading = null;
   function loadPyramids() {
     if (pyramids) return Promise.resolve(pyramids);
-    pyrLoading ||= fetch("pyramids.json?v=22").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
+    pyrLoading ||= fetch("pyramids.json?v=25").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
     return pyrLoading;
   }
   // A small line chart as an SVG string: the country against the world and continent medians

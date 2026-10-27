@@ -42,6 +42,8 @@ It's a static website: no server, no database, no accounts. All the data is in a
   - **Glossary**: key terms (electoral autocracy, demographic transition stages, Köppen climates, plate boundaries, volcano types and more) have a dotted underline or an ⓘ: hover or tap to see what they mean (`glossary.js`).
   - **SDG tracker**: for 14 of the 17 Sustainable Development Goals, whether each country has achieved the goal, is on track for 2030, is improving too slowly, stagnating or getting worse, from the speed of change since 2015 (a simplified version of the SDSN's method; targets are listed in `filters.js` and `build_data.py`). Filters under Politics & the world, and a goal dashboard in every country profile.
   - **Insights** (`insights.js`): patterns found for you, using only the countries that match your filters: the strongest links between measures (rank correlations, with obvious pairs hidden), the biggest rises and falls over 5–30 years, countries changing demographic transition stage, human development group or type of government, who is next to cross a line such as 100 million people (a simple projection of the last ten years), and countries far above or below what another measure predicts.
+  - **Year players** (map, Compare, Charts) have a speed button (½× to 4×) and mark years of unusually big change in amber or red on the slider; when the player reaches one, a light pulses, the player pauses a little longer and a note says what happened (for example life expectancy falling in 2020–21, or tourist numbers in 2020).
+  - **Find out more**: country profiles, filter panes, “why?” links on each filter for a country, SDG goals and physical features link to Wikipedia, BBC News, Our World in Data and videos, plus hand-picked extras in `links.js`.
   - **Charts**: one measure drawn many ways, chosen from a row of tabs, like Our World in Data:
     - **Line**, **Bar**, **Table** (any two years, with the change) and **Map**.
     - **Stacked area**: totals by continent over time, as amounts or as shares of the world.
@@ -99,6 +101,8 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `style.css` | All styling, including the dark theme |
 | `filters.js` | **The list of filters.** The interface is generated from this, plus families (related measures grouped in the menu), themes, short menu names, starter questions, puzzles and source credits |
 | `app.js` | Map (including the map styles), filtering logic, results list, URL state, and the Back / Home / Clear all dock |
+| `player.js` | Shared parts of the year players: the speed button and the amber/red “big change” years |
+| `links.js` | “Find out more” links (Wikipedia, BBC, Our World in Data, videos). Add your own favourite articles or videos to `CURATED`, by measure key, country code or SDG |
 | `ask.js` | Turns a question in plain English into filters and a view |
 | `glossary.js` | Definitions of key terms, shown on hover |
 | `picker.js` | The two-level measure picker: any `<select data-pick>` becomes a button that opens categories on the left and their measures on the right, with a search box |

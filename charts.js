@@ -19,7 +19,7 @@
   const SUM_KEYS = new Set(["population", "co2_mt", "refugees_hosted", "refugees_from", "idps", "asylum_seekers_hosted", "tourists",
     "tourist_departures", "tourism_receipts_usd", "military_spend_usd", "armed_forces", "exports_usd", "goods_exports_usd",
     "services_exports_usd", "gdp_usd", "elec_twh", "oil_twh", "gas_twh", "coal_twh", "area_km2", "patents", "science_articles"]);
-  const isSum = (key) => SUM_KEYS.has(key) || !!F[key]?.sum;
+  const isSum = (key) => SUM_KEYS.has(key) || !!(F || window.WC?.F)?.[key]?.sum;
   // Missing refugee figures mean none were reported, so they count as zero in totals
   const ZERO_MISSING = new Set(["refugees_hosted", "refugees_from"]);
 
@@ -221,8 +221,8 @@
 
   function stop() {
     if (!playTimer) return;
-    clearInterval(playTimer); playTimer = null;
-    const b = $("#tPlay"); if (b) b.textContent = "▶";
+    clearTimeout(playTimer); playTimer = null;
+    const b = $("#chPlay"); if (b) b.textContent = "▶";
   }
 
   // ---------- Draw ----------
@@ -309,17 +309,28 @@
       $("#tTo").onchange = (e) => { t.year = +e.target.value; W.render(); };
       return { year, from };
     }
-    row.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">${playTimer ? "❚❚" : "▶"}</button><input type="range" id="tYear" min="${ys[0]}" max="${ys[ys.length - 1]}" step="1" value="${year}" aria-label="Year"><span class="num vy">${year}</span>`;
-    $("#tYear").oninput = (e) => { stop(); t.year = +e.target.value; W.render(); };
-    $("#tPlay").onclick = () => {
+    // ids start "ch" so they never clash with the map's year player
+    row.innerHTML = `<button type="button" class="play" id="chPlay" aria-label="Play through the years">${playTimer ? "❚❚" : "▶"}</button>${window.WPL ? window.WPL.speedHTML("chSpeed") : ""}<span class="yslide"><input type="range" id="chYear" min="${ys[0]}" max="${ys[ys.length - 1]}" step="1" value="${year}" aria-label="Year"></span><span class="num vy">${year}</span><span class="ysig" id="chSig" hidden></span>`;
+    const sigKey = opts.sigKey || key;
+    const sig = window.WPL && TS[sigKey] && !W.CAT_TS[sigKey] ? window.WPL.merged([sigKey]) : new Map();
+    if (window.WPL) {
+      requestAnimationFrame(() => window.WPL.marks($("#chYear"), sig)); window.WPL.light($("#chSig"), sig, year); window.WPL.bindSpeed($("#chSpeed"));
+      const st = sig.get(year);
+      if (st) row.insertAdjacentHTML("beforeend", `<p class="tsigtext l${st.level}" style="flex-basis:100%">${esc(st.text)}</p>`);
+    }
+    $("#chYear").oninput = (e) => { stop(); t.year = +e.target.value; W.render(); };
+    $("#chPlay").onclick = () => {
       if (playTimer) return stop();
       if (t.year == null || t.year >= ys[ys.length - 1]) t.year = ys[0];
       W.render();
-      playTimer = setInterval(() => {
+      const tick = () => {
         if (t.year >= ys[ys.length - 1]) { stop(); W.render(); return; }
         t.year++; W.render();
-      }, 420);
-      $("#tPlay").textContent = "❚❚";
+        const s = sig.get(t.year);
+        playTimer = setTimeout(tick, (window.WPL ? window.WPL.ms(420) : 420) * (s ? (s.level === 2 ? 3 : 2) : 1));
+      };
+      playTimer = setTimeout(tick, window.WPL ? window.WPL.ms(420) : 420);
+      $("#chPlay").textContent = "❚❚";
     };
     return { year };
   }
@@ -698,7 +709,7 @@
   // ======================= SANKEY =======================
   function loadFlows() {
     if (flowData) return Promise.resolve(flowData);
-    flowLoading ||= fetch("refugee_flows_years.json?v=22").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
+    flowLoading ||= fetch("refugee_flows_years.json?v=25").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
     return flowLoading;
   }
   function drawSankey() {

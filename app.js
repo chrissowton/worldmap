@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "22";
+  const DATA_VERSION = "25";
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
   const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
@@ -85,8 +85,8 @@
   }
   const UNITS = {
     per1000: " per 1,000 people", per1000birth: " per 1,000 births", per1000women: " per 1,000 teenage girls",
-    per100k: " per 100,000 births", density: " people per km²", years: " years",
-    permillion: " per million people", per100: " per 100 people", twh: " TWh", kwh: " kWh per person",
+    per100k: " per 100,000 births", per100kpop: " per 100,000 people", density: " people per km²", years: " years",
+    permillion: " per million people", per100: " per 100 people", kwh: " per person",
   };
   // Full form, used in sentences and profiles: "20 per 1,000 people"
   function fmt(f, v) {
@@ -110,7 +110,7 @@
       case "tonnes": return (a < 10 ? +v.toFixed(1) : Math.round(v)) + " t";
       case "per1000": case "per1000birth": case "per1000women": return String(a < 10 ? +v.toFixed(1) : Math.round(v));
       case "density": return compact(v);
-      case "per100k": case "years": return String(Math.round(v));
+      case "per100k": case "per100kpop": case "years": return String(Math.round(v));
       case "kmlen": return d3.format(",")(Math.round(v)) + " km";
       case "temp": return (+v.toFixed(1)) + "°C";
       case "mm": return d3.format(",")(Math.round(v)) + " mm";
@@ -829,14 +829,16 @@
     }
     if (!el.dataset.built) {
       el.dataset.built = "1";
-      el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>
-        <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="tnote" id="tNote"></span>
+      el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("tSpeed") : ""}
+        <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span><span class="tnote" id="tNote"></span>
         <button type="button" class="linkbtn" id="tLatest">Back to latest</button></div>
-        <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div></div>`;
+        <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div>
+        <p class="tsigtext" id="tSigText" hidden></p></div>`;
       const range = $("#tRange");
       range.oninput = () => { stopPlay(); setYear(+range.value); };
       $("#tLatest").onclick = () => { stopPlay(); setYear(null); };
       $("#tPlay").onclick = () => (playing ? stopPlay() : startPlay());
+      window.WPL?.bindSpeed($("#tSpeed"));
     }
     const range = $("#tRange");
     el.classList.toggle("off", !sp);
@@ -848,6 +850,15 @@
       ? (state.filters.some((fl) => F[fl.key].time) ? "These filters have no years in common." : "Add a filter marked “yearly” (like population, HDI or democracy) to go back in time.")
       : state.year ? `Showing ${state.year} for filters with yearly data.` : `Data from ${sp[0]} to ${sp[1]}. Drag or press play.`;
     $("#tLatest").hidden = !state.year;
+    // years with unusually big changes in the measures being played
+    if (window.WPL && sp) {
+      const sig = timeSig();
+      window.WPL.marks(range, sig);
+      window.WPL.light($("#tSig"), sig, state.year);
+      const st = state.year && sig.get(state.year);
+      $("#tSigText").hidden = !st;
+      if (st) { $("#tSigText").textContent = st.text; $("#tSigText").className = `tsigtext l${st.level}`; $("#tNote").textContent = ""; }
+    } else if (window.WPL) { window.WPL.marks(range, new Map()); window.WPL.light($("#tSig"), new Map(), null); }
     $("#tPlay").textContent = playing ? "❚❚" : "▶";
     $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
   }
@@ -857,18 +868,29 @@
     render({ keepEditor: !!state.open && document.activeElement?.id === "tRange" });
     if (state.open && document.activeElement?.id !== "tRange") renderEditor();
   }
+  function timeSig() {
+    const keys = state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key);
+    const ck = colourKey();
+    if (ck && TS[ck] && !CAT_TS[ck] && !keys.includes(ck)) keys.push(ck);
+    return window.WPL ? window.WPL.merged(keys) : new Map();
+  }
   function startPlay() {
     const sp = sliderSpan();
     if (!sp) return;
     const [y0, y1] = sp;
     if (!state.year || state.year >= y1) setYear(y0);
-    playing = setInterval(() => {
+    const sig = timeSig();
+    // one year at a time; it lingers on years with big changes so they can be seen
+    const tick = () => {
       if (state.year >= y1) return stopPlay();
       setYear(state.year + 1);
-    }, 550);
+      const s = sig.get(state.year);
+      playing = setTimeout(tick, (window.WPL ? window.WPL.ms(550) : 550) * (s ? (s.level === 2 ? 3 : 2) : 1));
+    };
+    playing = setTimeout(tick, window.WPL ? window.WPL.ms(550) : 550);
     renderTimebar();
   }
-  function stopPlay() { if (playing) { clearInterval(playing); playing = null; renderTimebar(); } }
+  function stopPlay() { if (playing) { clearTimeout(playing); playing = null; renderTimebar(); } }
 
   // ---------- Refugee flow view ----------
   let flowScale = null;
@@ -1232,6 +1254,7 @@
     const fam = famOf[fl.key];
     el.innerHTML = `<div class="eyebrow">${esc(f.group)}${fam ? ` · ${esc(fam.label)}` : ""}</div><header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
       <p class="info">${glossify(esc(f.info))} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.${timeNote}</p>
+      ${window.WL && !f.target ? `<details class="edmore"><summary>Find out more about ${esc(lowerL(f.label))}</summary>${window.WL.html(window.WL.measure(f), "")}</details>` : ""}
       ${famPicker(fl)}
       ${f.modes ? `<div class="seg modes" role="group" aria-label="Match">
         ${[["any", "Any of these"], ["all", "All of these"], ["none", "None of these"]].map(([m, t]) => `<button type="button" data-mode="${m}" class="${(fl.mode || "any") === m ? "on" : ""}">${t}</button>`).join("")}</div>` : ""}
@@ -1687,7 +1710,8 @@
         const f = F[key], m = g.measures.find((x) => x[0] === key);
         return `<li><span class="dot" style="background:${ST[st][1]}"></span><span><b>${esc(f ? f.label : key)}</b>: ${esc(f ? fmtFull(f, v) : String(v))} <small>(${y})</small><br><small>Target ${esc(m ? m[1].replace(/^[^:]*: /, "") : "")} · ${ST[st][0]}</small></span></li>`;
       }).join("");
-      detail = `<div class="sdgd" style="--sdg:${g.colour}"><b>Goal ${g.n}: ${esc(g.name)}</b> <span class="sub">${esc(g.aim)}</span><ul>${rows}</ul></div>`;
+      detail = `<div class="sdgd" style="--sdg:${g.colour}"><b>Goal ${g.n}: ${esc(g.name)}</b> <span class="sub">${esc(g.aim)}</span><ul>${rows}</ul>
+        ${window.WL ? `<p class="fwhy">${window.WL.sdg(g.n, g.name).map(([l, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join(" · ")}</p>` : ""}</div>`;
     }
     return `<h4 data-g="sdgs">Sustainable Development Goals</h4>
       <p class="sub">On track or achieved for <b>${r.sdg_on_track} of ${r.sdg_measured}</b> goals with data${r.sdg_achieved ? ` (${r.sdg_achieved} already achieved)` : ""}. Tap a goal to see why.</p>
@@ -1704,8 +1728,9 @@
     }));
   }
 
+  const lowerL = (s) => (/^[A-Z][^A-Z]*$/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
   // ---------- A country seen through your filters: just the measures you're asking about ----------
-  let focusFor = null, showFull = false;
+  let focusFor = null, showFull = false, detailOpen = null;
   function rankLine(f, r) {
     const vs = pool().map((x) => x[f.key]).filter((v) => typeof v === "number");
     const v = r[f.key];
@@ -1760,7 +1785,11 @@
         const vals = Array.isArray(v) ? v : v != null ? [v] : [];
         body = `<p class="fval">${vals.length ? vals.map((x) => `<span class="fv${fl.values.includes(x) ? " hit" : ""}">${glossFor(x) ? glTerm(x) : esc(x)}</span>`).join(" ") : "<b>No data</b>"}</p>`;
       }
-      return `<section class="fcardx" data-g="${gslug(f.group)}"><div class="fhead"><span class="ftitle">${esc(chipLabel(fl))}</span>${mark}</div>${body}</section>`;
+      // "Why?" links: for numbers, and for categories with a matching article (religion, languages, government…)
+      const why = !window.WL ? [] : sdgGoal ? window.WL.sdg(+sdgGoal[1], window.SDGS.find((g) => g.n === +sdgGoal[1])?.name || "")
+        : f.type === "range" && !f.target ? window.WL.countryMeasure(r, f) : window.WL.hasTopic(f.key) ? window.WL.countryMeasure(r, f).slice(0, 1) : [];
+      return `<section class="fcardx" data-g="${gslug(f.group)}"><div class="fhead"><span class="ftitle">${esc(chipLabel(fl))}</span>${mark}</div>${body}
+        ${why.length ? `<p class="fwhy">Why? ${why.map(([l, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join(" · ")}</p>` : ""}</section>`;
     }).join("");
   }
 
@@ -1778,6 +1807,7 @@
         ${e0?.match ? `<span class="badge m">Matches every filter</span>` : e0 ? `<span class="badge">Fails ${e0.fails.length} of ${lastEval.act.length} filters</span>` : ""}
         <h4>On your filters</h4>
         ${focusHTML(r)}
+        ${window.WL ? window.WL.html(window.WL.country(r), `Find out more about ${r.name}`) : ""}
         <div class="fmore"><button type="button" class="ffopen" id="fullBtn">Everything about ${esc(r.name)} <span>full profile</span></button>
         <button type="button" class="linkbtn" id="ffOpen2">📄 Country factfile</button></div>
       </div>${footHTML()}`;
@@ -1791,54 +1821,83 @@
     const badge = !lastEval.act.length ? "" : e?.match ? `<span class="badge m">Matches every filter</span>` : e?.near ? `<span class="badge n">Near miss: fails ${esc(F[e.fails[0].key].label)}</span>` : e ? `<span class="badge">Fails ${e.fails.length} filters</span>` : `<span class="badge">Territory (hidden)</span>`;
     const val = (f) => {
       const v = r[f.key];
-      if (f.type === "range") return fmtFull(f, v);
-      if (f.type === "bool") return v == null ? "no data" : v ? "Yes" : "No";
-      if (Array.isArray(v)) return v.length ? v.join(", ") : "none listed";
-      return v ?? "no data";
+      if (f.type === "range") return v == null ? null : fmtFull(f, v);
+      if (f.type === "bool") return v == null ? null : v ? "Yes" : "No";
+      if (Array.isArray(v)) return v.length ? v.join(", ") : null;
+      return v ?? null;
     };
-    const mg = modeGroups();
-    const groups = window.FILTER_GROUPS.filter((g) => mg.has(g)).map((g) => {
-      const fs = FILTERS.filter((f) => f.group === g && !f.target && !f.hidden && !/^sdg\d+_status$/.test(f.key));
-      if (!fs.length) return "";
-      return `<h4 data-g="${gslug(g)}">${g}</h4><dl>${fs.map((f) => `<dt>${esc(f.label)}</dt><dd>${f.type === "cat" && glossFor(val(f)) ? glTerm(val(f)) : esc(val(f))}${f.year && typeof f.year === "string" && r[f.year] ? ` <small>(${r[f.year]})</small>` : ""}</dd>`).join("")}</dl>`;
-    }).join("");
-    el.innerHTML = `<div class="detail">
-      <button type="button" class="linkbtn back" id="back">← Back to results</button>
-      <h2><span>${r.flag || ""}</span>${esc(r.name)}</h2>
-      <button type="button" class="ffopen" id="ffOpen">📄 Country factfile <span>print or download</span></button>
-      <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
-      ${badge}
-      ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; refugee routes and everything else show the latest figures.</p>` : ""}
-      ${state.mode === "physical" ? (window.WP ? window.WP.profileHTML(r) : "") : window.WV ? window.WV.profileHTML(r) : ""}
-      ${state.mode === "physical" ? "" : sdgHTML(r)}
-      ${(() => {
+    const yr = (f) => (f.year && typeof f.year === "string" && r[f.year] ? ` <small>${r[f.year]}</small>` : "");
+    const cell = (f) => { const v = val(f); return f.type === "cat" && glossFor(v) ? glTerm(v) : esc(v); };
+    // --- extra blocks that belong inside a topic ---
+    const extras = {
+      Refugees: () => {
         const out = flows.filter((f) => f[0] === r.iso3).sort((a, b) => b[2] - a[2]);
         const inn = flows.filter((f) => f[1] === r.iso3).sort((a, b) => b[2] - a[2]);
         if (!out.length && !inn.length) return "";
         const nm = (i) => esc(byIso.get(i)?.name || i);
-        const flowYear = r._latest?.refugees_hosted_year ?? r.refugees_hosted_year ?? 2025;
-        const list = (fs, col) => `<dl>${fs.slice(0, 5).map((f) => `<dt>${nm(f[col])}</dt><dd>${d3.format(",")(f[2])}</dd>`).join("")}</dl>`;
-        return `<h4 data-g="refugees">Refugees</h4>
-          ${inn.length ? `<p class="sub">In ${flowYear} it hosted <b>${d3.format(",")(r._latest?.refugees_hosted ?? r.refugees_hosted ?? 0)}</b> refugees. Largest groups come from:</p>${list(inn, 0)}` : ""}
-          ${out.length ? `<p class="sub">${d3.format(",")(r._latest?.refugees_from ?? r.refugees_from ?? 0)} refugees had fled ${esc(r.name)} by ${flowYear}. Largest numbers live in:</p>${list(out, 1)}` : ""}
-          <div class="flowbtns">
-            ${inn.length ? `<button type="button" data-dir="to">Map where its refugees come from</button>` : ""}
-            ${out.length ? `<button type="button" data-dir="from">Map where its refugees have gone</button>` : ""}
-          </div>`;
-      })()}
-      ${(() => {
+        const list = (fs, col) => `<dl class="pmini">${fs.slice(0, 5).map((f) => `<dt>${nm(f[col])}</dt><dd>${d3.format(",")(f[2])}</dd>`).join("")}</dl>`;
+        return `${inn.length ? `<p class="psub">Largest groups of refugees living here come from:</p>${list(inn, 0)}` : ""}
+          ${out.length ? `<p class="psub">Refugees from ${esc(r.name)} live mostly in:</p>${list(out, 1)}` : ""}
+          <div class="flowbtns">${inn.length ? `<button type="button" data-dir="to">Map where its refugees come from</button>` : ""}${out.length ? `<button type="button" data-dir="from">Map where its refugees have gone</button>` : ""}</div>`;
+      },
+      Geography: () => {
+        const nb = r.borders_list || [];
+        return nb.length ? `<p class="psub">Neighbours (${nb.length}), with the length of each land border:</p><dl class="pmini nbrs">${nb.map(([iso, km]) => `<dt><button type="button" class="linkbtn goto" data-iso="${iso}">${byIso.get(iso)?.flag || ""} ${esc(byIso.get(iso)?.name || iso)}</button></dt><dd>${d3.format(",")(km)} km</dd>`).join("")}</dl>` : `<p class="psub">No land borders.</p>`;
+      },
+      Cities: () => {
         const cs = cities.filter((c) => c.iso3 === r.iso3).slice(0, 6);
-        const nb = (r.borders_list || []);
-        const nbHTML = nb.length ? `<h4 data-g="geography">Neighbours (${nb.length})</h4><p class="sub">Land borders: about ${d3.format(",")(r.border_km)} km in total.</p><dl class="nbrs">${nb.map(([iso, km]) => `<dt><button type="button" class="linkbtn goto" data-iso="${iso}">${byIso.get(iso)?.flag || ""} ${esc(byIso.get(iso)?.name || iso)}</button></dt><dd>${d3.format(",")(km)} km</dd>`).join("")}</dl>`
-          : `<h4 data-g="geography">Neighbours</h4><p class="sub">No land borders.</p>`;
+        return cs.length ? `<p class="psub">Largest cities:</p><dl class="pmini">${cs.map((c) => `<dt>${esc(c.name)}${c.city_capital ? " (capital)" : ""}</dt><dd>${d3.format(",")(c.city_population)}</dd>`).join("")}</dl>` : "";
+      },
+      Climate: () => {
         const cl = r.climate_list || [];
-        const climHTML = cl.length ? `<h4 data-g="climate">Climate zones</h4><dl>${cl.slice(0, 6).map(([n, p]) => `<dt>${esc(n)}</dt><dd>${p}% of land</dd>`).join("")}</dl>` : "";
+        return cl.length ? `<p class="psub">Climate zones (share of land):</p><dl class="pmini">${cl.slice(0, 6).map(([n, p]) => `<dt>${glossFor(n) ? glTerm(n) : esc(n)}</dt><dd>${p}%</dd>`).join("")}</dl>` : "";
+      },
+      "Energy & resources": () => {
         const ml = r.minerals_list || [];
-        const minHTML = ml.length ? `<h4 data-g="energy-resources">Mining (share of world production, 2025)</h4><dl>${ml.map(([m, p]) => `<dt>${esc(m.charAt(0).toUpperCase() + m.slice(1))}</dt><dd>${p < 1 ? "under 1" : Math.round(p)}%</dd>`).join("")}</dl>` : "";
-        return nbHTML + climHTML + minHTML + (cs.length ? `<h4>Largest cities</h4><dl>${cs.map((c) => `<dt>${esc(c.name)}${c.city_capital ? " (capital)" : ""}</dt><dd>${d3.format(",")(c.city_population)}</dd>`).join("")}</dl>` : "");
-      })()}
-      ${groups}
+        return ml.length ? `<p class="psub">Share of world mining (2025):</p><dl class="pmini">${ml.map(([m, p]) => `<dt>${esc(m.charAt(0).toUpperCase() + m.slice(1))}</dt><dd>${p < 1 ? "under 1" : Math.round(p)}%</dd>`).join("")}</dl>` : "";
+      },
+      SDGs: () => sdgHTML(r),
+      Population: () => (state.mode !== "physical" && window.WV ? window.WV.profileHTML(r) : ""),
+    };
+    const skip = (f) => f.target || f.hidden || /^sdg\d+_status$/.test(f.key) || f.key === "sdg_goals_on_track";
+    // one group of measures: the ones with data as rows, the rest named in one line
+    const groupHTML = (g) => {
+      const fs = FILTERS.filter((f) => f.group === g && !skip(f)).sort((x, y) => x.label.localeCompare(y.label, "en", { numeric: true }));
+      const have = g === "SDGs" ? [] : fs.filter((f) => val(f) != null), miss = g === "SDGs" ? [] : fs.filter((f) => val(f) == null);
+      const extra = extras[g] ? extras[g]() : "";
+      if (!have.length && !extra) return "";
+      return `<div class="pgroup" data-g="${gslug(g)}"><h4>${esc(g)}</h4>${extra}
+        ${have.length ? `<dl class="prows">${have.map((f) => `<dt>${esc(f.label)}</dt><dd>${cell(f)}${yr(f)}</dd>`).join("")}</dl>` : ""}
+        ${miss.length ? `<p class="pmiss">No data: ${esc(miss.map((f) => f.short || f.label).join(", "))}.</p>` : ""}</div>`;
+    };
+    // --- key facts at the top ---
+    const K = (k, label) => { const f = F[k]; if (!f) return ""; const v = val(f); return v == null ? "" : `<div><dt>${esc(label || f.short || f.label)}</dt><dd>${cell(f)}</dd></div>`; };
+    const keyFacts = state.mode === "physical"
+      ? [K("region"), K("area_km2", "Area"), K("highest_m", "Highest point"), K("main_climate", "Main climate"), K("main_biome", "Main biome"), K("landlocked")].join("")
+      : [K("region"), K("population"), K("income_group", "Income group"), K("hdi", "HDI"), K("regime", "Government"), K("largest_religion", "Largest religion"), K("official_languages", "Official languages"), K("currencies", "Currency")].join("");
+    const TH = themes();
+    detailOpen ||= new Set([TH[0].id]);
+    const sections = TH.map((t) => {
+      const inner = t.groups.map(groupHTML).join("");
+      if (!inner) return "";
+      return `<details class="psec" data-t="${t.id}" ${detailOpen.has(t.id) ? "open" : ""}><summary><span>${esc(t.label)}</span><small>${esc(t.groups.join(" · "))}</small></summary>${inner}</details>`;
+    }).join("");
+    el.innerHTML = `<div class="detail pdetail">
+      <button type="button" class="linkbtn back" id="back">← Back to results</button>
+      <h2><span>${r.flag || ""}</span>${esc(r.name)}</h2>
+      <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
+      ${badge}
+      <dl class="pkeys">${keyFacts}</dl>
+      <button type="button" class="ffopen" id="ffOpen">📄 Country factfile <span>the full picture, to print or download</span></button>
+      ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; the rest show the latest figures.</p>` : ""}
+      ${state.mode === "physical" && window.WP ? `<div class="pphys">${window.WP.profileHTML(r)}</div>` : ""}
+      <div class="ptools"><button type="button" class="linkbtn" id="pOpenAll">Open all</button> · <button type="button" class="linkbtn" id="pCloseAll">Close all</button></div>
+      ${sections}
+      ${window.WL ? window.WL.html(window.WL.country(r), `Find out more about ${r.name}`) : ""}
     </div>`;
+    el.querySelectorAll(".psec").forEach((d) => (d.ontoggle = () => { d.open ? detailOpen.add(d.dataset.t) : detailOpen.delete(d.dataset.t); }));
+    $("#pOpenAll").onclick = () => el.querySelectorAll(".psec").forEach((d) => (d.open = true));
+    $("#pCloseAll").onclick = () => el.querySelectorAll(".psec").forEach((d) => (d.open = false));
     $("#back").onclick = () => { state.selected = null; render(); };
     if (state.mode !== "physical") window.WV?.bindProfile(el, r);
     $("#ffOpen").onclick = () => window.openFactfile?.(r.iso3);
