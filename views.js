@@ -587,6 +587,7 @@
   // ======================= Country profile: trend chart, pyramid, DTM =======================
   let pyramids = window.__PYRAMIDS__ || null, pyrLoading = null;
   function loadPyramids() {
+    pyramids ||= window.__PYRAMIDS__ || null;
     if (pyramids) return Promise.resolve(pyramids);
     pyrLoading ||= fetch("pyramids.json?v=25").then((r) => r.json()).then((d) => (pyramids = d)).catch(() => null);
     return pyrLoading;
@@ -619,7 +620,11 @@
     [sp[0], Math.round((sp[0] + sp[1]) / 2), sp[1]].forEach((y, i) => (s += txt(sx(y), ht - 4, String(y), i === 0 ? "start" : i === 2 ? "end" : "middle")));
     s += `<path d="${ln(wm) || ""}" fill="none" stroke="${C.muted}" stroke-width="1.6" stroke-dasharray="5 3"/>`;
     s += `<path d="${ln(rm) || ""}" fill="none" stroke="${C.region}" stroke-width="1.6" stroke-dasharray="1.5 2.5" stroke-linecap="round"/>`;
-    s += `<path d="${ln(mine)}" fill="none" stroke="${C.accent}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if (W.SURVEY_KEYS?.has(key)) {
+      // surveys every few years: join the survey points and mark each one
+      const pts = mine.map((v, i) => (v == null ? null : [sx(years[i]), sy(v)])).filter(Boolean);
+      s += `<path d="${d3.line()(pts)}" fill="none" stroke="${C.accent}" stroke-width="2.2" stroke-linejoin="round"/>` + pts.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="${C.accent}"/>`).join("");
+    } else s += `<path d="${ln(mine)}" fill="none" stroke="${C.accent}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
     return s + `</svg>`;
   }
   const lineKey = (o = {}) => `<span class="lk"><span class="lkl" style="border-color:${o.accent || "var(--accent)"}"></span>This country</span><span class="lk"><span class="lkl dash" style="border-color:${o.muted || "var(--muted)"}"></span>World median</span><span class="lk"><span class="lkl dot" style="border-color:${o.region || "var(--match-deep)"}"></span>${esc(o.regionName || "Continent")} median</span>`;
@@ -963,6 +968,7 @@
   function init() {
     W = window.WC;
     F = W.F;
+    pyramids ||= window.__PYRAMIDS__ || null;
     followFilters();
     W.SITE = window.SITE || {};
     F = W.F; TS = W.TS; TS_YEARS = W.TS_YEARS; esc = W.esc; fmtShort = W.fmtShort;

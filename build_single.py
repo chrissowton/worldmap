@@ -38,8 +38,19 @@ def main():
     physical = read("physical.json")
     rflows = read("refugee_flows_years.json")
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
+    # the data goes in gzip-compressed (as base64 text) and the page unpacks it with the browser's DecompressionStream:
+    # about a quarter of the size of plain JSON
+    import gzip
+    blobs = {"COUNTRIES": data, "WORLD": world, "CITIES": cities, "FLOWS": flows, "TIMESERIES": timeseries, "FEATURES": features,
+             "PYRAMIDS": pyramids, "PHYSICAL": physical, "RFLOWS": rflows}
+    packed = ",".join(f'{k}:"{base64.b64encode(gzip.compress(v.encode("utf-8"), 9)).decode()}"' for k, v in blobs.items())
+    unpack = (
+        "<script>window.__READY__=(async()=>{const P={" + packed + "};"
+        "const un=(b)=>new Response(new Blob([Uint8Array.from(atob(b),(c)=>c.charCodeAt(0))]).stream().pipeThrough(new DecompressionStream('gzip'))).json();"
+        "await Promise.all(Object.entries(P).map(async([k,b])=>{window['__'+k+'__']=await un(b);}));})();</script>\n"
+    )
     inline = (
-        f"<script>window.__COUNTRIES__={data};window.__WORLD__={world};window.__CITIES__={cities};window.__FLOWS__={flows};window.__TIMESERIES__={timeseries};window.__FEATURES__={features};window.__PYRAMIDS__={pyramids};window.__PHYSICAL__={physical};window.__RFLOWS__={rflows};</script>\n"
+        unpack +
         f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>"
     )
     head = (

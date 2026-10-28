@@ -31,7 +31,8 @@
     Trade: "Economy of", "Global links": "Foreign relations of", Refugees: "Immigration to", Cities: "List of cities in", Culture: "Culture of",
     Tourism: "Tourism in", Technology: "Internet in", Politics: "Politics of", "UN & treaties": "Foreign relations of", Military: "Military of",
     Sport: "Sport in", Geography: "Geography of", Climate: "Climate of", "Energy & resources": "Energy in", Environment: "Environment of",
-    SDGs: "Economy of",
+    SDGs: "Economy of", "Happiness & trust": "Culture of", "Religion & morals": "Religion in", "Gender roles": "Women in",
+    "Politics & institutions": "Politics of", "Tolerance & priorities": "Culture of", "Science & health": "Health in", "Risk & safety": "Crime in", "Afrobarometer (Africa)": "Politics of", "Pew global views": "Foreign relations of",
   };
   const TOPIC_KEY = { largest_religion: "Religion in", official_languages: "Languages of", spoken_languages: "Languages of", pct_muslim: "Religion in", pct_christian: "Religion in",
     renewables_elec_pct: "Renewable energy in", co2_per_capita: "Climate change in", co2_mt: "Climate change in", gini: "Income inequality in", extreme_poverty: "Poverty in",
@@ -56,6 +57,13 @@
     const plain = f.label.replace(/\s*\([^)]*\)\s*/g, " ").trim();
     return [
       ...(CURATED.measure[f.key] || []),
+      ...(f.source === "wgm" ? [["Wellcome Global Monitor: reports and data", "https://wellcome.org/reports/wellcome-global-monitor", "data"]] : []),
+      ...(f.source === "wrp" ? [["World Risk Poll: reports and data explorer", "https://www.lrfoundation.org.uk/world-risk-poll-data", "data"]] : []),
+      ...(f.source === "afro" ? [["Afrobarometer: findings and online data analysis", "https://www.afrobarometer.org/online-data-analysis/", "data"]] : []),
+      ...(f.source === "pew25" ? [["Pew Research Center: Global Attitudes", "https://www.pewresearch.org/global/", "read"]] : []),
+      ...(f.source === "whr" ? [["World Happiness Report", "https://worldhappiness.report/", "read"]] : []),
+      ...(f.source === "wvs" ? [["World Values Survey: findings and online analysis", "https://www.worldvaluessurvey.org/WVSOnline.jsp", "data"],
+        ["The Inglehart–Welzel cultural map of the world", wiki("Inglehart–Welzel cultural map of the world"), "read"]] : []),
       [`${plain} on Wikipedia`, wiki(plain), "read"], [`${plain} on Our World in Data`, owid(plain), "data"], [`Videos explaining ${plain.toLowerCase()}`, yt(`${plain} explained geography`), "video"],
     ];
   }

@@ -41,6 +41,7 @@
   --g-geography: #4f7590;
   --g-environment: #3c8a22;
   --g-sdgs: #19689c;
+  --g-happiness-trust: #b26b00; --g-religion-morals: #6a4bb5; --g-gender-roles: #b8406f; --g-politics-institutions: #2d6a8a; --g-tolerance-priorities: #2c8556; --g-science-health: #0f7f86; --g-risk-safety: #b8432f; --g-afrobarometer-africa: #8a6d00; --g-pew-global-views: #5a5fb0;
   --pane: #eef4f7;
   --g-trade: #2a7f8f;
   --g-tourism: #c2407a;
@@ -59,14 +60,14 @@
   :root:not([data-theme="light"]) {
     --bg: #0d161b; --surface: #142028; --ink: #e5ecef; --muted: #91a3ab; --line: #253540;
     --ocean: #0a1317; --land: #2a3943; --border: #0d161b; --match: #f2b13a; --match-deep: #ffe2a6;
-    --river: #2f5566; --label-land: #c2ad8f; --label-water: #7fb2c9; --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --g-sdgs: #74b7e6; --pane: #15242c; --g-trade: #69c6d6; --g-tourism: #f08bb7; --g-technology: #a59cf5; --g-climate: #f39a76; --g-energy-resources: #d9b553; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
+    --river: #2f5566; --label-land: #c2ad8f; --label-water: #7fb2c9; --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --g-sdgs: #74b7e6; --g-happiness-trust: #f0b04f; --g-religion-morals: #ae97f2; --g-gender-roles: #f08db5; --g-politics-institutions: #79b8d9; --g-tolerance-priorities: #73cf9c; --g-science-health: #5ccbd2; --g-risk-safety: #f2907c; --g-afrobarometer-africa: #e2c35a; --g-pew-global-views: #a3a8f0; --pane: #15242c; --g-trade: #69c6d6; --g-tourism: #f08bb7; --g-technology: #a59cf5; --g-climate: #f39a76; --g-energy-resources: #d9b553; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
     --shadow: 0 8px 28px rgba(0, 0, 0, .5); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0d161b; --surface: #142028; --ink: #e5ecef; --muted: #91a3ab; --line: #253540;
   --ocean: #0a1317; --land: #2a3943; --border: #0d161b; --match: #f2b13a; --match-deep: #ffe2a6;
-  --river: #2f5566; --label-land: #c2ad8f; --label-water: #7fb2c9; --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --g-sdgs: #74b7e6; --pane: #15242c; --g-trade: #69c6d6; --g-tourism: #f08bb7; --g-technology: #a59cf5; --g-climate: #f39a76; --g-energy-resources: #d9b553; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
+  --river: #2f5566; --label-land: #c2ad8f; --label-water: #7fb2c9; --near: #6a5327; --ramp-lo: #7a5a1c; --ramp-hi: #ffe2a6; --g-development: #7ea2f0; --g-population: #4fd1c1; --g-health: #f08399; --g-gender: #bb94f0; --g-work-money: #e7ad52; --g-global-links: #6dbdea; --g-refugees: #f59a63; --g-cities: #9aa1f3; --g-culture: #ec8cce; --g-politics: #a7aebf; --g-un-treaties: #6fcf98; --g-military: #c9a37c; --g-sport: #e8c64a; --g-geography: #93b6cf; --g-environment: #86cf63; --g-sdgs: #74b7e6; --g-happiness-trust: #f0b04f; --g-religion-morals: #ae97f2; --g-gender-roles: #f08db5; --g-politics-institutions: #79b8d9; --g-tolerance-priorities: #73cf9c; --g-science-health: #5ccbd2; --g-risk-safety: #f2907c; --g-afrobarometer-africa: #e2c35a; --g-pew-global-views: #a3a8f0; --pane: #15242c; --g-trade: #69c6d6; --g-tourism: #f08bb7; --g-technology: #a59cf5; --g-climate: #f39a76; --g-energy-resources: #d9b553; --accent: #6cc1d2; --accent-soft: #17323a; --danger: #f08a73;
   --shadow: 0 8px 28px rgba(0, 0, 0, .5); color-scheme: dark;
 }
 
@@ -339,6 +340,15 @@ button { cursor: pointer; }
 [data-g="geography"] { --gc: var(--g-geography); }
 [data-g="environment"] { --gc: var(--g-environment); }
 [data-g="sdgs"] { --gc: var(--g-sdgs); }
+[data-g="happiness-trust"] { --gc: var(--g-happiness-trust); }
+[data-g="religion-morals"] { --gc: var(--g-religion-morals); }
+[data-g="gender-roles"] { --gc: var(--g-gender-roles); }
+[data-g="politics-institutions"] { --gc: var(--g-politics-institutions); }
+[data-g="tolerance-priorities"] { --gc: var(--g-tolerance-priorities); }
+[data-g="science-health"] { --gc: var(--g-science-health); }
+[data-g="risk-safety"] { --gc: var(--g-risk-safety); }
+[data-g="afrobarometer-africa"] { --gc: var(--g-afrobarometer-africa); }
+[data-g="pew-global-views"] { --gc: var(--g-pew-global-views); }
 .chip[data-g] { border-color: color-mix(in srgb, var(--gc) 45%, var(--line)); background: color-mix(in srgb, var(--gc) 12%, var(--surface)); }
 .chip[data-g] > button.lab::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--gc); margin-right: 7px; vertical-align: 1px; }
 .chip[data-g].open { border-color: var(--gc); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gc) 30%, transparent); }

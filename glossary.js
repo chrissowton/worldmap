@@ -11,6 +11,12 @@ window.GLOSSARY = [
   ["Closed autocracy", "No multi-party elections for the head of government or parliament: rulers are not chosen by voters. Examples include China, Saudi Arabia and North Korea."],
   ["Autocracy", "A system where power is held by one person or a small group, without real accountability to voters.", { also: ["autocracies"] }],
   ["Liberal democracy index", "V-Dem's score from 0 to 1 for how far a country has free elections, rights for individuals and minorities, the rule of law and checks on the government."],
+  // ---- Attitudes and values ----
+  ["Post-materialist", "Someone who cares most about freedom, self-expression and having a say, rather than about material and physical security (jobs, prices, order). Ronald Inglehart argued that people who grow up safe and well-off become more post-materialist.", { also: ["post-materialists", "post-materialism", "post-materialist index"] }],
+  ["Social trust", "How far people trust others they don't know. High social trust (social capital) is linked with lower corruption and stronger economies.", { also: ["social capital"] }],
+  ["Resilience", "How well people, households and communities can cope with and recover from a shock such as a flood, earthquake or losing their income.", { also: ["resilience index"] }],
+  ["Cantril ladder", "A survey question used to measure happiness: imagine a ladder from 0 (the worst possible life for you) to 10 (the best possible). Which step are you on now?", { also: ["happiness score"] }],
+  ["World Values Survey", "A survey of people's beliefs and values run in about 100 countries since 1981, in waves every five years or so. Each country's figure comes from about 1,000–3,000 interviews."],
   // ---- Population ----
   ["Demographic transition model", "A model of how birth and death rates change as countries develop, in five stages: from high births and deaths, through rapid population growth, to low births and deaths.", { also: ["demographic transition"] }],
   ["Stage 1", "Demographic transition stage 1: high birth rates and high death rates, so the population grows slowly. No country is in stage 1 today."],

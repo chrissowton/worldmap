@@ -1859,3 +1859,190 @@ Object.assign(window.SOURCES, {
   sdgtracker: { name: "SDG tracker worked out on this site from World Bank, UN and Our World in Data figures (method based on SDSN's Sustainable Development Report)", url: "https://dashboards.sdgindex.org/", licence: "CC BY 4.0" },
   handlists: { name: "Compiled by hand from Wikipedia and other references", url: "https://en.wikipedia.org/wiki/Oceanic_trench", licence: "CC0" },
 });
+
+/* =====================================================================
+ * ATTITUDES & VALUES
+ * From the World Values Survey (WVS) Trend File 1981–2022: about 1,000–3,000 people interviewed in each country
+ * in each wave. Percentages leave out "don't know" and "no answer". The current value is the latest survey from 2010 on;
+ * earlier surveys show on the year slider and in Charts. See make_attitudes.py.
+ * ===================================================================== */
+window.FILTER_GROUPS.push("Happiness & trust", "Religion & morals", "Gender roles", "Politics & institutions", "Tolerance & priorities");
+window.THEMES.splice(1, 0, { id: "attitudes", label: "Attitudes & values", groups: ["Happiness & trust", "Religion & morals", "Gender roles", "Politics & institutions", "Tolerance & priorities"] });
+window.SOURCES.wvs = { name: "World Values Survey Trend File 1981–2022 (v4.1) and European Values Study Trend File 1981–2017", url: "https://www.worldvaluessurvey.org/WVSEVStrend.jsp", licence: "Free for non-profit use; cite Haerpfer et al. (2022), doi:10.14281/18241.27, and EVS (2022), doi:10.4232/1.14021" };
+{
+  const SURVEY_NOTE = " World Values Survey, or the European Values Study for most of Europe: about 1,000–3,000 people asked in each country, so figures are within about ±2–3 percentage points (the two studies sometimes differ by more). Don't-knows are left out. Latest survey from 2010 on.";
+  const att = (key, group, label, short, info, say, kw, o = {}) => ({
+    key, group, label, short, type: "range", scale: "linear", step: 1, format: "pct", bounds: [0, 100], source: "wvs", year: key + "_year", survey: true,
+    info: info + SURVEY_NOTE, say, keywords: "attitudes values survey opinion wvs world values " + kw, ...o,
+  });
+  const pctSay = (txt) => (b) => `${b} of people ${txt}`;
+  window.FILTERS.push(
+    att("att_happy", "Happiness & trust", "Happy people", "Happy", "People who say they are very or quite happy, when asked: “Taking all things together, would you say you are very happy, quite happy, not very happy or not at all happy?”", pctSay("say they are happy"), "happiness happy wellbeing"),
+    att("att_life_satisfaction", "Happiness & trust", "Life satisfaction (1–10)", "Life satisfaction", "Average answer to “All things considered, how satisfied are you with your life as a whole these days?”, from 1 (completely dissatisfied) to 10 (completely satisfied).", (b) => `average life satisfaction is ${b} out of 10`, "life satisfaction wellbeing happiness", { format: "dec1", bounds: [1, 10], step: 0.1 }),
+    att("att_trust", "Happiness & trust", "Most people can be trusted", "Trust in others", "People who answer “most people can be trusted” rather than “you need to be very careful” when asked about trusting others. A classic measure of social trust (social capital).", pctSay("say most people can be trusted"), "trust social capital others"),
+    att("att_religion_important", "Religion & morals", "Religion very important", "Religion important", "People who say religion is “very important” in their life.", pctSay("say religion is very important in their life"), "religion religious faith god secular"),
+    att("att_not_religious", "Religion & morals", "Not religious (incl. atheists)", "Not religious", "People who describe themselves as “not a religious person” or “a convinced atheist”, whatever their religion on paper.", pctSay("say they are not religious"), "religion secular atheist irreligion"),
+    att("att_atheist", "Religion & morals", "Convinced atheists", "Atheists", "People who describe themselves as “a convinced atheist”.", pctSay("are convinced atheists"), "atheist atheism religion secular"),
+    att("att_attend_weekly", "Religion & morals", "Go to religious services weekly", "Weekly worship", "People who go to religious services once a week or more, apart from weddings and funerals.", pctSay("go to religious services every week"), "church mosque temple worship attendance religion"),
+    att("att_homosexuality_never", "Religion & morals", "Homosexuality: never justifiable", "Homosexuality never OK", "People who give 1 (“never justifiable”) on a 1–10 scale when asked whether homosexuality can be justified.", pctSay("say homosexuality is never justifiable"), "homosexuality gay lgbt tolerance morals"),
+    att("att_abortion_never", "Religion & morals", "Abortion: never justifiable", "Abortion never OK", "People who give 1 (“never justifiable”) on a 1–10 scale when asked whether abortion can be justified.", pctSay("say abortion is never justifiable"), "abortion morals"),
+    att("att_bribe_never", "Religion & morals", "Taking a bribe: never justifiable", "Bribes never OK", "People who give 1 (“never justifiable”) on a 1–10 scale when asked whether someone accepting a bribe in the course of their duties can be justified.", pctSay("say taking a bribe is never justifiable"), "bribe corruption morals"),
+    att("att_men_leaders", "Gender roles", "Men make better political leaders", "Men better leaders", "People who agree or strongly agree that “on the whole, men make better political leaders than women do”.", pctSay("agree men make better political leaders"), "gender women men leaders politics equality sexism"),
+    att("att_men_jobs", "Gender roles", "Men should get jobs first", "Men first for jobs", "People who agree that “when jobs are scarce, men should have more right to a job than women”.", pctSay("agree men should have more right to a job when jobs are scarce"), "gender women men jobs work equality sexism"),
+    att("att_uni_boys", "Gender roles", "University matters more for boys", "Uni for boys", "People who agree or strongly agree that “a university education is more important for a boy than for a girl”.", pctSay("agree university is more important for a boy"), "gender girls boys education university equality"),
+    att("att_democracy_good", "Politics & institutions", "Democracy is a good system", "Democracy good", "People who say “having a democratic political system” is a very or fairly good way of governing their country.", pctSay("say democracy is a good way to govern"), "democracy politics government support"),
+    att("att_strong_leader_good", "Politics & institutions", "Strong leader is a good system", "Strong leader good", "People who say “having a strong leader who does not have to bother with parliament and elections” is a very or fairly good way of governing.", pctSay("say a strong leader without parliament or elections would be good"), "authoritarian strongman dictator politics"),
+    att("att_army_rule_good", "Politics & institutions", "Army rule is a good system", "Army rule good", "People who say “having the army rule” is a very or fairly good way of governing their country.", pctSay("say army rule would be good"), "military army rule coup politics"),
+    att("att_experts_good", "Politics & institutions", "Rule by experts is a good system", "Experts rule good", "People who say “having experts, not government, make decisions according to what they think is best for the country” is a very or fairly good way of governing.", pctSay("say rule by experts would be good"), "technocracy experts politics"),
+    ...[["government", "the government", "Government"], ["parliament", "parliament", "Parliament"], ["police", "the police", "Police"], ["courts", "the courts", "Courts"],
+      ["press", "the press", "Press"], ["army", "the armed forces", "Armed forces"], ["churches", "churches and religious organisations", "Churches"], ["un", "the United Nations", "United Nations"]].map(([k, what, Short]) =>
+      att(`att_conf_${k}`, "Politics & institutions", `Confidence in ${what}`, `Trust: ${Short}`, `People who have “a great deal” or “quite a lot” of confidence in ${what}.`, pctSay(`have confidence in ${what}`), `confidence trust institutions ${k} ${what}`)),
+    att("att_fight", "Politics & institutions", "Willing to fight for their country", "Would fight", "People who answer yes to “Of course, we all hope that there will not be another war, but if it were to come to that, would you be willing to fight for your country?”", pctSay("would fight for their country"), "war fight patriotism military nationalism"),
+    att("att_very_proud", "Politics & institutions", "Very proud of their nationality", "Very proud", "People who say they are “very proud” of their nationality.", pctSay("are very proud of their nationality"), "pride patriotism nationalism identity"),
+    ...[["gay", "gay people", "Gay people"], ["immigrants", "immigrants or foreign workers", "Immigrants"], ["race", "people of a different race", "Different race"], ["religion", "people of a different religion", "Different religion"], ["drinkers", "heavy drinkers", "Heavy drinkers"]].map(([k, who, Short]) =>
+      att(`att_nb_${k}`, "Tolerance & priorities", `Would not want ${who} as neighbours`, `No ${Short.toLowerCase()} next door`, `People who pick ${who} from a list of groups they would not like to have as neighbours. A widely used measure of tolerance.`, pctSay(`would not want ${who} as neighbours`), `tolerance prejudice neighbours discrimination ${k} ${who}`)),
+    att("att_environment_first", "Tolerance & priorities", "Environment before economic growth", "Environment first", "People who choose “protecting the environment should be given priority, even if it causes slower economic growth and some loss of jobs” over putting the economy first.", pctSay("put protecting the environment before economic growth"), "environment economy growth climate sustainability priorities"),
+    att("att_postmaterialist", "Tolerance & priorities", "Post-materialists", "Post-materialists", "People who, from a list of national goals, put freedom of speech and having more say in government ahead of keeping order and fighting rising prices (Inglehart's post-materialist index). Richer, safer societies tend to have more post-materialists.", pctSay("are post-materialists"), "postmaterialism inglehart values priorities freedom"),
+  );
+  window.FAMILIES.push(
+    { id: "religiosity", label: "How religious people are", short: "Religiosity", info: "Four ways of measuring how religious people are, from the World Values Survey.",
+      variants: [["att_religion_important", "Religion very important"], ["att_attend_weekly", "Weekly worship"], ["att_not_religious", "Not religious"], ["att_atheist", "Atheists"]] },
+    { id: "neverok", label: "Never justifiable", short: "Never justifiable", info: "People who say something can never be justified (1 on a 1–10 scale).",
+      variants: [["att_homosexuality_never", "Homosexuality"], ["att_abortion_never", "Abortion"], ["att_bribe_never", "Taking a bribe"]] },
+    { id: "genderroles", label: "Views on gender roles", short: "Gender roles", info: "People who agree with statements that favour men over women.",
+      variants: [["att_men_leaders", "Men better leaders"], ["att_men_jobs", "Men first for jobs"], ["att_uni_boys", "University for boys"]] },
+    { id: "govways", label: "Ways of governing seen as good", short: "Ways of governing", info: "People who say each way of governing their country would be very or fairly good.",
+      variants: [["att_democracy_good", "Democracy"], ["att_strong_leader_good", "Strong leader"], ["att_army_rule_good", "Army rule"], ["att_experts_good", "Experts"]] },
+    { id: "confidence", label: "Confidence in institutions", short: "Confidence in…", info: "People who have a great deal or quite a lot of confidence in each institution.",
+      variants: [["att_conf_government", "Government"], ["att_conf_parliament", "Parliament"], ["att_conf_police", "Police"], ["att_conf_courts", "Courts"], ["att_conf_press", "Press"], ["att_conf_army", "Armed forces"], ["att_conf_churches", "Churches"], ["att_conf_un", "UN"]] },
+    { id: "neighbours", label: "Would not want as neighbours", short: "Not as neighbours", info: "People who pick each group from a list of people they would not like to have as neighbours.",
+      variants: [["att_nb_gay", "Gay people"], ["att_nb_immigrants", "Immigrants"], ["att_nb_race", "Different race"], ["att_nb_religion", "Different religion"], ["att_nb_drinkers", "Heavy drinkers"]] },
+    { id: "happiness", label: "Happiness", short: "Happiness", info: "Whether people say they are happy, and how satisfied they are with their lives.",
+      variants: [["att_happy", "% happy"], ["att_life_satisfaction", "Life satisfaction"]] },
+  );
+}
+
+/* ---------- More opinion surveys: Wellcome Global Monitor, World Risk Poll, World Happiness Report, UNODC ---------- */
+window.FILTER_GROUPS.push("Science & health", "Risk & safety");
+window.THEMES.find((t) => t.id === "attitudes").groups.push("Science & health", "Risk & safety");
+Object.assign(window.SOURCES, {
+  wgm: { name: "Wellcome Global Monitor 2026 (fieldwork by Gallup, 2025)", url: "https://wellcome.org/reports/wellcome-global-monitor", licence: "Free to use with attribution (Wellcome)" },
+  wrp: { name: "Lloyd's Register Foundation World Risk Poll 2019–2025 (fieldwork by Gallup)", url: "https://www.lrfoundation.org.uk/world-risk-poll-data", licence: "Free to download and use, with attribution" },
+  whr: { name: "World Happiness Report 2026 (Gallup World Poll), via Our World in Data", url: "https://worldhappiness.report/data/", licence: "Free to download; cite the World Happiness Report" },
+  unodc: { name: "UNODC, via Our World in Data", url: "https://ourworldindata.org/grapher/safety-walking-alone", licence: "CC BY 4.0 (Our World in Data); UNODC terms" },
+});
+{
+  const WGM_NOTE = " Wellcome Global Monitor 2026: about 1,000 people in each of 139 countries, interviewed by Gallup in 2025. Don't-knows are left out.";
+  const WRP_NOTE = " World Risk Poll (Lloyd's Register Foundation, run by Gallup): about 1,000 people per country, every two years since 2019. Don't-knows are left out.";
+  const pctSay = (txt) => (b) => `${b} of people ${txt}`;
+  const sv = (key, group, label, short, info, say, kw, source, o = {}) => ({
+    key, group, label, short, type: "range", scale: "linear", step: 1, format: "pct", bounds: [0, 100], source, year: key + "_year", survey: true,
+    info: info + (source === "wgm" ? WGM_NOTE : source === "wrp" ? WRP_NOTE : ""), say, keywords: "survey opinion " + kw, ...o,
+  });
+  window.FILTERS.push(
+    sv("happiness_score", "Happiness & trust", "Happiness score (World Happiness Report)", "Happiness score", "The score behind the World Happiness Report rankings: people rate their lives from 0 (the worst possible life) to 10 (the best possible), averaged over three years of Gallup World Poll surveys.", (b) => `the happiness score is ${b} out of 10`, "happiness world happiness report cantril ladder life evaluation wellbeing gallup", "whr", { format: "dec2", bounds: [0, 10], step: 0.1, survey: false }),
+    sv("happiness_rank", "Happiness & trust", "World Happiness rank", "Happiness rank", "Position in the World Happiness Report 2026 ranking (1 = happiest), based on the happiness score for 2023–2025.", (b) => `it ranks ${b} for happiness`, "happiness rank world happiness report", "whr", { format: "rank", bounds: [1, 150], scale: "linear", survey: false }),
+    ...[["science", "science", "Science"], ["scientists", "scientists in their country", "Scientists"], ["doctors", "doctors and nurses", "Doctors and nurses"], ["government", "the national government", "Government"], ["journalists", "journalists", "Journalists"], ["neighbours", "people in their neighbourhood", "Neighbours"]].map(([k, what, Short]) =>
+      sv(`wgm_trust_${k}`, "Science & health", `Trust ${what} a lot`, `Trust a lot: ${Short}`, `People who say they trust ${what} “a lot” (rather than some, not much or not at all).`, pctSay(`trust ${what} a lot`), `trust confidence ${k} ${what} wellcome`, "wgm")),
+    sv("wgm_vaccines_now", "Science & health", "Would get recommended vaccines straight away", "Vaccines straight away", "People who say that when doctors or nurses recommend a vaccine, they want to get it right away (rather than think about it for a while, or not get vaccines at all).", pctSay("would get recommended vaccines straight away"), "vaccines vaccination hesitancy health wellcome", "wgm"),
+    sv("wgm_no_vaccines", "Science & health", "Do not get vaccines at all", "No vaccines", "People who say they do not get vaccines at all, even when doctors or nurses recommend them.", pctSay("say they do not get vaccines at all"), "vaccines anti-vax hesitancy health wellcome", "wgm"),
+    sv("wgm_health_access", "Science & health", "Confident they can get healthcare", "Can get healthcare", "People who are very or somewhat confident they can get the healthcare services they need.", pctSay("are confident they can get healthcare"), "healthcare access health services wellcome", "wgm"),
+    sv("wgm_heard_ai", "Science & health", "Have heard of artificial intelligence", "Heard of AI", "People who say they have heard of artificial intelligence (AI).", pctSay("have heard of AI"), "ai artificial intelligence technology wellcome", "wgm"),
+    sv("wgm_ai_benefit", "Science & health", "Think AI will benefit people a lot", "AI will help a lot", "Of people who have heard of AI, those who think it will help people in their country “a lot”.", pctSay("think AI will help a lot"), "ai artificial intelligence technology optimism wellcome", "wgm"),
+    sv("wrp_climate_serious", "Risk & safety", "See climate change as a very serious threat", "Climate a serious threat", "People who say climate change is a very serious threat to people in their country in the next 20 years.", pctSay("see climate change as a very serious threat"), "climate change global warming threat risk", "wrp"),
+    ...[["crime", "violent crime", "Violent crime"], ["weather", "severe weather", "Severe weather"], ["roads", "road accidents", "Road accidents"], ["water", "the water they drink", "Drinking water"]].map(([k, what, Short]) =>
+      sv(`wrp_worry_${k}`, "Risk & safety", `Very worried about ${what}`, `Worried: ${Short}`, `People who are very worried that ${what} could cause them serious harm.`, pctSay(`are very worried about ${what}`), `worry fear risk safety ${k} ${what}`, "wrp")),
+    sv("wrp_harm_crime", "Risk & safety", "Harmed by violent crime (them or someone they know)", "Harmed: crime", "People who, in the past two years, were seriously harmed by violent crime, or know someone who was.", pctSay("were harmed by violent crime, or know someone who was"), "crime violence victim safety", "wrp"),
+    sv("wrp_harm_weather", "Risk & safety", "Harmed by severe weather (them or someone they know)", "Harmed: weather", "People who, in the past two years, were seriously harmed by severe weather such as floods, storms or heatwaves, or know someone who was.", pctSay("were harmed by severe weather, or know someone who was"), "weather flood storm heatwave hazard disaster climate", "wrp"),
+    sv("wrp_disaster_5y", "Risk & safety", "Hit by a disaster in the past 5 years", "Hit by disaster", "People whose lives were affected by a disaster in their country in the past five years.", pctSay("were affected by a disaster in the past five years"), "disaster hazard flood earthquake drought", "wrp"),
+    sv("wrp_gov_prepared", "Risk & safety", "Government well prepared for disasters", "Gov. prepared", "People who think the national government is well prepared to deal with a disaster.", pctSay("think the government is well prepared for disasters"), "disaster preparedness government hazard management", "wrp"),
+    sv("wrp_gov_cares", "Risk & safety", "Government cares a lot about them", "Gov. cares", "People who think the government of their country cares “a lot” about them and their wellbeing.", pctSay("think the government cares a lot about them"), "government trust care wellbeing", "wrp"),
+    sv("wrp_under_month", "Risk & safety", "Could last under a month without income", "Under a month's savings", "People whose household could cover its basic needs for less than a month if it lost all its income.", pctSay("could last under a month without income"), "savings poverty money financial resilience vulnerability", "wrp"),
+    sv("wrp_resilience", "Risk & safety", "Resilience index (0–100)", "Resilience", "The World Risk Poll's measure of how well people, households, communities and societies could cope with and recover from a shock such as a disaster. Higher is more resilient.", (b) => `the resilience index is ${b}`, "resilience coping disaster hazard vulnerability", "wrp", { format: "dec1" }),
+    ...[["skin", "the colour of their skin", "Skin colour"], ["religion", "their religion", "Religion"], ["ethnic", "their nationality or ethnic group", "Ethnicity"], ["gender", "their gender", "Gender"]].map(([k, what, Short]) =>
+      sv(`wrp_discrim_${k}`, "Risk & safety", `Faced discrimination because of ${what}`, `Discrimination: ${Short}`, `People who say they have experienced discrimination because of ${what}.`, pctSay(`faced discrimination because of ${what}`), `discrimination racism prejudice ${k}`, "wrp")),
+    sv("wrp_risk_roads", "Risk & safety", "Say road accidents are their biggest risk", "Roads biggest risk", "People who name road accidents when asked: “In your own words, what is the greatest source of risk to your safety in your daily life?”", pctSay("say road accidents are their biggest risk"), "road accidents traffic safety risk", "wrp"),
+    { key: "wrp_top_risk", type: "cat", group: "Risk & safety", label: "Biggest everyday risk (most common answer)", short: "Biggest risk", source: "wrp", year: "wrp_top_risk_year",
+      say: (v) => `the most common answer for the biggest risk to safety is ${v.toLowerCase()}`,
+      info: "The most common answer, grouped, when people were asked: “In your own words, what is the greatest source of risk to your safety in your daily life?”" + WRP_NOTE,
+      keywords: "risk safety danger biggest greatest road crime health economy war" },
+    sv("safe_walking", "Risk & safety", "Feel safe walking alone at night", "Safe at night", "People who feel safe walking alone around the area where they live after dark (UN Sustainable Development Goal indicator 16.1.4, compiled by UNODC from national surveys). Only about 56 countries have figures.", pctSay("feel safe walking alone at night"), "safety crime fear night walking alone sdg", "unodc", { survey: false }),
+  );
+  window.FAMILIES.push(
+    { id: "wgmtrust", label: "Trust a lot in…", short: "Trust a lot in…", info: "People who trust each group “a lot” (Wellcome Global Monitor 2026).",
+      variants: [["wgm_trust_science", "Science"], ["wgm_trust_scientists", "Scientists"], ["wgm_trust_doctors", "Doctors and nurses"], ["wgm_trust_government", "Government"], ["wgm_trust_journalists", "Journalists"], ["wgm_trust_neighbours", "Neighbours"]] },
+    { id: "vaccines", label: "Views on vaccines", short: "Vaccines", info: "What people do when doctors or nurses recommend a vaccine.", variants: [["wgm_vaccines_now", "Straight away"], ["wgm_no_vaccines", "Never"]] },
+    { id: "aiviews", label: "Artificial intelligence", short: "AI", info: "Whether people have heard of AI, and whether they think it will help.", variants: [["wgm_heard_ai", "Heard of AI"], ["wgm_ai_benefit", "Will help a lot"]] },
+    { id: "worries", label: "Very worried about…", short: "Worries", info: "People who are very worried each could cause them serious harm.", variants: [["wrp_worry_crime", "Violent crime"], ["wrp_worry_weather", "Severe weather"], ["wrp_worry_roads", "Road accidents"], ["wrp_worry_water", "Drinking water"]] },
+    { id: "harmed", label: "Harmed in the past 2 years by…", short: "Harmed by…", info: "People who were seriously harmed, or know someone who was, in the past two years.", variants: [["wrp_harm_crime", "Violent crime"], ["wrp_harm_weather", "Severe weather"]] },
+    { id: "discrim", label: "Faced discrimination because of…", short: "Discrimination", info: "People who say they have experienced discrimination for each reason.", variants: [["wrp_discrim_skin", "Skin colour"], ["wrp_discrim_religion", "Religion"], ["wrp_discrim_ethnic", "Ethnicity"], ["wrp_discrim_gender", "Gender"]] },
+    { id: "disasters", label: "Disasters", short: "Disasters", info: "Whether people were hit by a disaster recently, and whether they think the government is ready for the next.", variants: [["wrp_disaster_5y", "Hit in past 5 years"], ["wrp_gov_prepared", "Government prepared"]] },
+  );
+  const hap = window.FAMILIES.find((f) => f.id === "happiness");
+  hap.variants.unshift(["happiness_score", "Happiness score"], ["happiness_rank", "Happiness rank"]);
+  hap.info = "The World Happiness Report score and rank (Gallup World Poll), or the World Values Survey's share who say they are happy and their life satisfaction.";
+}
+
+/* ---------- Afrobarometer Round 10 (Africa) and Pew Research Center Global Attitudes (24 countries) ---------- */
+window.FILTER_GROUPS.push("Afrobarometer (Africa)", "Pew global views");
+window.THEMES.find((t) => t.id === "attitudes").groups.push("Afrobarometer (Africa)", "Pew global views");
+Object.assign(window.SOURCES, {
+  afro: { name: "Afrobarometer Round 10 (2024–2025)", url: "https://www.afrobarometer.org/data/", licence: "Free to use with citation (Afrobarometer)" },
+  pew25: { name: "Pew Research Center, Global Attitudes Spring 2025 survey", url: "https://www.pewresearch.org/dataset/spring-2025-survey-data/", licence: "Pew terms of use; attribution required" },
+});
+{
+  const AB_NOTE = " Afrobarometer Round 10: about 1,200–2,400 people in each of 38 African countries, interviewed face to face in 2024–2025. Don't-knows are left out.";
+  const PEW_NOTE = " Pew Research Center Global Attitudes survey, spring 2025: about 1,000 people in each of 24 countries. Don't-knows are left out, so figures can be a little higher than Pew's own.";
+  const pctSay = (txt) => (b) => `${b} of people ${txt}`;
+  const ab = (key, label, short, info, say, kw) => ({ key, group: "Afrobarometer (Africa)", label, short, type: "range", scale: "linear", step: 1, format: "pct", bounds: [0, 100],
+    source: "afro", year: key + "_year", survey: true, info: info + AB_NOTE, say, keywords: "afrobarometer africa survey opinion " + kw });
+  const pew = (key, label, short, info, say, kw) => ({ key, group: "Pew global views", label, short, type: "range", scale: "linear", step: 1, format: "pct", bounds: [0, 100],
+    source: "pew25", year: key + "_year", survey: true, info: info + PEW_NOTE, say, keywords: "pew survey opinion global attitudes " + kw });
+  window.FILTERS.push(
+    ab("ab_democracy_best", "Democracy is best (Africa)", "AB: Democracy best", "People who say “democracy is preferable to any other kind of government”, rather than that a non-democratic government can sometimes be better, or that it doesn't matter.", pctSay("say democracy is the best kind of government"), "democracy support"),
+    ab("ab_democracy_satisfied", "Satisfied with democracy (Africa)", "AB: Satisfied with democracy", "People who are fairly or very satisfied with the way democracy works in their country.", pctSay("are satisfied with how democracy works"), "democracy satisfaction"),
+    ab("ab_military_approve", "Would approve of army rule (Africa)", "AB: Approve army rule", "People who would approve or strongly approve if “the army comes in to govern the country”.", pctSay("would approve of army rule"), "military army coup rule"),
+    ab("ab_trust_president", "Trust the president (Africa)", "AB: Trust president", "People who trust the president somewhat or a lot.", pctSay("trust the president"), "trust president leader"),
+    ab("ab_corruption_up", "Think corruption has risen (Africa)", "AB: Corruption rising", "People who say the level of corruption in their country has increased somewhat or a lot in the past year.", pctSay("think corruption has risen"), "corruption"),
+    ab("ab_right_direction", "Country going the right way (Africa)", "AB: Right direction", "People who say their country is going in the right direction.", pctSay("say the country is going in the right direction"), "direction optimism mood"),
+    ab("ab_no_food", "Went without food in the past year (Africa)", "AB: Went without food", "People who went without enough food at least once in the past year. Part of Afrobarometer's Lived Poverty Index.", pctSay("went without enough food at least once in the past year"), "hunger food poverty lived poverty"),
+    ab("ab_no_water", "Went without clean water in the past year (Africa)", "AB: Went without water", "People who went without enough clean water for home use at least once in the past year.", pctSay("went without clean water at least once in the past year"), "water poverty lived poverty"),
+    ab("ab_no_medical", "Went without medical care in the past year (Africa)", "AB: Went without medicine", "People who went without medicines or medical treatment at least once in the past year.", pctSay("went without medical care at least once in the past year"), "health medicine poverty lived poverty"),
+    ab("ab_unsafe", "Felt unsafe walking nearby (Africa)", "AB: Felt unsafe", "People who felt unsafe walking in their neighbourhood at least once in the past year.", pctSay("felt unsafe walking in their neighbourhood"), "safety crime fear"),
+    ab("ab_emigrate", "Have thought about emigrating (Africa)", "AB: Thought of emigrating", "People who have given somewhat or a lot of thought to moving to another country to live.", pctSay("have thought about emigrating"), "emigration migration leave move abroad"),
+    ab("ab_china_positive", "China's influence is positive (Africa)", "AB: China positive", "People who say China's economic and political influence on their country is somewhat or very positive.", pctSay("see China's influence as positive"), "china influence"),
+    ab("ab_us_positive", "USA's influence is positive (Africa)", "AB: USA positive", "People who say the United States' economic and political influence on their country is somewhat or very positive.", pctSay("see the USA's influence as positive"), "united states america usa influence"),
+    ab("ab_russia_positive", "Russia's influence is positive (Africa)", "AB: Russia positive", "People who say Russia's economic and political influence on their country is somewhat or very positive.", pctSay("see Russia's influence as positive"), "russia influence"),
+    ab("ab_colonial_positive", "Former colonial power's influence is positive (Africa)", "AB: Ex-colonial power positive", "People who say the former colonial power's influence on their country (for example France or the UK) is somewhat or very positive.", pctSay("see the former colonial power's influence as positive"), "colonial colonialism france britain portugal influence"),
+    ab("ab_heard_climate", "Have heard of climate change (Africa)", "AB: Heard of climate change", "People who have heard of climate change.", pctSay("have heard of climate change"), "climate change awareness"),
+    ab("ab_climate_worse", "Climate change making life worse (Africa)", "AB: Climate making life worse", "Of people who have heard of climate change, those who say it is making life in their country somewhat or much worse.", pctSay("say climate change is making life worse"), "climate change impact"),
+    ab("ab_men_jobs", "Men should get jobs first (Africa)", "AB: Men first for jobs", "People who agree or strongly agree that when jobs are scarce, men should have more right to a job than women.", pctSay("agree men should get jobs first"), "gender women men jobs"),
+    ab("ab_women_leaders", "Women should have an equal chance to lead (Africa)", "AB: Women leaders", "People who agree that “women should have the same chance of being elected to political office as men”, rather than that men make better leaders.", pctSay("say women should have an equal chance to be elected"), "gender women leaders politics equality"),
+    ab("ab_nb_gay_dislike", "Would dislike gay neighbours (Africa)", "AB: Dislike gay neighbours", "People who would somewhat or strongly dislike having homosexuals as neighbours.", pctSay("would dislike gay neighbours"), "homosexuality tolerance neighbours lgbt"),
+    ab("ab_nb_immigrants_dislike", "Would dislike immigrant neighbours (Africa)", "AB: Dislike immigrant neighbours", "People who would somewhat or strongly dislike having immigrants or foreign workers as neighbours.", pctSay("would dislike immigrant neighbours"), "immigrants tolerance neighbours"),
+    ...[["us", "the United States", "USA"], ["china", "China", "China"], ["un", "the United Nations", "UN"], ["eu", "the European Union", "EU"], ["russia", "Russia", "Russia"], ["nato", "NATO", "NATO"]].map(([k, what, Short]) =>
+      pew(`pew_fav_${k}`, `Favourable view of ${what}`, `Pew: Like ${Short}`, `People with a very or somewhat favourable opinion of ${what}.`, pctSay(`have a favourable view of ${what}`), `favourable view opinion ${k} ${what}`)),
+    pew("pew_econ_good", "Economy is in good shape (Pew)", "Pew: Economy good", "People who say the current economic situation in their country is very or somewhat good.", pctSay("say the economy is good"), "economy economic mood"),
+    pew("pew_democracy_satisfied", "Satisfied with democracy (Pew)", "Pew: Satisfied with democracy", "People who are very or somewhat satisfied with the way democracy is working in their country.", pctSay("are satisfied with how democracy works"), "democracy satisfaction"),
+    pew("pew_homosexuality_ok", "Homosexuality is morally acceptable (Pew)", "Pew: Homosexuality OK", "People who say homosexuality is morally acceptable (rather than unacceptable, or not a moral issue).", pctSay("say homosexuality is morally acceptable"), "homosexuality gay lgbt morals"),
+    pew("pew_god_needed", "Must believe in God to be moral (Pew)", "Pew: God needed for morals", "People who say it is necessary to believe in God in order to be moral and have good values.", pctSay("say you must believe in God to be moral"), "god religion morals religiosity"),
+    pew("pew_china_top_economy", "Think China is the top economic power (Pew)", "Pew: China top economy", "People who name China, rather than the USA, Japan or the EU, as the world's leading economic power.", pctSay("think China is the world's leading economic power"), "china united states economy power"),
+    pew("pew_ai_concerned", "More concerned than excited about AI (Pew)", "Pew: AI concern", "People who say the growing use of artificial intelligence in daily life makes them more concerned than excited.", pctSay("are more concerned than excited about AI"), "ai artificial intelligence technology"),
+  );
+  window.FAMILIES.push(
+    { id: "abdemocracy", label: "Democracy (Afrobarometer)", short: "AB: Democracy", info: "Support for democracy, satisfaction with it, and approval of army rule, in 38 African countries.",
+      variants: [["ab_democracy_best", "Democracy best"], ["ab_democracy_satisfied", "Satisfied"], ["ab_military_approve", "Approve army rule"]] },
+    { id: "abpoverty", label: "Lived poverty (Afrobarometer)", short: "AB: Lived poverty", info: "People who went without food, clean water or medical care at least once in the past year, in 38 African countries.",
+      variants: [["ab_no_food", "Food"], ["ab_no_water", "Clean water"], ["ab_no_medical", "Medical care"]] },
+    { id: "abinfluence", label: "Foreign influence seen as positive (Afrobarometer)", short: "AB: Foreign influence", info: "People who say each country's influence on their country is positive, in 38 African countries.",
+      variants: [["ab_china_positive", "China"], ["ab_us_positive", "USA"], ["ab_russia_positive", "Russia"], ["ab_colonial_positive", "Former colonial power"]] },
+    { id: "abclimate", label: "Climate change (Afrobarometer)", short: "AB: Climate change", info: "Whether people have heard of climate change, and whether they think it is making life worse.",
+      variants: [["ab_heard_climate", "Heard of it"], ["ab_climate_worse", "Making life worse"]] },
+    { id: "abgender", label: "Gender roles (Afrobarometer)", short: "AB: Gender roles", info: "Views on women as leaders and in work, in 38 African countries.",
+      variants: [["ab_women_leaders", "Women leaders"], ["ab_men_jobs", "Men first for jobs"]] },
+    { id: "abneighbours", label: "Would dislike as neighbours (Afrobarometer)", short: "AB: Neighbours", info: "People who would dislike having each group as neighbours.",
+      variants: [["ab_nb_gay_dislike", "Gay people"], ["ab_nb_immigrants_dislike", "Immigrants"]] },
+    { id: "pewfav", label: "Favourable views of… (Pew)", short: "Pew: Views of…", info: "People with a favourable opinion of each country or organisation, in 24 countries (spring 2025).",
+      variants: [["pew_fav_us", "USA"], ["pew_fav_china", "China"], ["pew_fav_un", "UN"], ["pew_fav_eu", "EU"], ["pew_fav_russia", "Russia"], ["pew_fav_nato", "NATO"]] },
+  );
+}

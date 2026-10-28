@@ -626,6 +626,39 @@ for row in csv.DictReader(open(raw("gdp.csv"), encoding="utf-8")):
 for row in csv.DictReader(open(raw("co2.csv"), encoding="utf-8")):
     if row["iso_code"] and row["co2_per_capita"]:
         put("co2_per_capita", row["iso_code"], int(row["year"]), round(float(row["co2_per_capita"]), 2))
+sparse = {}
+# Social attitudes (World Values Survey Trend File 1981-2022, country figures from make_attitudes.py):
+# a value for every survey year, and the latest survey from 2010 on as the current value
+for row in csv.DictReader(l for l in open(raw("attitudes.csv"), encoding="utf-8") if not l.startswith("#")):
+    f, iso, y = row["field"], row["iso3"], int(row["year"])
+    v = float(row["value"])
+    if iso in countries:  # stored sparsely ([year, value, year, value…]); app.js fills in the empty years
+        sparse.setdefault(f, {}).setdefault(iso, []).extend([y, v])
+    rec = countries.get(iso)
+    if rec is not None and y >= 2010 and y >= rec.get(f + "_year", 0):
+        rec[f] = v; rec[f + "_year"] = y
+# Other opinion surveys (Wellcome Global Monitor, World Risk Poll, World Happiness Report, UNODC), from make_surveys.py.
+# wave 0 = a yearly series (stored in full); other waves are surveys every year or two (stored sparsely)
+for row in csv.DictReader(l for l in open(raw("surveys.csv"), encoding="utf-8") if not l.startswith("#")):
+    f, iso, y, wave = row["field"], row["iso3"], int(row["year"]), int(row["wave"])
+    v = float(row["value"])
+    if iso not in countries:
+        continue
+    if f == "happiness_rank":
+        v = int(v)
+    elif wave == 0:
+        series.setdefault(f, {})
+        put(f, iso, y, v)
+    elif not f.startswith(("ab_", "pew_", "wgm_")):  # one-off surveys (one wave) have no history to show
+        sparse.setdefault(f, {}).setdefault(iso, []).extend([y, v])
+    rec = countries[iso]
+    if y >= 2010 and y >= rec.get(f + "_year", 0):
+        rec[f] = v; rec[f + "_year"] = y
+for row in csv.DictReader(l for l in open(raw("surveys_cat.csv"), encoding="utf-8") if not l.startswith("#")):
+    rec = countries.get(row["iso3"])
+    if rec is not None and int(row["year"]) >= rec.get(row["field"] + "_year", 0):
+        rec[row["field"]] = row["value"]; rec[row["field"] + "_year"] = int(row["year"])
+        rec[row["field"] + "_share"] = float(row["share_pct"])
 # Demographic transition model stage and natural increase, from the birth and death rates of each year
 DTM_STAGES = ["Stage 1 · High birth and death rates", "Stage 2 · Death rate falling, birth rate high",
               "Stage 3 · Birth rate falling", "Stage 4 · Low birth and death rates", "Stage 5 · Deaths outnumber births"]
@@ -776,7 +809,7 @@ def num_json(v):
 with open(os.path.join(ROOT, "timeseries.json"), "w", encoding="utf-8") as f:
     f.write('{"years":' + json.dumps(YEARS, separators=(",", ":")) + ',"series":{')
     f.write(",".join(json.dumps(k) + ":{" + ",".join(json.dumps(iso) + ":[" + ",".join(num_json(v) for v in vals) + "]" for iso, vals in s.items()) + "}" for k, s in series.items()))
-    f.write("}}")
+    f.write('},"sparse":' + json.dumps(sparse, separators=(",", ":")) + "}")
 print("Wrote timeseries.json:", {k: len(v) for k, v in series.items()})
 
 # --- 14b. Population pyramids (World Bank / UN WPP): % of the whole population in each 5-year age group ---
@@ -824,6 +857,19 @@ if os.path.exists(raw("physical_countries.json")):
                 rec.setdefault(k, 0)
             rec.setdefault("glacier_pct", 0)
             rec.setdefault("hazards", [])
+
+# --- Survey years: most survey measures for a country come from the same fieldwork year, so store that year once
+# per source ("sy_att", "sy_wgm", "sy_wrp") and only keep a measure's own *_year when it differs (app.js fills them back in)
+from collections import Counter
+for rec in countries.values():
+    for pre in ("att", "wgm", "wrp", "ab", "pew"):
+        ys = [v for k, v in rec.items() if k.startswith(pre + "_") and k.endswith("_year")]
+        if not ys:
+            continue
+        common = Counter(ys).most_common(1)[0][0]
+        rec["sy_" + pre] = common
+        for k in [k for k in rec if k.startswith(pre + "_") and k.endswith("_year") and rec[k] == common]:
+            del rec[k]
 
 # --- Write ---
 out = sorted(countries.values(), key=lambda r: r["name"])

@@ -4,7 +4,9 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "25";
+  const DATA_VERSION = "29";
+  // the single-file version carries its data compressed, and unpacks it first
+  if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
   const [rows, topo, cityRows, flows, timeseries, features, physical] = await Promise.all([
     window.__COUNTRIES__ || loadJSON("countries.json"),
@@ -22,8 +24,23 @@
   const itemsFor = (f) => (f.target === "city" ? cities : f.target ? (window.WP?.items(f.target) || []) : rows);
 
   const FILTERS = window.FILTERS;
+  // survey years are stored once per source (sy_att, sy_wgm, sy_wrp): fill in each measure's year
+  for (const r of rows) for (const pre of ["att", "wgm", "wrp", "ab", "pew"]) {
+    const y = r["sy_" + pre];
+    if (y) for (const k in r) if (k.startsWith(pre + "_") && !k.endsWith("_year") && r[k + "_year"] == null) r[k + "_year"] = y;
+  }
   // ---------- Year slider: which measures have yearly data ----------
   const TS = timeseries ? timeseries.series : {};
+  // survey measures are stored sparsely ([year, value, …]) to keep the file small
+  const SURVEY_KEYS = new Set(Object.keys(timeseries?.sparse || {}));
+  for (const [k, byIso] of Object.entries(timeseries?.sparse || {})) {
+    TS[k] = {};
+    for (const [iso, pairs] of Object.entries(byIso)) {
+      const arr = new Array(timeseries.years.length).fill(null);
+      for (let i = 0; i < pairs.length; i += 2) { const j = pairs[i] - timeseries.years[0]; if (j >= 0 && j < arr.length) arr[j] = pairs[i + 1]; }
+      TS[k][iso] = arr;
+    }
+  }
   const TS_YEARS = timeseries ? timeseries.years : [];
   const REGIMES = ["Closed autocracy", "Electoral autocracy", "Electoral democracy", "Liberal democracy"];
   // yearly series stored as numbers that stand for categories
@@ -33,7 +50,9 @@
   // First and last years with data for a reasonable number of countries (at least 20)
   const TS_SPAN = {};
   for (const [key, s] of Object.entries(TS)) {
-    const counts = TS_YEARS.map((_, i) => Object.values(s).filter((arr) => arr[i] != null).length);
+    // survey measures count a country while its last survey still stands (up to 8 years)
+    const has = SURVEY_KEYS.has(key) ? (arr, i) => arr.slice(Math.max(0, i - 8), i + 1).some((v) => v != null) : (arr, i) => arr[i] != null;
+    const counts = TS_YEARS.map((_, i) => Object.values(s).filter((arr) => has(arr, i)).length);
     const first = counts.findIndex((n) => n >= 20), last = counts.length - 1 - [...counts].reverse().findIndex((n) => n >= 20);
     if (first >= 0) TS_SPAN[key] = [TS_YEARS[first], TS_YEARS[last]];
   }
@@ -201,7 +220,7 @@
     const s = TS[key]?.[iso];
     if (!s) return null;
     const i = year - TS_YEARS[0];
-    const back = NO_LOOKBACK.has(key) ? 0 : 4;
+    const back = NO_LOOKBACK.has(key) ? 0 : SURVEY_KEYS.has(key) ? 8 : 4;
     for (let j = i; j >= 0 && j >= i - back; j--) if (s[j] != null) return s[j];
     return null;
   }
@@ -226,7 +245,7 @@
         if (!s) continue;
         // survey-based measures are not collected every year: use the most recent value up to 5 years earlier
         let j = i;
-        const back = NO_LOOKBACK.has(k) ? 0 : 4;
+        const back = NO_LOOKBACK.has(k) ? 0 : SURVEY_KEYS.has(k) ? 8 : 4;
         while (j > 0 && j > i - back && s[j] == null) j--;
         const v = j >= 0 ? s[j] : null;
         if (v == null) continue;
@@ -2507,7 +2526,7 @@
   // ---------- Shared with factfile.js ----------
   window.WC = { openSheet: (n) => openSheet(n),
     F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
-    applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
+    applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, SURVEY_KEYS, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
     pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
     get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; },
     render: (o) => render(o), setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),

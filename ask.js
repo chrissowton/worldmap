@@ -122,6 +122,28 @@
       ["paris agreement", "value", "treaties_joined", ["Paris Agreement"]], ["permanent member", "value", "security_council", ["Permanent member"]],
       ["drive on the left", "value", "driving_side", ["Left"]], ["drive on the right", "value", "driving_side", ["Right"]],
       ["left hand drive", "value", "driving_side", ["Right"]], ["right hand drive", "value", "driving_side", ["Left"]],
+      // attitudes (World Values Survey)
+      ["religion is very important", "measure", "att_religion_important"], ["religion very important", "measure", "att_religion_important"],
+      ["religious", "measure", "att_religion_important"], ["religiosity", "measure", "att_religion_important"], ["atheist", "measure", "att_atheist"],
+      ["not religious", "measure", "att_not_religious"], ["go to church", "measure", "att_attend_weekly"], ["attend religious services", "measure", "att_attend_weekly"],
+      ["trust other", "measure", "att_trust"], ["people can be trusted", "measure", "att_trust"], ["social trust", "measure", "att_trust"],
+      ["happy", "measure", "att_happy"], ["happiness", "measure", "happiness_score"], ["happiness score", "measure", "happiness_score"], ["happiness rank", "measure", "happiness_rank"],
+      ["trust science", "measure", "wgm_trust_science"], ["trust scientists", "measure", "wgm_trust_scientists"], ["trust doctors", "measure", "wgm_trust_doctors"],
+      ["vaccine", "measure", "wgm_vaccines_now"], ["anti vax", "measure", "wgm_no_vaccines"], ["artificial intelligence", "measure", "wgm_ai_benefit"],
+      ["climate change is a serious threat", "measure", "wrp_climate_serious"], ["climate threat", "measure", "wrp_climate_serious"],
+      ["worried about crime", "measure", "wrp_worry_crime"], ["worried about violent crime", "measure", "wrp_worry_crime"], ["feel safe", "measure", "safe_walking"],
+      ["safe walking", "measure", "safe_walking"], ["resilience", "measure", "wrp_resilience"], ["discrimination", "measure", "wrp_discrim_skin"],
+      ["racism", "measure", "wrp_discrim_skin"], ["disaster", "measure", "wrp_disaster_5y"], ["savings", "measure", "wrp_under_month"],
+      ["favourable view of china", "measure", "pew_fav_china"], ["favorable view of china", "measure", "pew_fav_china"], ["like china", "measure", "pew_fav_china"],
+      ["favourable view of the us", "measure", "pew_fav_us"], ["favorable view of the us", "measure", "pew_fav_us"], ["like the us", "measure", "pew_fav_us"],
+      ["favourable view of the un", "measure", "pew_fav_un"], ["emigrate", "measure", "ab_emigrate"], ["emigration", "measure", "ab_emigrate"],
+      ["went without food", "measure", "ab_no_food"], ["army rule in africa", "measure", "ab_military_approve"], ["life satisfaction", "measure", "att_life_satisfaction"], ["satisfied with life", "measure", "att_life_satisfaction"],
+      ["proud", "measure", "att_very_proud"], ["patriotic", "measure", "att_very_proud"], ["fight for their country", "measure", "att_fight"], ["fight for country", "measure", "att_fight"],
+      ["men make better leaders", "measure", "att_men_leaders"], ["men make better political leaders", "measure", "att_men_leaders"],
+      ["support democracy", "measure", "att_democracy_good"], ["strong leader", "measure", "att_strong_leader_good"], ["army rule", "measure", "att_army_rule_good"],
+      ["trust the government", "measure", "att_conf_government"], ["confidence in the government", "measure", "att_conf_government"], ["trust the police", "measure", "att_conf_police"],
+      ["post materialist", "measure", "att_postmaterialist"], ["environment before economic growth", "measure", "att_environment_first"],
+      ["homosexuality", "measure", "att_homosexuality_never"], ["gay neighbours", "measure", "att_nb_gay"], ["immigrants as neighbours", "measure", "att_nb_immigrants"],
     ];
     for (const [p, kind, key, v] of A) {
       if (!F[key]) continue;
@@ -389,7 +411,7 @@
     if (measures.some((h) => h.bare && h.key === "coastline_km") && !byKey.has("landlocked") && F.landlocked) { out.filters.push({ key: "landlocked", value: false }); byKey.set("landlocked", 1); measures.forEach((h) => h.key === "coastline_km" && (h.key = "landlocked")); }
     out.bare = measures.filter((h) => h.bare && !byKey.has(h.key)).map((h) => h.key).filter((k, i, a) => a.indexOf(k) === i);
     // what kind of answer: a chart over time, a comparison, a ranking, a total, or the map
-    const has = (re) => re.test(joined);
+    const has = (re) => re.test(joined.replace(/\bclimate change\b/g, "climate"));
     const ranged = out.filters.filter((fl) => F[fl.key].type === "range");
     const measuresAll = [...ranged.map((fl) => fl.key), ...out.bare];
     if (measuresAll.length >= 2 && has(/\b(compare|comparing|against|versus|vs|relationship|correlat\w*|related|link between|plot)\b/)) {

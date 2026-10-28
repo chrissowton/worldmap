@@ -363,10 +363,15 @@
     const log = lineLog(key);
     const ms = H.matchSet(), pins = pinsList();
     const series = [];
-    for (const g of groups()) series.push({ id: g.id, name: seriesName(g, mode), vals: ys.map((y) => agg(key, g.isos, y, mode, g.minN)),
+    // survey measures: different countries were surveyed in each wave, so group medians would jump about as countries
+    // come and go. Show countries instead.
+    const survey = W.SURVEY_KEYS?.has(key);
+    if (!survey) for (const g of groups()) series.push({ id: g.id, name: seriesName(g, mode), vals: ys.map((y) => agg(key, g.isos, y, mode, g.minN)),
       colour: pins.length && !g.world && !g.mine ? H.css("--muted") : g.colour, dash: g.world ? "6 4" : pins.length && !g.mine ? "2 3" : null,
       width: g.world || g.mine ? 2.4 : pins.length ? 1.4 : 2.2, label: true, bold: g.world || g.mine });
     if (ms && t.matches) for (const iso of ms) if (!pins.includes(iso) && TS[key][iso]) series.push({ id: iso, name: W.byIso.get(iso).name, vals: ys.map((y) => TS[key][iso][y - TS_YEARS[0]] ?? null), colour: H.css("--match"), width: 1, opacity: 0.5, thin: true });
+    if (survey && !series.length) for (const [iso, arr] of Object.entries(TS[key])) if (!pins.includes(iso) && W.byIso.get(iso)?.sovereign)
+      series.push({ id: iso, name: W.byIso.get(iso).name, vals: ys.map((y) => arr[y - TS_YEARS[0]] ?? null), colour: H.css("--muted"), width: 1, opacity: 0.35, thin: true });
     pins.forEach((iso, i) => series.push({ id: iso, name: W.byIso.get(iso).name, vals: ys.map((y) => TS[key][iso]?.[y - TS_YEARS[0]] ?? null), colour: pinColour(i), width: 2.8, label: true, bold: true }));
     const { w, h } = H.size();
     const mob = w < 560;
@@ -381,13 +386,18 @@
     axes(svg, sx, sy, log, f, w, h, M, mob, `↑ ${f.label}${log ? " (log scale)" : ""}`);
     const ln = d3.line().defined((v) => v != null && (!log || v > 0)).x((v, i) => sx(ys[i])).y((v) => sy(v));
     const order = series.slice().sort((a, b) => (a.thin ? 0 : 1) - (b.thin ? 0 : 1));
-    svg.append("g").selectAll("path").data(order).join("path").attr("d", (s) => ln(s.vals)).attr("fill", "none")
+    // survey measures (asked every few years): join each country's survey points and mark them
+    const pts = (s) => s.vals.map((v, i) => (v == null || (log && v <= 0) ? null : [sx(ys[i]), sy(v)])).filter(Boolean);
+    const path = (s) => (survey ? d3.line()(pts(s)) : ln(s.vals));
+    if (survey) svg.append("g").selectAll("circle").data(order.flatMap((s) => pts(s).map((p) => ({ p, s }))))
+      .join("circle").attr("cx", (d) => d.p[0]).attr("cy", (d) => d.p[1]).attr("r", (d) => (d.s.thin ? 2 : 3.5)).attr("fill", (d) => d.s.colour).attr("opacity", (d) => d.s.opacity ?? 1);
+    svg.append("g").selectAll("path").data(order).join("path").attr("d", (s) => path(s)).attr("fill", "none")
       .attr("stroke", (s) => s.colour).attr("stroke-width", (s) => s.width).attr("stroke-dasharray", (s) => s.dash).attr("opacity", (s) => s.opacity ?? 1)
       .attr("stroke-linejoin", "round").attr("stroke-linecap", "round");
     endLabels(svg, series.filter((s) => s.label), ys, sx, sy, w, h, M, mob, log);
     hoverRule(svg, sx, ys, w, h, M, (i) => series.filter((s) => s.label && s.vals[i] != null).sort((a, b) => b.vals[i] - a.vals[i])
       .map((s) => `<dt><span class="sw" style="background:${s.colour}"></span> ${esc(s.name)}</dt><dd>${esc(fmtShort(f, s.vals[i]))}</dd>`).join(""));
-    $("#tNote").innerHTML = `${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
+    $("#tNote").innerHTML = survey ? `Each dot is one survey. Different countries were surveyed in each wave, so world and continent medians are not shown: add countries below to compare them. ${f.info ? esc(f.info) : ""}` : `${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
     V.csv = () => [["Year", ...series.map((s) => s.name)], ...ys.map((y, i) => [y, ...series.map((s) => s.vals[i] ?? "")])];
     V.title = `${f.label}, ${ys[0]}–${ys[ys.length - 1]}`;
   }
@@ -708,12 +718,14 @@
 
   // ======================= SANKEY =======================
   function loadFlows() {
+    flowData ||= window.__RFLOWS__ || null;
     if (flowData) return Promise.resolve(flowData);
     flowLoading ||= fetch("refugee_flows_years.json?v=25").then((r) => r.json()).then((d) => (flowData = d)).catch(() => null);
     return flowLoading;
   }
   function drawSankey() {
     const t = V.trend, kind = sankeyKind(t.key);
+    flowData ||= window.__RFLOWS__ || null;
     if (kind === "refugees" && !flowData) {
       $("#vbody").innerHTML = `<p class="cexplain">Loading refugee flows…</p>`;
       loadFlows().then((d) => { if (d) W.render(); else $("#vbody").innerHTML = `<p class="cexplain">The refugee flow data could not be loaded.</p>`; });
