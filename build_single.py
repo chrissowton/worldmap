@@ -51,7 +51,7 @@ def main():
     )
     inline = (
         unpack +
-        f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>"
+        f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>\n<script>{read('numbers.js')}</script>"
     )
     head = (
         f"<title>Which Countries?</title>\n"

@@ -14,7 +14,27 @@
   const CONT_VAR = { Africa: "--c-africa", Americas: "--c-americas", Asia: "--c-asia", Europe: "--c-europe", Oceania: "--c-oceania" };
   const INCOME = ["Low income", "Lower-middle income", "Upper-middle income", "High income"];
   const PIN_VARS = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6"];
-  const SIZE_KEYS = ["population", "co2_mt", "refugees_hosted", "refugees_from", "tourists", "armed_forces"];
+  // Compare: things that make sense as bubble sizes (totals, not rates), and groupings that make sense as colours
+  const SIZE_KEYS = ["population", "gdp_usd", "area_km2", "co2_mt", "military_spend_usd", "armed_forces", "tourists", "refugees_hosted", "refugees_from"];
+  const COLOUR_KEYS = [["region", "Continent"], ["income_group", "Income group"], ["hdi_group", "Human development"], ["regime", "Type of government"],
+    ["largest_religion", "Largest religion"], ["main_climate", "Main climate"], ["match", "Matches your filters"]];
+  const ORDERED_COLOURS = { income_group: INCOME, regime: ["Closed autocracy", "Electoral autocracy", "Electoral democracy", "Liberal democracy"] };
+  const CAT_PAL = ["#2a78d6", "#e34948", "#1baf7a", "#eda100", "#8a5cd6", "#e86fb0", "#6d7a86", "#9c6b3a", "#0aa5c2"];
+  // Words for the corners of the Compare chart: [low, high]
+  const ADJ = {
+    gdp_per_capita: ["poor", "rich"], gni_ppp: ["poor", "rich"], gdp_usd: ["small economy", "big economy"], hdi: ["less developed", "more developed"],
+    life_expectancy: ["shorter lives", "longer lives"], happiness_score: ["unhappy", "happy"], att_happy: ["unhappy", "happy"], att_life_satisfaction: ["dissatisfied", "satisfied"],
+    fertility: ["few children", "many children"], birth_rate: ["few births", "many births"], median_age: ["young", "old"], pop_growth: ["shrinking", "growing"],
+    urban_pct: ["rural", "urban"], co2_per_capita: ["low CO₂", "high CO₂"], internet: ["offline", "online"], literacy: ["less literate", "more literate"],
+    infant_mortality: ["few baby deaths", "many baby deaths"], under5_mortality: ["few child deaths", "many child deaths"], gini: ["more equal", "less equal"],
+    extreme_poverty: ["little poverty", "much poverty"], libdem: ["less democratic", "more democratic"], att_trust: ["low trust", "high trust"],
+    att_religion_important: ["secular", "religious"], women_parliament: ["few women MPs", "many women MPs"], density: ["empty", "crowded"],
+    population: ["small population", "big population"], area_km2: ["small", "large"], mean_schooling: ["less schooling", "more schooling"],
+    renewables_elec_pct: ["fossil power", "clean power"], forest_pct: ["few trees", "forested"], health_spend: ["low health spending", "high health spending"],
+    military_spend_pct: ["low military spending", "high military spending"], tourists: ["few tourists", "many tourists"], migrants_pct: ["few migrants", "many migrants"],
+    homicides: ["safe", "violent"], wgm_trust_science: ["low trust in science", "high trust in science"], wrp_resilience: ["less resilient", "more resilient"],
+  };
+  const adj = (key) => ADJ[key] || [`low ${lower(F[key].short || F[key].label)}`, `high ${lower(F[key].short || F[key].label)}`];
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const contColour = (reg) => css(CONT_VAR[reg] || "--muted");
   const lower = (s) => (/^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
@@ -122,9 +142,10 @@
           <label class="fld"><span>↑ Up</span><select id="cY" data-pick></select></label>
           <label class="fld"><span>→ Across</span><select id="cX" data-pick></select></label>
           <label class="fld"><span>Bubble size</span><select id="cZ" data-pick></select></label>
-          <label class="fld"><span>Colour</span><select id="cC" data-pick><option value="region">Continent</option><option value="income_group">Income group</option><option value="match">Matches your filters</option></select></label>
+          <label class="fld"><span>Colour</span><select id="cC" data-pick></select></label>
         </div></div>
-        <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg></div>
+        <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg>
+          <div class="czoom" role="group" aria-label="Zoom the chart"><button type="button" id="cZin" aria-label="Zoom in">+</button><button type="button" id="cZout" aria-label="Zoom out">−</button><button type="button" id="cZreset" aria-label="Show the whole chart" title="Show the whole chart">⟲</button></div></div>
         <div class="vfoot">
           <div class="vyear" id="cYearRow"><button type="button" class="play" id="cPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("cSpeed") : ""}<span class="yslide"><input type="range" id="cYear" step="1" aria-label="Year"></span><span class="num vy" id="cYearLab"></span><span class="ysig" id="cSig" hidden></span></div>
           <div class="vlegend" id="cLeg"></div>
@@ -133,6 +154,7 @@
             <label class="tog"><input type="checkbox" id="cLogX"> Log scale across</label>
             <label class="tog"><input type="checkbox" id="cLogY"> Log scale up</label>
             <label class="tog"><input type="checkbox" id="cFit"> Trend line</label>
+            <label class="tog"><input type="checkbox" id="cQuad"> Corner labels</label>
             <span class="vfind"><input id="cFind" list="vCountries" placeholder="Follow a country…" aria-label="Follow a country"><datalist id="vCountries"></datalist></span>
             <span class="pins" id="cPins"></span>
           </div>
@@ -238,10 +260,21 @@
     $("#cY").innerHTML = W.measureOptions(c.y);
     $("#cZ").innerHTML = `<option value="">All the same size</option>` + SIZE_KEYS.filter((k) => F[k]).map((k) => `<option value="${k}" ${c.size === k ? "selected" : ""}>${esc(F[k].label)}</option>`).join("");
     $("#cZ").value = c.size;
+    $("#cC").innerHTML = COLOUR_KEYS.filter(([k]) => k === "region" || k === "match" || F[k]).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("");
     $("#cC").value = c.colour;
-    const upd = () => { c.year = null; W.render(); };
+    const upd = () => { c.year = null; resetZoom(true); W.render(); };
     $("#cX").onchange = (e) => { c.x = e.target.value; c.logx = null; upd(); };
     $("#cY").onchange = (e) => { c.y = e.target.value; c.logy = null; upd(); };
+    $("#cQuad").onchange = (e) => { c.quads = e.target.checked; W.render(); };
+    // zoom: scroll or pinch on the chart, drag to move around; the buttons do the same
+    const svgEl = d3.select("#vsvg");
+    zoomer = d3.zoom().scaleExtent([1, 30])
+      .filter((e) => (e.type === "wheel" ? true : e.type === "touchstart" ? e.touches.length > 1 : !e.button))
+      .on("zoom", (e) => { const t = e.transform; c.zt = t.k === 1 && !t.x && !t.y ? null : t; drawCompare(0); });
+    svgEl.call(zoomer).on("dblclick.zoom", null);
+    $("#cZin").onclick = () => svgEl.transition().duration(250).call(zoomer.scaleBy, 1.6);
+    $("#cZout").onclick = () => svgEl.transition().duration(250).call(zoomer.scaleBy, 1 / 1.6);
+    $("#cZreset").onclick = () => resetZoom();
     $("#cZ").onchange = (e) => { c.size = e.target.value; upd(); };
     $("#cC").onchange = (e) => { c.colour = e.target.value; c.focus = null; W.render(); };
     $("#cLogX").onchange = (e) => { c.logx = e.target.checked; W.render(); };
@@ -253,6 +286,30 @@
     window.WPL?.bindSpeed($("#cSpeed"));
     $("#cFind").onchange = (e) => { const r = findCountry(e.target.value); e.target.value = ""; if (r && !c.pins.includes(r.iso3)) { c.pins = c.pins.concat(r.iso3).slice(-8); W.render(); } };
   }
+  let zoomer = null;
+  function resetZoom(quiet) {
+    V.cmp.zt = null;
+    const el = $("#vsvg");
+    if (zoomer && el) { if (quiet) el.__zoom = d3.zoomIdentity; else d3.select(el).transition().duration(250).call(zoomer.transform, d3.zoomIdentity); }
+  }
+  // colour groups for the bubbles: continents, income groups, government type…
+  function colourGroups() {
+    const c = V.cmp;
+    if (c.colour === "match") return [];
+    if (c.colour === "region") return CONTINENTS;
+    if (ORDERED_COLOURS[c.colour]) return ORDERED_COLOURS[c.colour];
+    const f = F[c.colour];
+    return f?.order || f?.options || [...new Set(W.rows.map((r) => r[c.colour]).filter((v) => typeof v === "string"))].sort();
+  }
+  function groupColour(k) {
+    const c = V.cmp, gs = colourGroups(), i = gs.indexOf(k);
+    if (i < 0) return css("--muted");
+    if (c.colour === "region") return contColour(k);
+    if (c.colour === "income_group") return css(`--inc-${i}`);
+    if (ORDERED_COLOURS[c.colour] || c.colour === "hdi_group") return d3.interpolateRgbBasis(["#d1453b", "#e9a23b", "#3aa76d", "#2a6fc9"])(gs.length > 1 ? i / (gs.length - 1) : 0);
+    return CAT_PAL[i % CAT_PAL.length];
+  }
+  const groupOf = (r) => (V.cmp.colour === "region" ? r.region : V.cmp.colour === "match" ? null : r[V.cmp.colour]);
   function compareYears() {
     const c = V.cmp;
     const keys = [c.x, c.y].concat(c.size && TS[c.size] ? [c.size] : []);
@@ -314,7 +371,9 @@
     }
     // the list in the results pane
     V.list = { title: year ? `Figures for ${year}` : "Latest figures", cols: [fy, fx], rows: pts.filter((p) => p.m).map((p) => ({ iso: p.iso, vals: [p.y, p.x] })),
-      pinned: c.pins, note: "Click a country to follow its path through the years.", max: 8,
+      pinned: c.pins, note: "Tick countries to follow their path through the years.", max: 8,
+      key: c.colour === "match" ? null : { label: (COLOUR_KEYS.find(([k]) => k === c.colour) || [, ""])[1], groups: colourGroups(), colour: groupColour, groupOf, focus: c.focus,
+        setFocus: (k) => { c.focus = c.focus === k ? null : k; } },
       toggle: (iso) => { c.pins = c.pins.includes(iso) ? c.pins.filter((x) => x !== iso) : c.pins.concat(iso).slice(-8); } };
     const { w, h } = size();
     // no animation when the chart has just changed size, so bubbles never lag behind the axes
@@ -329,33 +388,41 @@
     let ex = ext(c.x, logx), ey = ext(c.y, logy);
     if (fx.bounds && !logx) ex = [Math.min(ex[0], fx.bounds[0]), Math.max(ex[1], fx.bounds[1])];
     if (fy.bounds && !logy) ey = [Math.min(ey[0], fy.bounds[0]), Math.max(ey[1], fy.bounds[1])];
-    const sx = (logx ? d3.scaleLog() : d3.scaleLinear()).domain(ex).range([M.l, w - M.r]).nice();
-    const sy = (logy ? d3.scaleLog() : d3.scaleLinear()).domain(ey).range([h - M.b, M.t]).nice();
+    const sx0 = (logx ? d3.scaleLog() : d3.scaleLinear()).domain(ex).range([M.l, w - M.r]).nice();
+    const sy0 = (logy ? d3.scaleLog() : d3.scaleLinear()).domain(ey).range([h - M.b, M.t]).nice();
+    // zoomed in: the same scales, stretched
+    const zt = c.zt;
+    const sx = zt ? zt.rescaleX(sx0) : sx0, sy = zt ? zt.rescaleY(sy0) : sy0;
+    if (zoomer) zoomer.extent([[M.l, M.t], [w - M.r, h - M.b]]).translateExtent([[M.l, M.t], [w - M.r, h - M.b]]);
+    $(".czoom")?.classList.toggle("zoomed", !!zt);
     const zmax = fz ? (yrs && TS[c.size] ? allYearsExtent(c.size)[1] : d3.max(pts, (p) => p.z)) || 1 : 1;
     const rmax = Math.max(16, Math.min(46, Math.min(w, h) / 12));
     const sr = fz ? d3.scaleSqrt().domain([0, zmax]).range([0, rmax]) : () => (mob ? 5 : 6.5);
     const colour = (p) => {
       if (!p.m) return css("--land");
       if (c.colour === "match") return css("--match");
-      if (c.colour === "income_group") { const i = INCOME.indexOf(p.r.income_group); return i < 0 ? css("--muted") : css(`--inc-${i}`); }
-      return contColour(p.r.region);
+      return groupColour(groupOf(p.r));
     };
-    const key = (p) => (c.colour === "income_group" ? p.r.income_group : p.r.region);
+    const key = (p) => groupOf(p.r);
     const svg = d3.select("#vsvg").attr("viewBox", `0 0 ${w} ${h}`).attr("width", w).attr("height", h)
       .attr("aria-label", `Bubble chart of ${fy.label} against ${fx.label}${year ? " in " + year : ""}`);
     // layers (made once)
     if (svg.select("g.layers").empty()) {
       svg.selectAll("*").remove();
       const L = svg.append("g").attr("class", "layers");
-      ["wm", "grid", "axes", "fit", "trails", "bubbles", "labels"].forEach((n) => L.append("g").attr("class", n));
+      svg.append("defs").append("clipPath").attr("id", "cClip").append("rect");
+      ["wm", "grid", "quad", "axes", "fit", "trails", "bubbles", "labels"].forEach((n) => L.append("g").attr("class", n));
+      ["fit", "trails", "bubbles", "labels", "grid"].forEach((n) => L.select("g." + n).attr("clip-path", "url(#cClip)"));
     }
+    svg.select("#cClip rect").attr("x", M.l).attr("y", M.t - 2).attr("width", Math.max(0, w - M.r - M.l)).attr("height", Math.max(0, h - M.b - M.t + 2));
     const ink = css("--ink"), muted = css("--muted"), line = css("--line"), surface = css("--surface");
     // watermark year
     svg.select("g.wm").selectAll("text").data(year ? [year] : []).join("text")
       .attr("x", (M.l + w - M.r) / 2).attr("y", (M.t + h - M.b) / 2).attr("text-anchor", "middle").attr("dy", "0.35em")
       .attr("font-size", Math.min(w, h) * 0.26).attr("font-weight", 700).attr("fill", line).attr("opacity", 0.55).text((d) => d);
     // grid + axes
-    const tx = ticksFor(sx, logx, mob ? 4 : 7), ty = ticksFor(sy, logy, mob ? 5 : 7);
+    const inR = (s) => (v) => { const p = s(v), r = s.range(); return p >= Math.min(...r) - 0.5 && p <= Math.max(...r) + 0.5; };
+    const tx = ticksFor(sx, logx, mob ? 4 : 7).filter(inR(sx)), ty = ticksFor(sy, logy, mob ? 5 : 7).filter(inR(sy));
     const g = svg.select("g.grid");
     g.selectAll("line.gx").data(tx).join("line").attr("class", "gx").attr("x1", sx).attr("x2", sx).attr("y1", M.t).attr("y2", h - M.b).attr("stroke", line);
     g.selectAll("line.gy").data(ty).join("line").attr("class", "gy").attr("y1", sy).attr("y2", sy).attr("x1", M.l).attr("x2", w - M.r).attr("stroke", line);
@@ -381,6 +448,21 @@
       .attr("y1", (d) => { const v = d.my + d.slope * (d.x0 - d.mx); return sy(logy ? 10 ** v : v); })
       .attr("y2", (d) => { const v = d.my + d.slope * (d.x1 - d.mx); return sy(logy ? 10 ** v : v); })
       .attr("stroke", ink).attr("stroke-width", 2).attr("stroke-dasharray", "6 4").attr("opacity", 0.7);
+    // corner labels: what each corner of the chart means ("happy but poor"…)
+    $("#cQuad").checked = c.quads !== false;
+    const [loX, hiX] = adj(c.x), [loY, hiY] = adj(c.y);
+    const neg = corr && corr.r < -0.2;
+    const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+    const corner = (yWord, xWord, odd) => cap(`${yWord} ${odd ? "but" : "and"} ${xWord}`);
+    const quads = c.quads === false ? [] : [
+      { t: "↖ " + corner(hiY, loX, !neg), x: M.l + 8, y: M.t + 16, a: "start" },
+      { t: corner(hiY, hiX, neg) + " ↗", x: w - M.r - 8, y: M.t + 16, a: "end" },
+      { t: "↙ " + corner(loY, loX, neg), x: M.l + 8, y: h - M.b - 9, a: "start" },
+      { t: corner(loY, hiX, !neg) + " ↘", x: w - M.r - 8, y: h - M.b - 9, a: "end" },
+    ];
+    svg.select("g.quad").selectAll("text").data(quads).join("text").attr("x", (d) => d.x).attr("y", (d) => d.y).attr("text-anchor", (d) => d.a)
+      .attr("font-size", mob ? 10.5 : 12.5).attr("font-weight", 600).attr("font-style", "italic").attr("fill", muted).attr("opacity", 0.85)
+      .attr("stroke", surface).attr("stroke-width", 3).attr("paint-order", "stroke").attr("pointer-events", "none").text((d) => d.t);
     // trails for followed countries
     const pinned = c.pins.filter((iso) => W.byIso.has(iso));
     const trails = yrs ? pinned.map((iso) => {
@@ -426,8 +508,8 @@
       .transition().duration(dur).ease(d3.easeLinear)
       .attr("x", (p) => sx(p.x) + Math.max(2.5, sr(p.z)) + 3).attr("y", (p) => sy(p.y) + 4);
     // legend
-    const groups = c.colour === "match" ? [] : c.colour === "income_group" ? INCOME : CONTINENTS;
-    const gcol = (k) => (c.colour === "income_group" ? css(`--inc-${INCOME.indexOf(k)}`) : contColour(k));
+    const groups = colourGroups();
+    const gcol = groupColour;
     $("#cLeg").innerHTML = (groups.length ? groups.map((k) => `<button type="button" class="lg ${focus && focus !== k ? "off" : ""}" data-k="${esc(k)}" aria-pressed="${focus === k}"><span class="sw" style="background:${gcol(k)}"></span>${esc(k)}</button>`).join("") + `<span class="lghint">Click to pick out</span>`
       : `<span class="lg"><span class="sw" style="background:var(--match)"></span>Matches your filters</span>`) +
       (ms ? `<span class="lg"><span class="sw" style="background:var(--land)"></span>Doesn't match</span>` : "") +
@@ -444,7 +526,14 @@
         ? `${yearText}, across ${n} countries, there is a <b>${strength} ${corr.r > 0 ? "positive" : "negative"} link</b> (r = ${corr.r.toFixed(2)}): countries with higher ${esc(lower(fx.label))} tend to have ${corr.r > 0 ? "higher" : "lower"} ${esc(lower(fy.label))}.`
         : `${yearText}, across ${n} countries, there is <b>little or no link</b> (r = ${corr.r.toFixed(2)}) between ${esc(lower(fx.label))} and ${esc(lower(fy.label))}.`;
       note += ` A link doesn't prove that one causes the other.`;
+      // countries far from the trend line: doing better or worse than the other measure would suggest
+      if (c.fit && used.length >= 10) {
+        const res = used.map((p) => ({ p, d: T(p.y, logy) - (corr.my + corr.slope * (T(p.x, logx) - corr.mx)) })).sort((a, b) => b.d - a.d);
+        const nm = (a) => a.slice(0, 3).map((q) => esc(q.p.r.name)).join(", ");
+        note += ` <b>Furthest above the trend line</b> (higher ${esc(lower(fy.short || fy.label))} than their ${esc(lower(fx.short || fx.label))} would suggest): ${nm(res)}. <b>Furthest below:</b> ${nm(res.slice().reverse())}.`;
+      }
     } else note = `${yearText}: too few countries have both measures to compare.`;
+    note += ` <span class="vhint">Scroll or pinch on the chart to zoom in; drag to move around.</span>`;
     if (!yrs) note += ` ${!TS[c.x] || W.CAT_TS[c.x] ? esc(fx.label) : esc(fy.label)} has no yearly data here, so the chart shows the latest figures and can't play through time.`;
     else if (ms) note += ` Countries that don't match your filters are grey.`;
     $("#cNote").innerHTML = note;
@@ -947,7 +1036,7 @@
     if (ok(p.get("cx"))) c.x = p.get("cx");
     if (ok(p.get("cy"))) c.y = p.get("cy");
     if (p.get("cz")) c.size = p.get("cz") === "none" ? "" : ok(p.get("cz")) ? p.get("cz") : c.size;
-    if (["income_group", "match"].includes(p.get("cc"))) c.colour = p.get("cc");
+    if (COLOUR_KEYS.some(([k]) => k === p.get("cc"))) c.colour = p.get("cc");
     if (p.get("cl")) { const l = p.get("cl"); c.logx = l.includes("x"); c.logy = l.includes("y"); }
     if (+p.get("cyr")) c.year = +p.get("cyr");
     if (p.get("cp")) c.pins = p.get("cp").split(".").filter((x) => /^[A-Z]{3}$/.test(x)).slice(0, 8);

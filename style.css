@@ -689,7 +689,7 @@ button { cursor: pointer; }
 /* ======================= Charts, map styles and classroom tools ======================= */
 :root {
   /* continents (Gapminder-like hues, checked for colour-blind separation; legends and tooltips always name them) */
-  --c-africa: #1baf7a; --c-americas: #008300; --c-asia: #e34948; --c-europe: #eda100; --c-oceania: #2a78d6;
+  --c-africa: #0aa2c0; --c-americas: #5e9f1e; --c-asia: #e34948; --c-europe: #e0a000; --c-oceania: #8a5cd6;
   /* countries you add to a chart, in this order */
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300;
   /* income groups, low to high */
@@ -703,14 +703,14 @@ button { cursor: pointer; }
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --c-africa: #199e70; --c-americas: #008300; --c-asia: #e66767; --c-europe: #c98500; --c-oceania: #3987e5;
+    --c-africa: #3cc3dc; --c-americas: #86c64a; --c-asia: #ec6f6f; --c-europe: #e8b52a; --c-oceania: #a989ee;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300;
     --inc-0: #184f95; --inc-1: #2a78d6; --inc-2: #5598e7; --inc-3: #9ec5f4;
     --div-lo: #3987e5; --div-mid: #383835; --div-hi: #e66767;
   }
 }
 :root[data-theme="dark"] {
-  --c-africa: #199e70; --c-americas: #008300; --c-asia: #e66767; --c-europe: #c98500; --c-oceania: #3987e5;
+  --c-africa: #3cc3dc; --c-americas: #86c64a; --c-asia: #ec6f6f; --c-europe: #e8b52a; --c-oceania: #a989ee;
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300;
   --inc-0: #184f95; --inc-1: #2a78d6; --inc-2: #5598e7; --inc-3: #9ec5f4;
   --div-lo: #3987e5; --div-mid: #383835; --div-hi: #e66767;
@@ -1559,3 +1559,84 @@ body[data-mode="physical"] .legend, body.no-time .legend { bottom: 12px; }
 @media (min-width: 1101px) { .shell { grid-template-columns: 264px minmax(0, 1fr); } }
 @media (min-width: 761px) { .cp-tool { white-space: nowrap; } }
 @media print { .cpanel, .tabbar, .sheetshade, .docktop { display: none !important; } .shell { display: block; } }
+
+/* ---------- Compare: colour key with a mini map, list search and tick boxes (Gapminder-style) ---------- */
+.ckey { padding: 8px 14px 10px; border-bottom: 1px solid var(--line); }
+.ckey-h { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.ckey-h b { color: var(--ink); }
+.ckey-map { display: block; width: 100%; height: auto; max-height: 150px; }
+.ckey-map path { stroke: var(--pane, var(--surface)); stroke-width: 0.4; cursor: pointer; }
+.ckey-map path:not([data-g]) { cursor: default; }
+.ckey-map path[data-g]:hover { stroke: var(--ink); stroke-width: 0.9; }
+.ckey-l { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 6px; font-size: 12px; }
+.ckey-l .lg { border: 0; background: none; padding: 2px 0; display: inline-flex; align-items: center; gap: 5px; color: var(--ink); cursor: pointer; font-size: 12px; }
+.ckey-l .lg.off { opacity: .4; }
+.ckey-l .lg.hov, .ckey-l .lg[aria-pressed="true"] { font-weight: 700; }
+.ckey-l .sw { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.csearch { padding: 8px 12px 4px; }
+.csearch input { width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13px; }
+.crow[hidden] { display: none; }
+/* tick boxes on the list rows, as in Gapminder */
+.crow .cpin::before { content: ""; flex: none; width: 14px; height: 14px; border: 1.5px solid var(--muted); border-radius: 3px; box-sizing: border-box; margin-right: 0; }
+.crow.on .cpin::before { content: "✓"; background: var(--accent); border-color: var(--accent); color: var(--surface); font-size: 11px; line-height: 11px; text-align: center; margin-right: 0; }
+/* Compare: zoom buttons */
+.vbody .czoom { position: absolute; right: 10px; top: 8px; display: flex; flex-direction: column; gap: 3px; z-index: 3; }
+.vbody .czoom button { width: 28px; height: 28px; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; font-size: 15px; line-height: 1; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); cursor: pointer; }
+.vbody .czoom button:hover { border-color: var(--accent); color: var(--accent); }
+.vbody .czoom #cZreset { display: none; }
+.vbody .czoom.zoomed #cZreset { display: block; border-color: var(--accent); color: var(--accent); }
+.vbody svg { cursor: grab; }
+.vbody svg:active { cursor: grabbing; }
+.vnote .vhint { color: var(--muted); font-style: italic; }
+.vbody .czoom { top: 3px; flex-direction: row; }
+.vbody .czoom button { width: 24px; height: 22px; font-size: 14px; }
+
+/* ---------- Quiz card: compact, at the top centre (over the Arctic, not the Americas), in its own red colour ---------- */
+:root { --quiz: #c2372e; --quiz-bg: color-mix(in srgb, #d6453d 7%, var(--surface)); }
+:root[data-theme="dark"] { --quiz: #f08a80; --quiz-bg: color-mix(in srgb, #d6453d 16%, var(--surface)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --quiz: #f08a80; --quiz-bg: color-mix(in srgb, #d6453d 16%, var(--surface)); } }
+.starter.quiz { left: 50%; transform: translateX(-50%); top: 10px; width: min(500px, calc(100% - 290px)); min-width: 330px; max-height: calc(100% - 120px);
+  padding: 10px 14px 10px; background: var(--quiz-bg); border: 1.5px solid color-mix(in srgb, var(--quiz) 45%, var(--line)); }
+.starter.quiz .qz-head h2 { font-size: 16.5px; color: var(--quiz); }
+.starter.quiz .qz-head h2::before { content: "🎯 "; }
+.starter.quiz .qz-intro { display: none; }
+.starter.quiz .qz-more .qz-intro { display: block; }
+.starter.quiz .qz-topics { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; margin: 6px 0 6px; padding-bottom: 3px; }
+.starter.quiz .qz-topic { flex: none; }
+.starter.quiz .qz-q { border-top: 0; padding-top: 2px; }
+.starter.quiz .qz-tag { display: none; }
+.starter.quiz .qz-text { font-size: 15px; margin: 0 0 7px; }
+.starter.quiz .qz-free input { padding: 7px 10px; font-size: 15px; }
+.starter.quiz .qz-row { margin-top: 7px; }
+.starter.quiz .qz-more { display: inline-block; margin: 8px 14px 0 0; padding-top: 0; border-top: 0; font-size: 12.5px; vertical-align: top; }
+.starter.quiz .qz-more[open] { display: block; margin-right: 0; }
+.starter.quiz .hide { top: 6px; right: 6px; }
+.starter.quiz #qzSubmit { background: var(--quiz); border-color: var(--quiz); }
+.quizpill { background: var(--quiz); left: 50%; transform: translateX(-50%); top: 10px; }
+@media (max-width: 1000px) and (min-width: 761px) { .starter.quiz { left: 12px; transform: none; width: calc(100% - 170px); min-width: 0; } .quizpill { left: 12px; transform: none; } }
+@media (max-width: 760px) {
+  .starter.quiz { left: 6px; right: 6px; transform: none; width: auto; min-width: 0; top: 6px; max-height: 55%; padding: 9px 11px; }
+  .quizpill { left: 8px; transform: none; }
+}
+
+/* ---------- Number hunt ---------- */
+.nh-overlay { background: #eef1ee; overflow: auto; }
+.nh-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; padding: 12px 18px; background: #fff; border-bottom: 1px solid #d5dcde; position: sticky; top: 0; z-index: 2; }
+.nh-bar h2 { margin: 0 8px 4px 0; font-family: var(--display); font-size: 22px; color: #15232a; }
+.nh-bar label span { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5b6b73; margin-bottom: 3px; }
+.nh-bar input#nhIn { font: 700 22px var(--display); width: 150px; padding: 5px 10px; border: 2px solid #c2372e; border-radius: 9px; color: #15232a; background: #fff; }
+.nh-bar select { padding: 6px 8px; border: 1px solid #c9d2d5; border-radius: 8px; background: #fff; color: #15232a; }
+.nh-bar .tog { color: #15232a; font-size: 13px; padding-bottom: 7px; }
+.nh-bar .ghost { color: #15232a; border-color: #c9d2d5; background: #fff; }
+.nh-bar #nhClose2 { margin-left: auto; font-size: 24px; color: #15232a; }
+.nh-help, .nh-count { margin: 10px 18px 0; color: #45555d; font-size: 13.5px; }
+.nh-body { padding: 0 18px 24px; }
+.nh-poster { margin-top: 10px; background: #fff; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.12); overflow: hidden; max-width: 1200px; }
+.nh-poster svg { display: block; width: 100%; height: auto; }
+.nh-empty { margin: 30px 18px; color: #45555d; font-size: 15px; }
+@media print {
+  body.print-nh > *:not(#numhunt) { display: none !important; }
+  body.print-nh #numhunt { position: static; overflow: visible; background: #fff; }
+  body.print-nh .nh-bar, body.print-nh .nh-help, body.print-nh .nh-count { display: none !important; }
+  body.print-nh .nh-poster { box-shadow: none; border-radius: 0; }
+}

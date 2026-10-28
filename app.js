@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "29";
+  const DATA_VERSION = "31";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -361,9 +361,38 @@
   const cityActive = () => state.filters.filter((fl) => isCity(fl) && isActive(fl));
   const showCities = () => state.filters.some(isCity);
 
+  // Physical feature filters also pick out countries: "deserts bigger than X" + "rivers through 3+ countries" means
+  // countries that have such a desert AND such a river. Each kind of feature with a real limit becomes a hidden
+  // yes/no country filter, "__has_<kind>", worked out afresh every time.
+  const featPhrases = (t) => state.filters.filter((fl) => F[fl.key].target === t && isActive(fl) && (F[fl.key].type !== "range" || isLimited(fl))).map(phrase).filter(Boolean);
+  function hasF(t) {
+    const key = "__has_" + t, T = window.WP.T[t];
+    F[key] ||= { key, type: "bool", internal: true, group: "Geography", label: `Has a ${T.one} like this`, short: `Has a ${T.one}`, yes: `Has a matching ${T.one}`, no: `No matching ${T.one}`,
+      say: (v) => {
+        const ps = featPhrases(t).map((x) => (/^it /.test(x) ? x.replace(/^it /, "that ") : /^its /.test(x) ? x.replace(/^its /, "whose ") : "where " + x));
+        return v ? `there is a ${T.one} ${ps.join(" and ")}` : `there is no ${T.one} like this`;
+      }, info: `Countries that contain at least one of the ${T.many} picked out by your filters.`, source: "physical" };
+    return key;
+  }
+  function featureAct() {
+    const out = [];
+    if (!window.WP?.loaded) return out;
+    const lim = state.filters.filter((fl) => isFeat(fl) && isActive(fl) && (F[fl.key].type !== "range" || isLimited(fl)));
+    for (const t of new Set(lim.map((fl) => F[fl.key].target))) {
+      const its = window.WP.items(t) || [];
+      if (!its.some((it) => it.iso && it.iso.length)) continue;   // features that belong to no country (trenches, plate boundaries)
+      const live = state.filters.filter((fl) => F[fl.key].target === t && isActive(fl));
+      const has = new Set();
+      for (const it of its) if (live.every((fl) => passes(it, fl))) (it.iso || []).forEach((i) => has.add(i));
+      const key = hasF(t);
+      for (const r of rows) r[key] = has.has(r.iso3);
+      out.push({ key, value: true, _t: t });
+    }
+    return out;
+  }
   function evaluate() {
     sliceCache.clear();
-    const act = active();
+    const act = active().concat(featureAct());
     const res = new Map();
     for (const r of pool()) {
       const fails = act.filter((fl) => !passes(r, fl));
@@ -513,7 +542,8 @@
     }
     for (const [t, list] of lastEval?.feat || []) {
       // a feature filter left at "no limit" just puts that kind of feature on the map, so it isn't described
-      const fp = state.filters.filter((fl) => F[fl.key].target === t && isActive(fl) && (F[fl.key].type !== "range" || isLimited(fl))).map(phrase).filter(Boolean);
+      const asCountry = act.some((fl) => fl._t === t);
+      const fp = asCountry ? [] : featPhrases(t);
       const m = list.length, T = window.WP.T[t];
       const part = `<b>${m.toLocaleString()} ${m === 1 ? T.one : T.many}</b>${fp.length ? ` where ${esc(andList(fp))}` : ""}`;
       cityPart = cityPart ? `${cityPart}; ${part}` : part;
@@ -1250,7 +1280,10 @@
     el.innerHTML = `<h3>No countries match all ${act.length} filters</h3>
       <p>${tries.length ? "Dropping one of them would bring some back:" : "Try removing a filter."}</p>
       <ul>${tries.map((t, i) => `<li><button type="button" data-i="${i}">Remove <b>${esc(chipLabel(t.fl))}</b> → ${t.n} ${t.n === 1 ? "match" : "matches"}</button></li>`).join("")}</ul>`;
-    el.querySelectorAll("button").forEach((b) => (b.onclick = () => removeFilter(tries[+b.dataset.i].fl.key)));
+    el.querySelectorAll("button").forEach((b) => (b.onclick = () => {
+      const fl = tries[+b.dataset.i].fl;
+      if (fl._t) { state.filters = state.filters.filter((x) => F[x.key].target !== fl._t); render(); } else removeFilter(fl.key);
+    }));
   }
 
   // ---------- Filter editor ----------
@@ -1643,6 +1676,20 @@
   }
   // ---------- In Compare, Rankings and Charts the pane lists the chart's countries and numbers ----------
   let listSort = { view: null, col: 0, dir: 0 };
+  let clQuery = "";
+  // a small world map coloured by group, for the Compare colour key (shapes are drawn once and kept)
+  let miniPaths = null;
+  function miniMapSVG(K) {
+    const W2 = 300, H2 = 150;
+    if (!miniPaths) {
+      const pr = d3.geoEqualEarth().fitExtent([[2, 2], [W2 - 2, H2 - 2]], { type: "Sphere" });
+      const pa = d3.geoPath(pr);
+      miniPaths = geo.filter((d) => d.rec).map((d) => ({ r: d.rec, d: pa(d) })).filter((x) => x.d);
+    }
+    return `<svg class="ckey-map" viewBox="0 0 ${W2} ${H2}" role="img" aria-label="World map coloured by ${esc(K.label.toLowerCase())}">` +
+      miniPaths.map(({ r, d }) => { const g = K.groupOf(r); const ok = g != null && K.groups.includes(g);
+        return `<path d="${d}" fill="${ok ? K.colour(g) : "var(--land)"}"${ok ? ` data-g="${esc(g)}"` : ""} opacity="${K.focus && g !== K.focus ? 0.25 : 1}"><title>${esc(r.name)}${ok ? ": " + esc(g) : ""}</title></path>`; }).join("") + `</svg>`;
+  }
   function renderChartList() {
     const L = window.WV_H.V.list, el = $("#results");
     if (listSort.view !== state.view + L.cols.map((f) => f.key).join()) listSort = { view: state.view + L.cols.map((f) => f.key).join(), col: 0, dir: L.asc ? 1 : -1 };
@@ -1653,11 +1700,16 @@
     const scrollTop = el.querySelector(".clist")?.scrollTop || 0;
     const head = (i, f) => `<button type="button" class="ch${c === i ? " on" : ""}" data-c="${i}" title="Sort">${esc(f ? f.short || f.label : "Country")}${c === i ? (listSort.dir > 0 ? " ↑" : " ↓") : ""}</button>`;
     const ms = lastEval.act.length;
+    // Gapminder-style colour key: a small world map in the bubbles' colours (click a colour to pick it out)
+    const K = L.key;
+    const keyHTML = K ? `<div class="ckey"><div class="ckey-h">Colour: <b>${esc(K.label)}</b></div>${miniMapSVG(K)}
+        <div class="ckey-l">${K.groups.map((g) => `<button type="button" class="lg${K.focus && K.focus !== g ? " off" : ""}" data-k="${esc(g)}" aria-pressed="${K.focus === g}"><span class="sw" style="background:${K.colour(g)}"></span>${esc(g)}</button>`).join("")}</div></div>` : "";
     el.innerHTML = `<div class="rhead chead">
         <div class="count"><span class="n num">${rows.length}</span><span class="of">${ms ? "matching countries" : "countries"} in this chart</span></div>
         <p class="note">${esc(L.title)}. ${esc(L.note)}</p>
         <button type="button" class="linkbtn" id="paneHide">Hide this list ⇥</button>
-      </div>
+      </div>${keyHTML}
+      <div class="csearch"><input type="search" id="clSearch" placeholder="Find a country…" aria-label="Find a country in the list" value="${esc(clQuery)}"></div>
       <div class="clhead" style="--ncols:${L.cols.length}"><span class="rk">#</span>${head(-1)}${L.cols.map((f, i) => head(i, f)).join("")}</div>
       <div class="clist" role="list" style="--ncols:${L.cols.length}">${rows.map((x, i) => `<div class="crow${pinned.has(x.iso) ? " on" : ""}" role="listitem" data-iso="${x.iso}"><span class="rk num">${i + 1}</span>
           <button type="button" class="cpin" aria-pressed="${pinned.has(x.iso)}" title="${pinned.has(x.iso) ? "Remove from the chart" : "Add to the chart"}"><span class="fl">${x.r.flag || ""}</span><span class="nm">${esc(x.r.name)}</span></button>
@@ -1666,6 +1718,18 @@
       ${footHTML()}`;
     bindCommon(el);
     el.querySelector(".clist").scrollTop = scrollTop;
+    const filterRows = () => { const q = clQuery.trim().toLowerCase(); el.querySelectorAll(".crow").forEach((row) => (row.hidden = !!q && !row.querySelector(".nm").textContent.toLowerCase().includes(q))); };
+    filterRows();
+    const si = $("#clSearch");
+    si.oninput = () => { clQuery = si.value; filterRows(); };
+    if (K) {
+      el.querySelectorAll(".ckey [data-k]").forEach((b) => (b.onclick = () => { K.setFocus(b.dataset.k); render(); }));
+      el.querySelectorAll(".ckey path[data-g]").forEach((pth) => {
+        pth.onclick = () => { K.setFocus(pth.dataset.g); render(); };
+        pth.onmouseenter = () => el.querySelector(`.ckey-l [data-k="${CSS.escape(pth.dataset.g)}"]`)?.classList.add("hov");
+        pth.onmouseleave = () => el.querySelectorAll(".ckey-l .hov").forEach((x) => x.classList.remove("hov"));
+      });
+    }
     $("#paneHide").onclick = () => { state.paneHidden = true; document.body.classList.add("pane-hidden"); render(); };
     el.querySelectorAll(".clhead .ch").forEach((b) => (b.onclick = () => { const i = +b.dataset.c; listSort.dir = listSort.col === i ? -listSort.dir : i < 0 ? 1 : -1; listSort.col = i; renderChartList(); }));
     el.querySelectorAll(".crow").forEach((row) => {
@@ -2549,6 +2613,7 @@
   window.WP?.setW(window.WC);
   window.WV?.init();
   window.WQ?.init();
+  window.WN?.init();
 
   // ---------- Go ----------
   new ResizeObserver(() => layout()).observe($("#mapwrap"));

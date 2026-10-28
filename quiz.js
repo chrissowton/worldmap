@@ -16,7 +16,7 @@
   };
   const seen = new Set(store.get("wcq-seen", []));
   const score = Object.assign({ right: 0, asked: 0, streak: 0, best: 0 }, store.get("wcq-score", {}));
-  const Q = { topics: Object.assign({ human: "any", physical: "p-any" }, store.get("wcq-topics", {})), cur: null, mc: false, picked: null, done: false, mode: "open", prevFilters: false };
+  const Q = { topics: Object.assign({ human: "any", physical: "p-any" }, store.get("wcq-topics", {})), cur: null, mc: false, picked: null, done: false, mode: window.matchMedia("(max-width: 760px)").matches ? "min" : "open", prevFilters: false };
 
   // ---------- Topics (colours match the filter categories) ----------
   const TOPICS = [

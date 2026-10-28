@@ -5,8 +5,8 @@
  * How a year is judged: for every country, the change from the year before (percentage change for things that
  * are counted, like population; plain change for rates, like life expectancy). The year's median change is compared
  * with the usual median change across all years, and we count how many countries jumped by much more than their own usual.
- *   amber: the typical change was 2–4 times the usual, or 7–15% of countries had an unusual jump
- *   red:   the typical change was over 4 times the usual, or over 15% of countries had an unusual jump */
+ *   amber: the typical change is at least 2 "robust standard deviations" from the usual (and in the top quarter of years)
+ *   red:   at least 4 (and in the top tenth of years) */
 (function () {
   "use strict";
   const SPEEDS = [0.5, 1, 2, 4];
@@ -62,8 +62,8 @@
     const score = [];
     for (let i = 1; i < YEARS.length; i++) if (med[i] != null) score[i] = Math.abs(med[i] - typ) / mad;
     const ratios = score.filter((x) => x != null).sort(d3.ascending);
-    // at least 3 for amber and 6 for red, and never more than about 1 year in 7
-    const amberT = Math.max(3, d3.quantileSorted(ratios, 0.86)), redT = Math.max(6, d3.quantileSorted(ratios, 0.95));
+    // at least 2 for amber and 4 for red, and never more than about 1 year in 4 (amber) or 1 in 10 (red)
+    const amberT = Math.max(2, d3.quantileSorted(ratios, 0.75)), redT = Math.max(4, d3.quantileSorted(ratios, 0.9));
     const own = rows.map((s) => d3.median(YEARS.slice(1).map((y, j) => delta(s, j + 1)).filter((d) => d != null && d !== 0).map(Math.abs)) || 0);
     const num = (d) => (f.format === "usd" && !counted ? `$${d3.format(",")(Math.round(Math.abs(d)))}` : counted ? `${Math.abs(d).toFixed(1)}%` : f.format === "pct" ? `${Math.abs(d) < 1 ? Math.abs(d).toFixed(2) : Math.abs(d).toFixed(1)} percentage points` : `${+Math.abs(d).toPrecision(2)}${f.format === "years" || /expectancy|age/.test(key) ? " years" : ""}`);
     for (let i = 1; i < YEARS.length; i++) {
