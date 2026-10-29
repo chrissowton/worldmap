@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "32";
+  const DATA_VERSION = "33";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -582,12 +582,12 @@
   let mapTopPad = 0;
   const narrow = () => window.matchMedia("(max-width: 760px)").matches;
   function layout() {
-    const box = $("#mapwrap").getBoundingClientRect();
+    const box = $("#mapstage").getBoundingClientRect();
     const w = Math.max(320, box.width), h = Math.max(240, box.height);
     svg.attr("viewBox", `0 0 ${w} ${h}`);
     citySize = Math.max(0.45, Math.min(1, w / 1100));
     // a little room round the world, and space at the top for the quiz card when it sits there
-    const padX = Math.max(16, w * 0.025), top = Math.max(16, mapTopPad), bottom = narrow() ? 12 : 64;
+    const padX = Math.max(16, w * 0.025), top = Math.max(16, mapTopPad), bottom = 16;
     projection.fitExtent([[padX, top], [w - padX, Math.max(top + 120, h - bottom)]], { type: "FeatureCollection", features: geo });
     paths.attr("d", path);
     riverPaths.attr("d", path); lakePaths.attr("d", path);
@@ -920,7 +920,7 @@
     $("#tPlay").textContent = playing ? "❚❚" : "▶";
     $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
     // keep the colour key clear of the year player
-    requestAnimationFrame(() => { const lg = $("#legend"); if (lg) lg.style.bottom = el.hidden || narrow() ? "" : el.offsetHeight + 22 + "px"; });
+    $("#mapfoot")?.classList.toggle("empty", el.hidden && $("#legend").hidden);
   }
   function setYear(y) {
     state.year = y;
@@ -2038,7 +2038,7 @@
   }
   function placeTip(evt) {
     tip.hidden = false;
-    const box = $("#mapwrap").getBoundingClientRect();
+    const box = $("#mapstage").getBoundingClientRect();
     let x = evt.clientX - box.left + 14, y = evt.clientY - box.top + 14;
     const tw = tip.offsetWidth, th = tip.offsetHeight;
     if (x + tw > box.width - 8) x = evt.clientX - box.left - tw - 14;
@@ -2465,7 +2465,7 @@
   // Phones: a tab bar along the bottom opens each part of the panel (or the results list) as a sheet,
   // and Back, Home and Clear all move to the top.
   const phone = window.matchMedia("(max-width: 760px)");
-  let sheet = null, lastSel = null;
+  let sheet = null, lastSel = null, lastOpen = null;
   function placeDock() {
     const d = $("#dock"), home = phone.matches ? $("#dockTop") : $("#cpFoot");
     if (d && home && d.parentElement !== home) home.appendChild(d);
@@ -2488,6 +2488,12 @@
     $("#cpanel").classList.toggle("nofilters", !n);
     const q = $("#quizBtn"), tq = document.querySelector("#tabbar [data-t=quiz]");
     if (q && tq) tq.setAttribute("aria-pressed", q.getAttribute("aria-pressed") || "false");
+    // the filter editor sits in the panel under the chips: on a phone, open the Filters sheet to show it
+    if (state.open && state.open !== lastOpen) {
+      if (phone.matches && sheet !== "filters") openSheet("filters");
+      requestAnimationFrame(() => $("#editor")?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+    }
+    lastOpen = state.open;
     // on a phone, picking a country (on the map or in a chart) opens its profile in the list sheet
     if (phone.matches && state.selected && state.selected !== lastSel && sheet !== "list") openSheet("list");
     lastSel = state.selected;
@@ -2629,7 +2635,7 @@
   window.WN?.init();
 
   // ---------- Go ----------
-  new ResizeObserver(() => layout()).observe($("#mapwrap"));
+  new ResizeObserver(() => layout()).observe($("#mapstage"));
 
   // ---------- Cards that can be moved and resized: the quiz card and the filter editor ----------
   // Drag them by their title; drag the bottom-right corner to resize; double-click the title to put them back.
@@ -2675,9 +2681,8 @@
     el.addEventListener("dblclick", (e) => { if (e.target.closest(handleSel) && !e.target.closest("button, input, select")) reset(); });
     new ResizeObserver(() => { if (el.classList.contains("moved") && el.offsetWidth) { clearTimeout(el._rs); el._rs = setTimeout(save, 300); } floatChanged(); }).observe(el);
   }
-  makeFloating($("#starter"), ".qz-head", "wc-float-quiz");
-  makeFloating($("#editor"), "header, .eyebrow", "wc-float-editor");
-  window.addEventListener("resize", floatChanged);
+  // (the quiz card and the filter editor now sit in fixed places: above the map and in the panel)
+  void makeFloating;
   layout();
   render();
 })();

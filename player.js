@@ -128,18 +128,25 @@
   }
   function avgHTML(key, year, short) {
     const W = window.WC, f = W?.F?.[key];
-    const now = average(key, year), prev = average(key, year - 1);
+    const now = average(key, year);
     if (!f || !now) return "";
+    // the change is worked out from the countries with figures for both years, so countries joining or leaving
+    // the data (common for survey measures like literacy) can't make the average jump
+    let prev = null;
+    {
+      const pairs = W.rows.filter((r) => r.sovereign).map((r) => [W.TS[key][r.iso3]?.[year - 1 - W.TS_YEARS[0]], W.TS[key][r.iso3]?.[year - W.TS_YEARS[0]]]).filter(([a, b]) => typeof a === "number" && typeof b === "number");
+      if (pairs.length >= 10) prev = { v: now.v - d3.mean(pairs, ([a, b]) => b - a), base: d3.mean(pairs, ([a]) => a), n: pairs.length };
+    }
     let dir = "", arrow = "", cls = "";
     if (prev) {
-      const d = now.v - prev.v, rel = prev.v ? Math.abs(d / prev.v) : Math.abs(d);
+      const d = now.v - prev.v, rel = prev.base ? Math.abs(d / prev.base) : Math.abs(d);
       if (rel < 0.002) { arrow = "►"; cls = "flat"; dir = "about the same as"; }
       else if (d > 0) { arrow = "▲"; cls = "up"; dir = "up on"; }
       else { arrow = "▼"; cls = "down"; dir = "down on"; }
     }
     // one more decimal than usual for small numbers, so small changes show
     const val = Math.abs(now.v) < 1000 && !["people", "usd", "rank"].includes(f.format) ? `${+now.v.toFixed(Math.abs(now.v) < 10 ? 2 : 1)}${f.format === "pct" ? "%" : W.UNITS[f.format] || ""}` : W.fmt(f, now.v);
-    const title = `Average of ${now.n} countries in ${year}: ${val}${prev ? `, ${dir} ${year - 1} (${W.fmt(f, prev.v)})` : ""}. Green ▲ = up, amber ► = within 0.2%, red ▼ = down.`;
+    const title = `Average of ${now.n} countries in ${year}: ${val}.${prev ? ` Compared with ${year - 1}, the ${prev.n} countries with figures for both years were ${dir.replace(" on", "").replace(" as", "")} on average.` : " Too few countries have figures for both years to show the change."} Green ▲ = up, amber ► = within 0.2%, red ▼ = down.`;
     return `<span class="avgchip ${cls}" title="${title.replace(/"/g, "&quot;")}"><span class="al">${short ? "" : "Average "}${(f.short || f.label).replace(/"/g, "&quot;")}:</span> <b>${val}</b>${arrow ? ` <span class="ar">${arrow}</span>` : ""}</span>`;
   }
   window.WPL = { average, avgHTML, speedHTML, bindSpeed, ms, significance, merged, marks, light, get speed() { return speed; } };

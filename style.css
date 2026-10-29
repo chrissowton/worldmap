@@ -1684,3 +1684,46 @@ body[data-mode="physical"] .legend, body.no-time .legend { bottom: 12px; }
   .editor.moved, .starter.moved { box-shadow: 0 10px 34px rgba(0,0,0,.22); }
   .dragging { opacity: .92; transition: none !important; }
 }
+
+/* =====================================================================
+   v33: nothing floats over the map any more.
+   Map column = quiz strip (top) · map · footer bar (key + year player). The filter editor lives in the panel.
+   ===================================================================== */
+.mapwrap { display: flex; flex-direction: column; overflow: hidden; }
+.mapstage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--ocean); }
+.mapstage #map { position: absolute; inset: 0; }
+/* quiz strip */
+.mapwrap > .starter, .mapwrap > .starter.quiz { position: relative; left: auto; right: auto; top: auto; bottom: auto; transform: none; width: auto; max-width: none; min-width: 0;
+  max-height: 45%; margin: 0; border-radius: 0; border-width: 0 0 1px; box-shadow: none; resize: none; flex: none; z-index: 5; }
+.mapwrap > .starter.quiz { padding: 8px 40px 8px 16px; }
+.mapwrap > .starter .qz-head { cursor: default; }
+.quizpill { left: 12px; top: 10px; transform: none; }
+/* footer bar */
+.mapfoot { flex: none; display: flex; align-items: center; gap: 10px 18px; padding: 6px 14px; background: var(--surface); border-top: 1px solid var(--line); flex-wrap: wrap; }
+.mapfoot.empty { display: none; }
+.mapfoot .legend { position: static; box-shadow: none; background: none; padding: 0; max-width: 34%; flex: 0 1 auto; display: flex; flex-direction: row; flex-wrap: wrap; gap: 3px 12px; font-size: 12px; max-height: 64px; overflow: auto; }
+.mapfoot .legend[hidden] { display: none; }
+.mapfoot .timebar { position: static; transform: none; left: auto; right: auto; bottom: auto; width: auto; max-width: none; margin: 0; flex: 1 1 380px;
+  box-shadow: none; border: 0; background: none; padding: 0; min-width: 0; }
+.mapfoot .timebar .play { width: 34px; height: 34px; }
+.mapfoot .timebar .tyear { font-size: 18px; }
+.mapfoot .timebar .tsigtext { margin: 4px 0 0; padding: 3px 9px; font-size: 12px; }
+/* filter editor: inside the panel, under the chips */
+.cpanel .editor { position: static; left: auto; top: auto; right: auto; bottom: auto; width: auto; max-width: none; max-height: none; margin: 8px 0 2px;
+  padding: 12px 12px 10px; box-shadow: none; border-radius: 10px; resize: none; overflow: visible; z-index: auto;
+  border: 1.5px solid color-mix(in srgb, var(--gc, var(--accent)) 45%, var(--line)); background: color-mix(in srgb, var(--gc, var(--accent)) 5%, var(--surface)); }
+.cpanel .editor header, .cpanel .editor .eyebrow { cursor: default; }
+.cpanel .editor h3 { font-size: 16px; }
+.cpanel .editor .info { font-size: 12px; }
+.cpanel .editor .seg button { padding-left: 6px; padding-right: 6px; font-size: 12px; }
+.cpanel .editor .fams, .cpanel .editor .fam { flex-wrap: wrap; }
+@media (min-width: 1101px) { .shell:has(.cpanel .editor:not([hidden])) { grid-template-columns: 320px minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .cpanel .editor { position: static; border-radius: 10px; padding-bottom: 12px; }
+  .mapfoot { padding: 5px 8px; }
+  .mapfoot .legend { display: none; }
+  .content .main { padding-bottom: 0; }
+  .content #mapwrap { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+}
+body { margin: 0; }
+.mapfoot .timebar .tsigtext { max-width: 640px; }

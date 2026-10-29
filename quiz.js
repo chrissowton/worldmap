@@ -1056,7 +1056,7 @@
       pill = document.createElement("button");
       pill.id = "quizPill"; pill.type = "button"; pill.className = "quizpill";
       pill.onclick = () => { Q.mode = "open"; Q.keepOpen = true; renderCard(); if (!Q.cur) ask(); };
-      $("#mapwrap").appendChild(pill);
+      ($("#mapstage") || $("#mapwrap")).appendChild(pill);
     }
     pill.hidden = hide || Q.mode !== "min";
     pill.innerHTML = Q.cur && !Q.done ? "🎯 Back to your question" : "🎯 Quiz";

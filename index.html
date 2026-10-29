@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 <!--APP-->
@@ -36,6 +36,7 @@
     <section class="cp-sec" data-s="filters" aria-labelledby="cpF">
       <h2 id="cpF" class="cp-h"><span class="cp-n">1</span>Filters<span id="cpCount" class="cp-count" hidden></span></h2>
       <div id="chips" class="chips"></div>
+      <div id="editor" class="card editor" hidden></div>
       <p class="cp-sub">Add a filter by theme</p>
       <nav id="themes" class="themes" aria-label="Browse filters by theme"></nav>
     </section>
@@ -70,22 +71,25 @@
 
 <main class="main">
   <div id="mapwrap" class="mapwrap">
-    <svg id="map" role="img" aria-label="World map highlighting matching countries"></svg>
     <div id="starter" class="card starter"></div>
-    <div id="zero" class="card zero" hidden></div>
-    <div id="flowbar" class="card flowbar" hidden></div>
-    <button id="mmBtn" class="mmbtn" type="button" aria-expanded="false" aria-controls="mmCard">🎨 Map style</button>
-    <div id="mmCard" class="card mmcard" hidden></div>
-    <div id="editor" class="card editor" hidden></div>
-    <div id="legend" class="legend"></div>
-    <div id="timebar" class="timebar"></div>
-    <div class="zoom">
-      <button id="zin" type="button" aria-label="Zoom in">+</button>
-      <button id="zout" type="button" aria-label="Zoom out">−</button>
-      <button id="zreset" type="button" aria-label="Reset view">⟲</button>
-      <button id="zlabels" type="button" aria-pressed="true" aria-label="Show place names, rivers and mountains" title="Place names, rivers and mountains">Aa</button>
+    <div id="mapstage" class="mapstage">
+      <svg id="map" role="img" aria-label="World map highlighting matching countries"></svg>
+      <div id="zero" class="card zero" hidden></div>
+      <div id="flowbar" class="card flowbar" hidden></div>
+      <button id="mmBtn" class="mmbtn" type="button" aria-expanded="false" aria-controls="mmCard">🎨 Map style</button>
+      <div id="mmCard" class="card mmcard" hidden></div>
+      <div class="zoom">
+        <button id="zin" type="button" aria-label="Zoom in">+</button>
+        <button id="zout" type="button" aria-label="Zoom out">−</button>
+        <button id="zreset" type="button" aria-label="Reset view">⟲</button>
+        <button id="zlabels" type="button" aria-pressed="true" aria-label="Show place names, rivers and mountains" title="Place names, rivers and mountains">Aa</button>
+      </div>
+      <div id="tooltip" class="tooltip" hidden></div>
     </div>
-    <div id="tooltip" class="tooltip" hidden></div>
+    <div id="mapfoot" class="mapfoot">
+      <div id="legend" class="legend"></div>
+      <div id="timebar" class="timebar"></div>
+    </div>
   </div>
 
   <div id="viewwrap" class="viewwrap" hidden></div>
@@ -111,19 +115,19 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-<script src="filters.js?v=32"></script>
-<script src="glossary.js?v=32"></script>
-<script src="links.js?v=32"></script>
-<script src="player.js?v=32"></script>
-<script src="picker.js?v=32"></script>
-<script src="physical.js?v=32"></script>
-<script src="views.js?v=32"></script>
-<script src="charts.js?v=32"></script>
-<script src="insights.js?v=32"></script>
-<script src="quiz.js?v=32"></script>
-<script src="app.js?v=32"></script>
-<script src="ask.js?v=32"></script>
-<script src="factfile.js?v=32"></script>
-<script src="numbers.js?v=32"></script>
+<script src="filters.js?v=33"></script>
+<script src="glossary.js?v=33"></script>
+<script src="links.js?v=33"></script>
+<script src="player.js?v=33"></script>
+<script src="picker.js?v=33"></script>
+<script src="physical.js?v=33"></script>
+<script src="views.js?v=33"></script>
+<script src="charts.js?v=33"></script>
+<script src="insights.js?v=33"></script>
+<script src="quiz.js?v=33"></script>
+<script src="app.js?v=33"></script>
+<script src="ask.js?v=33"></script>
+<script src="factfile.js?v=33"></script>
+<script src="numbers.js?v=33"></script>
 </body>
 </html>
