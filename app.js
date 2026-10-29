@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "31";
+  const DATA_VERSION = "32";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -579,12 +579,16 @@
   const onMap = new Set(geo.map((d) => d.rec?.iso3).filter(Boolean));
   let k = 1;
 
+  let mapTopPad = 0;
+  const narrow = () => window.matchMedia("(max-width: 760px)").matches;
   function layout() {
     const box = $("#mapwrap").getBoundingClientRect();
     const w = Math.max(320, box.width), h = Math.max(240, box.height);
     svg.attr("viewBox", `0 0 ${w} ${h}`);
     citySize = Math.max(0.45, Math.min(1, w / 1100));
-    projection.fitExtent([[10, 10], [w - 10, h - 10]], { type: "FeatureCollection", features: geo });
+    // a little room round the world, and space at the top for the quiz card when it sits there
+    const padX = Math.max(16, w * 0.025), top = Math.max(16, mapTopPad), bottom = narrow() ? 12 : 64;
+    projection.fitExtent([[padX, top], [w - padX, Math.max(top + 120, h - bottom)]], { type: "FeatureCollection", features: geo });
     paths.attr("d", path);
     riverPaths.attr("d", path); lakePaths.attr("d", path);
     invalidatePoints();
@@ -882,6 +886,7 @@
         <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span><span class="tnote" id="tNote"></span>
         <button type="button" class="linkbtn" id="tLatest">Back to latest</button></div>
         <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div>
+        <div class="tavg" id="tAvg" aria-live="polite"></div>
         <p class="tsigtext" id="tSigText" hidden></p></div>`;
       const range = $("#tRange");
       range.oninput = () => { stopPlay(); setYear(+range.value); };
@@ -907,9 +912,15 @@
       const st = state.year && sig.get(state.year);
       $("#tSigText").hidden = !st;
       if (st) { $("#tSigText").textContent = st.text; $("#tSigText").className = `tsigtext l${st.level}`; $("#tNote").textContent = ""; }
-    } else if (window.WPL) { window.WPL.marks(range, new Map()); window.WPL.light($("#tSig"), new Map(), null); }
+    } else if (window.WPL) { window.WPL.marks(range, new Map()); window.WPL.light($("#tSig"), new Map(), null); $("#tSigText").hidden = true; }
+    // the average of each measure being played, and which way it moved
+    const avgKeys = sp && state.year ? [...new Set(state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key).concat(colourKey() && TS[colourKey()] && !CAT_TS[colourKey()] ? [colourKey()] : []))].slice(0, 3) : [];
+    $("#tAvg").innerHTML = window.WPL ? avgKeys.map((k) => window.WPL.avgHTML(k, state.year)).join("") : "";
+    $("#tAvg").hidden = !avgKeys.length;
     $("#tPlay").textContent = playing ? "❚❚" : "▶";
     $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
+    // keep the colour key clear of the year player
+    requestAnimationFrame(() => { const lg = $("#legend"); if (lg) lg.style.bottom = el.hidden || narrow() ? "" : el.offsetHeight + 22 + "px"; });
   }
   function setYear(y) {
     state.year = y;
@@ -931,7 +942,8 @@
     const sig = timeSig();
     // one year at a time; it lingers on years with big changes so they can be seen
     const tick = () => {
-      if (state.year >= y1) return stopPlay();
+      const now = sliderSpan();   // a filter may have been removed while playing
+      if (!now || !state.year || state.year >= Math.min(y1, now[1])) return stopPlay();
       setYear(state.year + 1);
       const s = sig.get(state.year);
       playing = setTimeout(tick, (window.WPL ? window.WPL.ms(550) : 550) * (s ? (s.level === 2 ? 3 : 2) : 1));
@@ -2366,6 +2378,7 @@
     state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; state.sortDir = null; state.tab = "countries";
     state.flow = null; state.selected = null; state.mapStyle = "std"; state.popSized = false; state.feat = null;
     stopPlay(); if (state.year) { state.year = null; applyYear(null); }
+    window.WV?.clearYears?.();   // the Compare and Charts players too
     svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
     render();
   }
@@ -2617,6 +2630,54 @@
 
   // ---------- Go ----------
   new ResizeObserver(() => layout()).observe($("#mapwrap"));
+
+  // ---------- Cards that can be moved and resized: the quiz card and the filter editor ----------
+  // Drag them by their title; drag the bottom-right corner to resize; double-click the title to put them back.
+  function floatChanged() {
+    clearTimeout(floatChanged.t);
+    floatChanged.t = setTimeout(() => {
+      const st = $("#starter");
+      const pad = !narrow() && st && !st.hidden && !st.classList.contains("moved") && st.offsetHeight ? st.offsetTop + st.offsetHeight + 6 : 0;
+      if (Math.abs(pad - mapTopPad) > 4) { mapTopPad = pad; layout(); }
+    }, 80);
+  }
+  function makeFloating(el, handleSel, store) {
+    if (!el) return;
+    const apply = (p) => {
+      el.classList.add("moved");
+      Object.assign(el.style, { left: p.x + "px", top: p.y + "px", right: "auto", bottom: "auto", transform: "none" });
+      if (p.w) el.style.width = p.w + "px";
+      if (p.h) el.style.height = p.h + "px";
+    };
+    const save = () => { try { localStorage.setItem(store, JSON.stringify({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.style.height ? el.offsetHeight : 0 })); } catch (e) { /* storage may be off */ } };
+    const reset = () => {
+      el.classList.remove("moved");
+      ["left", "top", "width", "height", "right", "bottom", "transform"].forEach((k) => (el.style[k] = ""));
+      try { localStorage.removeItem(store); } catch (e) { /* ignore */ }
+      floatChanged();
+    };
+    try { const p = JSON.parse(localStorage.getItem(store) || "null"); if (p && !narrow()) apply(p); } catch (e) { /* ignore */ }
+    el.addEventListener("pointerdown", (e) => {
+      if (narrow() || e.button) return;
+      if (!e.target.closest(handleSel) || e.target.closest("button, input, select, a, summary, label")) return;
+      e.preventDefault();
+      const host = el.parentElement.getBoundingClientRect(), r = el.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      apply({ x: r.left - host.left, y: r.top - host.top, w: r.width });
+      el.classList.add("dragging");
+      const move = (ev) => {
+        el.style.left = Math.max(0, Math.min(host.width - 80, ev.clientX - host.left - dx)) + "px";
+        el.style.top = Math.max(0, Math.min(host.height - 40, ev.clientY - host.top - dy)) + "px";
+      };
+      const up = () => { el.classList.remove("dragging"); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); save(); floatChanged(); };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+    });
+    el.addEventListener("dblclick", (e) => { if (e.target.closest(handleSel) && !e.target.closest("button, input, select")) reset(); });
+    new ResizeObserver(() => { if (el.classList.contains("moved") && el.offsetWidth) { clearTimeout(el._rs); el._rs = setTimeout(save, 300); } floatChanged(); }).observe(el);
+  }
+  makeFloating($("#starter"), ".qz-head", "wc-float-quiz");
+  makeFloating($("#editor"), "header, .eyebrow", "wc-float-editor");
+  window.addEventListener("resize", floatChanged);
   layout();
   render();
 })();

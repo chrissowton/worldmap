@@ -317,6 +317,8 @@
       requestAnimationFrame(() => window.WPL.marks($("#chYear"), sig)); window.WPL.light($("#chSig"), sig, year); window.WPL.bindSpeed($("#chSpeed"));
       const st = sig.get(year);
       if (st) row.insertAdjacentHTML("beforeend", `<p class="tsigtext l${st.level}" style="flex-basis:100%">${esc(st.text)}</p>`);
+      const av = window.WPL.avgHTML(sigKey, year);
+      if (av) row.insertAdjacentHTML("beforeend", `<div class="tavg" style="flex-basis:100%">${av}</div>`);
     }
     $("#chYear").oninput = (e) => { stop(); t.year = +e.target.value; W.render(); };
     $("#chPlay").onclick = () => {

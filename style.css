@@ -1640,3 +1640,47 @@ body[data-mode="physical"] .legend, body.no-time .legend { bottom: 12px; }
   body.print-nh .nh-bar, body.print-nh .nh-help, body.print-nh .nh-count { display: none !important; }
   body.print-nh .nh-poster { box-shadow: none; border-radius: 0; }
 }
+
+/* ---------- Year players: the average for the year, with an arrow (green up, amber same, red down) ---------- */
+.tavg { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
+.tavg[hidden] { display: none; }
+.avgchip { display: inline-flex; align-items: baseline; gap: 4px; font-size: 12.5px; padding: 2px 9px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--ink); }
+.avgchip .al { color: var(--muted); }
+.avgchip .ar { font-size: 12px; }
+.avgchip.up { border-color: #2e9d55; background: color-mix(in srgb, #2e9d55 12%, var(--surface)); }
+.avgchip.up .ar { color: #2e9d55; }
+.avgchip.flat { border-color: #e0a000; background: color-mix(in srgb, #e0a000 14%, var(--surface)); }
+.avgchip.flat .ar { color: #c98a00; }
+.avgchip.down { border-color: #d6453d; background: color-mix(in srgb, #d6453d 11%, var(--surface)); }
+.avgchip.down .ar { color: #d6453d; }
+
+/* ---------- Quiz card v2: a long, low strip at the top of the map (the map moves down to make room);
+   drag it by its title, resize it from the corner, double-click the title to put it back ---------- */
+@media (min-width: 761px) {
+  .starter.quiz { left: 12px; right: 150px; top: 8px; transform: none; width: auto; min-width: 0; max-width: 1000px; max-height: none;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; row-gap: 4px; align-items: center;
+    resize: both; overflow: auto; padding: 8px 34px 9px 14px; }
+  .starter.quiz.moved { right: auto; max-width: none; }
+  .starter.quiz .qz-head { grid-column: 1; grid-row: 1; padding-right: 0; cursor: move; user-select: none; flex-wrap: nowrap; }
+  .starter.quiz .qz-head h2 { white-space: nowrap; }
+  .starter.quiz .qz-topics { grid-column: 2; grid-row: 1; margin: 0; padding-bottom: 2px; }
+  .starter.quiz .qz-more.qz-ask { grid-column: 1; grid-row: 3; }
+  .starter.quiz .qz-more:not(.qz-ask) { grid-column: 2; grid-row: 3; justify-self: start; }
+  .starter.quiz .qz-more { margin: 0; white-space: nowrap; }
+  .starter.quiz .qz-more[open] { grid-column: 1 / -1; grid-row: 4; white-space: normal; }
+  .starter.quiz .qz-q { grid-column: 1 / -1; grid-row: 2; }
+  .starter.quiz .qz-text { margin: 0 0 5px; }
+  .starter.quiz #qzForm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .starter.quiz .qz-free { flex: 1 1 220px; max-width: 420px; }
+  .starter.quiz .qz-opts { flex: 1 1 100%; }
+  .starter.quiz .qz-row { margin: 0; }
+  .starter.quiz .qz-msg { flex-basis: 100%; margin: 0; }
+  .starter.quiz .qz-msg:empty { display: none; }
+  .starter.quiz .qz-res { margin-top: 6px; }
+  .quizpill { left: 12px; transform: none; top: 8px; }
+  /* the filter editor can be moved and resized too */
+  .editor { resize: both; }
+  .editor header, .editor .eyebrow { cursor: move; user-select: none; }
+  .editor.moved, .starter.moved { box-shadow: 0 10px 34px rgba(0,0,0,.22); }
+  .dragging { opacity: .92; transition: none !important; }
+}

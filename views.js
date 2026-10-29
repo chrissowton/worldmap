@@ -355,6 +355,12 @@
     if (yrs) { range.min = yrs.from; range.max = yrs.to; range.value = year; range.disabled = false; $("#cPlay").disabled = false; }
     else { range.disabled = true; $("#cPlay").disabled = true; }
     $("#cYearLab").textContent = yrs ? year : "Latest figures";
+    {
+      let a = $("#cAvg");
+      if (!a) { a = document.createElement("div"); a.id = "cAvg"; a.className = "tavg"; $("#cYearRow").after(a); }
+      a.innerHTML = yrs && window.WPL ? [c.y, c.x].map((k) => window.WPL.avgHTML(k, year)).join("") : "";
+      a.hidden = !a.innerHTML;
+    }
     if (window.WPL) {
       const sig = yrs ? cmpSig() : new Map(); window.WPL.marks(range, sig); window.WPL.light($("#cSig"), sig, year);
       let p = $("#cSigText"); if (!p) { p = document.createElement("p"); p.id = "cSigText"; $("#cYearRow").after(p); }
@@ -1091,5 +1097,6 @@
   // for the Back button: the chart settings as plain data, and back again
   function snapshot() { const { built, ...rest } = V; return JSON.parse(JSON.stringify(rest)); }
   function restore(o) { if (!o) return; stopPlay(); Object.assign(V.cmp, o.cmp); Object.assign(V.rank, o.rank); Object.assign(V.trend, o.trend); V.task = o.task || ""; }
-  window.WV = { currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
+  function clearYears() { stopPlay(); V.cmp.year = null; V.cmp.pins = []; V.cmp.focus = null; V.cmp.zt = null; V.trend.year = null; V.trend.from = null; V.trend.pins = []; V.rank.year = null; }
+  window.WV = { clearYears, currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
 })();
