@@ -149,5 +149,41 @@
     const title = `Average of ${now.n} countries in ${year}: ${val}.${prev ? ` Compared with ${year - 1}, the ${prev.n} countries with figures for both years were ${dir.replace(" on", "").replace(" as", "")} on average.` : " Too few countries have figures for both years to show the change."} Green ▲ = up, amber ► = within 0.2%, red ▼ = down.`;
     return `<span class="avgchip ${cls}" title="${title.replace(/"/g, "&quot;")}"><span class="al">${short ? "" : "Average "}${(f.short || f.label).replace(/"/g, "&quot;")}:</span> <b>${val}</b>${arrow ? ` <span class="ar">${arrow}</span>` : ""}</span>`;
   }
-  window.WPL = { average, avgHTML, speedHTML, bindSpeed, ms, significance, merged, marks, light, get speed() { return speed; } };
+  // ---------- Yes/no and category measures (democracy, type of government, stage of the demographic transition) ----------
+  // Big changes in the SHARE of countries in a group, e.g. the jump in democracies around 1990
+  const shareCache = new Map();
+  function shareSig(id, label, years, share) {
+    if (shareCache.has(id)) return shareCache.get(id);
+    const out = new Map(), d = [];
+    for (let i = 1; i < years.length; i++) { const a = share(years[i - 1]), b = share(years[i]); d[i] = a == null || b == null ? null : b - a; }
+    const ds = d.filter((x) => x != null);
+    if (ds.length >= 5) {
+      const typ = d3.median(ds), mad = d3.median(ds.map((x) => Math.abs(x - typ))) || d3.mean(ds.map((x) => Math.abs(x - typ))) || 0.1;
+      const z = d.map((x) => (x == null ? null : Math.abs(x - typ) / mad));
+      const zs = z.filter((x) => x != null).sort(d3.ascending);
+      void zs;
+      for (let i = 1; i < years.length; i++) {
+        // a change of at least 2 percentage points in a year is unusual (amber), 4 or more is big (red)
+        if (z[i] == null || Math.abs(d[i]) < 2) continue;
+        const a = share(years[i - 1]), b = share(years[i]);
+        out.set(years[i], { level: Math.abs(d[i]) >= 4 ? 2 : 1,
+          text: `${years[i]}: the share of countries where ${label} ${d[i] > 0 ? "rose" : "fell"} by ${Math.abs(d[i]).toFixed(1)} percentage points (from ${a.toFixed(0)}% to ${b.toFixed(0)}%), against a usual change of ${Math.abs(typ).toFixed(1)} points.` });
+      }
+    }
+    shareCache.set(id, out);
+    return out;
+  }
+  function shareHTML(short, label, year, share) {
+    const now = share(year), prev = share(year - 1);
+    if (now == null) return "";
+    let arrow = "", cls = "", dir = "";
+    if (prev != null) {
+      const d = now - prev;
+      if (Math.abs(d) < 0.2) { arrow = "►"; cls = "flat"; dir = "about the same as"; }
+      else if (d > 0) { arrow = "▲"; cls = "up"; dir = "up from"; } else { arrow = "▼"; cls = "down"; dir = "down from"; }
+    }
+    const title = `In ${year}, ${now.toFixed(1)}% of countries with data: ${label}.${prev != null ? ` ${dir} ${prev.toFixed(1)}% in ${year - 1}.` : ""} Green ▲ = up, amber ► = within 0.2 points, red ▼ = down.`;
+    return `<span class="avgchip ${cls}" title="${title.replace(/"/g, "&quot;")}"><span class="al">${short}:</span> <b>${now.toFixed(0)}%</b><span class="al"> of countries</span>${arrow ? ` <span class="ar">${arrow}</span>` : ""}</span>`;
+  }
+  window.WPL = { shareSig, shareHTML, average, avgHTML, speedHTML, bindSpeed, ms, significance, merged, marks, light, get speed() { return speed; } };
 })();

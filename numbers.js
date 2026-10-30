@@ -7,7 +7,13 @@
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const st = { n: null, count: 12, close: true, places: true, seed: 0 };
+  const st = { n: null, count: 12, close: true, places: true, seed: 0, topics: new Set() };
+  // which panel theme a fact belongs to (its filter group), so people can pick topics
+  function themeOf(group) {
+    const t = (window.THEMES || []).find((x) => x.groups.includes(group));
+    return t ? t.id : "physical";
+  }
+  const topicList = () => (window.THEMES || []).map((t) => [t.id, t.label]).concat([["physical", "Physical geography"]]);
 
   // ---------- Finding the facts ----------
   // how far a value may be from the number and still "be" that number when shown: half a unit of its last digit
@@ -46,7 +52,10 @@
   }
   // a varied selection: the closest first, at most one fact per measure and two per country or place
   function pick(n, text) {
-    const all = candidates(n, text);
+    const every = candidates(n, text);
+    every.forEach((c) => (c.th = themeOf(c.g)));
+    const byTopic = d3.rollup(every, (v) => v.length, (c) => c.th);
+    const all = st.topics.size ? every.filter((c) => st.topics.has(c.th)) : every;
     // a little shuffle so "Shuffle" gives a different but still close set
     let s = st.seed + 1;
     const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
@@ -65,7 +74,7 @@
     }
     // too few? fill up without the limit per topic
     for (const c of all) { if (outp.length >= st.count) break; if (!byKey.get(c.key) && (byWho.get(c.who) || 0) < 2) { byKey.set(c.key, 1); byWho.set(c.who, (byWho.get(c.who) || 0) + 1); outp.push(c); } }
-    return { list: outp, total: all.length, exact: all.filter((c) => c.exact).length };
+    return { list: outp, total: all.length, exact: all.filter((c) => c.exact).length, byTopic };
   }
   function describe(c) {
     const f = c.f, val = W.fmt(f, c.v);
@@ -98,6 +107,7 @@
           <button type="button" class="ghost sm" id="nhShuffle" title="Pick a different set of facts">🔀 Shuffle</button>
           <button type="button" class="ghost sm" id="nhPng">⬇ Save poster</button>
           <button type="button" class="ghost sm" id="nhPrint">🖨 Print</button>
+          <button type="button" class="ghost sm" id="nhWs" title="Add this poster to your worksheet">＋ Worksheet</button>
           <button type="button" class="iconbtn" id="nhClose2" aria-label="Close">×</button>
         </div>
         <p class="nh-help">Type any number to find facts from across the site that come to it, then save or print them as a one-page poster.</p>
@@ -111,6 +121,7 @@
       $("#nhClose2").onclick = close;
       $("#nhPrint").onclick = () => { document.body.classList.add("print-nh"); window.print(); setTimeout(() => document.body.classList.remove("print-nh"), 500); };
       $("#nhPng").onclick = savePNG;
+      $("#nhWs").onclick = () => { const svgEl = $("#nhSVG"); if (svgEl && window.WK) window.WK.addSVG(svgEl, `The number ${Number(st.n.v).toLocaleString("en-GB")}`, "#fbfaf7"); };
       document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el.hidden) close(); });
     }
     el.hidden = false;
@@ -142,8 +153,18 @@
     const body = $("#nhBody");
     if (!body) return;
     if (!st.n || st.n.v == null) { body.innerHTML = `<p class="nh-empty">Try 7, 42, 100, 1,000 or 8,848.</p>`; return; }
-    const { list, total, exact } = pick(st.n.v, st.n.text);
-    if (!list.length) { body.innerHTML = `<p class="nh-empty">Nothing on the site comes to ${esc(st.n.text)}${st.close ? " or near it" : ""}. Try ticking “Include close matches”, or another number.</p>`; return; }
+    const { list, total, exact, byTopic } = pick(st.n.v, st.n.text);
+    // topic chips (like the filter panel): pick one or more, or all
+    const chips = `<div class="nh-topics" role="group" aria-label="Topics"><button type="button" class="nh-t${st.topics.size ? "" : " on"}" data-t="">All topics</button>${topicList().map(([id, label]) => {
+      const k = byTopic.get(id) || 0;
+      return `<button type="button" class="nh-t${st.topics.has(id) ? " on" : ""}" data-t="${id}" ${k ? "" : "disabled"}>${esc(label)} <small>${k}</small></button>`;
+    }).join("")}</div>`;
+    const bindChips = () => body.querySelectorAll(".nh-t").forEach((b) => (b.onclick = () => {
+      const t = b.dataset.t;
+      if (!t) st.topics.clear(); else st.topics.has(t) ? st.topics.delete(t) : st.topics.add(t);
+      st.seed = 0; draw();
+    }));
+    if (!list.length) { body.innerHTML = chips + `<p class="nh-empty">Nothing on the site comes to ${esc(st.n.text)}${st.close ? " or near it" : ""}. Try ticking “Include close matches”, another topic, or another number.</p>`; bindChips(); return; }
     const cols = list.length <= 6 ? 2 : 3, cw = 360, ch = 190, gap = 18, padX = 36, top = 190;
     const Wd = padX * 2 + cols * cw + (cols - 1) * gap, rowsN = Math.ceil(list.length / cols), Ht = top + rowsN * (ch + gap) + 70;
     const ink = "#15232a", muted = "#5b6b73";
@@ -156,17 +177,21 @@
     list.forEach((c, i) => {
       const d = describe(c), x = padX + (i % cols) * (cw + gap), y = top + Math.floor(i / cols) * (ch + gap);
       const gc = css(`--g-${W.gslug(c.g)}`) || "#3a7ca5";
-      const lines = wrap(d.line, 34).slice(0, 3);
+      // every line is wrapped to fit inside the card
+      const whereL = wrap(d.where, 36).slice(0, 2);
+      const lines = wrap(d.line, 42).slice(0, 4 - whereL.length);
+      const bigText = (c.exact ? "" : "≈ ") + d.big, bigSize = bigText.length > 12 ? 30 : bigText.length > 9 ? 36 : 44;
       s += `<g><rect x="${x}" y="${y}" width="${cw}" height="${ch}" rx="14" fill="${gc}" fill-opacity="0.12" stroke="${gc}" stroke-opacity="0.55"/>
         <rect x="${x}" y="${y}" width="8" height="${ch}" rx="4" fill="${gc}"/>
         <text x="${x + 24}" y="${y + 34}" font-size="13" font-weight="700" fill="${gc}" letter-spacing="0.06em">${esc(String(c.g).toUpperCase())}</text>
-        <text x="${x + 24}" y="${y + 84}" font-size="44" font-weight="700" fill="${ink}" font-family="Bricolage Grotesque, IBM Plex Sans, Arial, sans-serif">${c.exact ? "" : "≈ "}${esc(d.big)}</text>
-        <text x="${x + 24}" y="${y + 112}" font-size="16" font-weight="600" fill="${ink}">${esc(d.where)}</text>
-        ${lines.map((l, k) => `<text x="${x + 24}" y="${y + 136 + k * 18}" font-size="14" fill="${muted}">${esc(l)}</text>`).join("")}
+        <text x="${x + 24}" y="${y + 80}" font-size="${bigSize}" font-weight="700" fill="${ink}" font-family="Bricolage Grotesque, IBM Plex Sans, Arial, sans-serif">${esc(bigText)}</text>
+        ${whereL.map((l, k) => `<text x="${x + 24}" y="${y + 108 + k * 19}" font-size="15.5" font-weight="600" fill="${ink}">${esc(l)}</text>`).join("")}
+        ${lines.map((l, k) => `<text x="${x + 24}" y="${y + 112 + whereL.length * 19 + k * 17}" font-size="13.5" fill="${muted}">${esc(l)}</text>`).join("")}
         ${d.year ? `<text x="${x + cw - 16}" y="${y + 34}" font-size="12.5" fill="${muted}" text-anchor="end">${esc(d.year)}</text>` : ""}</g>`;
     });
     s += `<text x="${padX}" y="${Ht - 30}" font-size="13" fill="${muted}">Figures are the latest on the site; ≈ means close to the number. Sources: see Sources &amp; methods at which-countries (chrissowton.github.io/worldmap).</text></svg>`;
-    body.innerHTML = `<p class="nh-count">${exact} fact${exact === 1 ? "" : "s"} come${exact === 1 ? "s" : ""} to exactly ${esc(num)}${st.close ? `, and ${total - exact} more come close` : ""}. Showing ${list.length}.</p><div class="nh-poster">${s}</div>`;
+    body.innerHTML = chips + `<p class="nh-count">${exact} fact${exact === 1 ? "" : "s"} come${exact === 1 ? "s" : ""} to exactly ${esc(num)}${st.close ? `, and ${total - exact} more come close` : ""}. Showing ${list.length}${st.topics.size ? " from the topics you picked" : ""}.</p><div class="nh-poster">${s}</div>`;
+    bindChips();
   }
   async function savePNG() {
     const svgEl = $("#nhSVG");

@@ -360,6 +360,7 @@
         <span class="ff-legend"><svg viewBox="0 0 120 14" width="120" height="14" aria-hidden="true"><line x1="4" y1="7" x2="116" y2="7" stroke="${LINE}" stroke-width="2"/><line x1="40" y1="2" x2="40" y2="12" stroke="${MUTED}" stroke-width="1.6"/><line x1="64" y1="3.5" x2="64" y2="10.5" stroke="${ACCENT}" stroke-opacity=".55" stroke-width="1.6"/><circle cx="88" cy="7" r="4.2" fill="${ACCENT}"/></svg>
         lowest to highest country · <span class="k k1"></span>world median · <span class="k k2"></span>${esc(regionName)} median · <span class="k k3"></span>${esc(r.name)}</span></section>`;
     for (const t of window.THEMES) {
+      if (hidden.has(t.id)) continue;
       let th = "";
       for (const g of t.groups) {
         const fs = facts(g, r);
@@ -376,10 +377,10 @@
       }
       if (th) h += `<h2 class="ff-theme">${esc(t.label)}</h2>` + th;
     }
-    const ex = extras(r);
+    const ex = hidden.has("extras") ? [] : extras(r);
     if (ex.length) h += `<h2 class="ff-theme">More detail</h2><section class="ff-extras">${ex.map((e) => `<div class="ff-box" style="--gc:${e.colour}"><h4>${esc(e.title)}</h4><table>${e.rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="n">${esc(b)}</td></tr>`).join("")}</table><p>${esc(e.note)}</p></div>`).join("")}</section>`;
-    h += changesHTML(r);
-    h += physHTML(r);
+    if (!hidden.has("changes")) h += changesHTML(r);
+    if (!hidden.has("physical")) h += physHTML(r);
     const S = window.SOURCES;
     h += `<footer class="ff-foot"><h4>Sources</h4><p>${[...used, "boundaries"].filter((k) => S[k]).map((k) => `${esc(S[k].name)} (${esc(S[k].licence)})`).join("; ")}.</p>
       <p>Figures are the latest available for each measure; the Year column shows which year. Countries with no data are left out of ranks and medians. Made with Which Countries?, an open-source world map, on ${today}.</p></footer>`;
@@ -412,6 +413,7 @@
         </div>
         <p class="ff-msg" id="ffMsg" aria-live="polite"></p>
       </div>
+      ${currentIso ? sectionChips() : ""}
       <div class="ff-scroll"><article class="ffdoc" id="ffDoc">${currentIso ? buildHTML(currentIso) : `<div class="ff-empty"><h2>Country factfiles</h2><p>Choose a country above to see every measure on this site for it, compared with its continent and the world, with maps. You can print it, save it as a PDF, or download it as a Word file.</p></div>`}</article></div>`;
     if (year) window.WC.applyYear(year);
     if (currentIso && window.WV && !window.WV.pyramids) {
@@ -419,10 +421,23 @@
       window.WV.loadPyramids().then((p) => { if (p && want === currentIso && !$("#factfile").hidden) open(want); });
     }
     $("#ffSel").onchange = (e) => open(e.target.value);
+    el.querySelectorAll(".secchips [data-sec]").forEach((b) => (b.onclick = () => { hidden.has(b.dataset.sec) ? hidden.delete(b.dataset.sec) : hidden.add(b.dataset.sec); const sc = el.querySelector(".ff-scroll").scrollTop; open(currentIso); el.querySelector(".ff-scroll").scrollTop = sc; }));
+    el.querySelector(".secchips .allon")?.addEventListener("click", () => { hidden.clear(); open(currentIso); });
     $("#ffClose").onclick = close;
     $("#ffPrint").onclick = printIt;
     $("#ffWord").onclick = () => wordIt().catch((err) => { console.error(err); msg("Sorry, the Word file couldn't be made. Try Print or save as PDF instead."); });
     el.querySelector(".ff-scroll").scrollTop = 0;
+  }
+  // Sections people can leave out (✕ to remove, + to add back); everything is in to start with
+  const hidden = new Set();
+  function sectionList() {
+    return window.THEMES.map((t) => [t.id, t.label]).concat([["extras", "More detail"], ["changes", "Changes over time"], ["physical", "Physical geography"]]);
+  }
+  function sectionChips() {
+    const esc = window.WC.esc;
+    return `<div class="secchips" role="group" aria-label="Sections to include"><span class="sclab">Include:</span>${sectionList().map(([id, label]) => hidden.has(id)
+      ? `<button type="button" class="secchip off" data-sec="${id}" title="Add ${esc(label)} back">+ ${esc(label)}</button>`
+      : `<button type="button" class="secchip" data-sec="${id}" title="Leave ${esc(label)} out">${esc(label)} <span aria-hidden="true">✕</span></button>`).join("")}${hidden.size ? `<button type="button" class="linkbtn allon">Put everything back</button>` : ""}</div>`;
   }
   function close() {
     $("#factfile").hidden = true;
@@ -529,6 +544,7 @@
     const used = new Set();
     const colW = [3400, 1500, 900, 1050, 1800, W - 3400 - 1500 - 900 - 1050 - 1800];
     for (const t of window.THEMES) {
+      if (hidden.has(t.id)) continue;
       let started = false;
       for (const g of t.groups) {
         const fs = facts(g, r);
@@ -559,7 +575,7 @@
         if (missing.length) body.push(P(T(`No data: ${missing.join(", ")}.`, { size: 14, italics: true, color: hex(MUTED) }), { before: 40 }));
       }
     }
-    const ex = extras(r);
+    const ex = hidden.has("extras") ? [] : extras(r);
     if (ex.length) {
       body.push(new D.Paragraph({ children: [T("More detail", { size: 30, bold: true, color: hex(ACCENT) })], spacing: { before: 240, after: 80 }, keepNext: true, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: hex(ACCENT), space: 2 } } }));
       for (const e of ex) {
@@ -573,7 +589,7 @@
     }
     // Changes over time: small line charts and the population pyramid
     const cards = trendCards(r), pyr = pyramidInfo(r), pf = popFacts(r);
-    if (cards.length || pyr) {
+    if ((cards.length || pyr) && !hidden.has("changes")) {
       body.push(new D.Paragraph({ children: [T("Changes over time", { size: 30, bold: true, color: hex(ACCENT) })], spacing: { before: 240, after: 80 }, keepNext: true, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: hex(ACCENT), space: 2 } } }));
       const pngs = await Promise.all(cards.map((c) => svgToPng(c.svg, 240, 118)));
       const cw = Math.floor(W / 4);
@@ -603,7 +619,7 @@
         }));
       }
     }
-    const pr = physRows(r);
+    const pr = hidden.has("physical") ? [] : physRows(r);
     if (pr.length) {
       body.push(new D.Paragraph({ children: [T("Physical geography", { size: 30, bold: true, color: hex(ACCENT) })], spacing: { before: 240, after: 80 }, keepNext: true, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: hex(ACCENT), space: 2 } } }));
       if (r.terrain) body.push(P([T("Terrain: ", { bold: true }), T(r.terrain.charAt(0).toUpperCase() + r.terrain.slice(1) + ".")], { after: 80 }));

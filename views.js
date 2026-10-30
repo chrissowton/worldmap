@@ -357,14 +357,14 @@
     $("#cYearLab").textContent = yrs ? year : "Latest figures";
     {
       let a = $("#cAvg");
-      if (!a) { a = document.createElement("div"); a.id = "cAvg"; a.className = "tavg"; $("#cYearRow").after(a); }
+      if (!a) { a = document.createElement("span"); a.id = "cAvg"; a.className = "tavg"; $("#cYearRow").appendChild(a); }
       a.innerHTML = yrs && window.WPL ? [c.y, c.x].map((k) => window.WPL.avgHTML(k, year)).join("") : "";
       a.hidden = !a.innerHTML;
     }
     if (window.WPL) {
       const sig = yrs ? cmpSig() : new Map(); window.WPL.marks(range, sig); window.WPL.light($("#cSig"), sig, year);
-      let p = $("#cSigText"); if (!p) { p = document.createElement("p"); p.id = "cSigText"; $("#cYearRow").after(p); }
-      const st = year && sig.get(year); p.hidden = !st; if (st) { p.textContent = st.text; p.className = `tsigtext l${st.level}`; }
+      let p = $("#cSigText"); if (!p) { p = document.createElement("p"); p.id = "cSigText"; $("#cYearRow").appendChild(p); }
+      const st = year && sig.get(year); p.hidden = !st; if (st) { p.textContent = st.text; p.className = `tsigtext pop l${st.level}`; }
     }
     // data
     const ms = matchSet();
@@ -806,6 +806,7 @@
 
   // ======================= Side by side =======================
   let sbsIsos = [];
+  const sbsHidden = new Set();
   function openSideBySide(iso) {
     if (!W) return;
     if (iso && !sbsIsos.includes(iso)) sbsIsos = [iso].concat(sbsIsos).slice(0, 3);
@@ -838,7 +839,7 @@
       if (Array.isArray(v)) return v.length ? esc(v.slice(0, 6).join(", ") + (v.length > 6 ? ` +${v.length - 6} more` : "")) : "none";
       return esc(String(v));
     };
-    const sections = window.THEMES.flatMap((t) => t.groups).map((g) => {
+    const sections = window.THEMES.filter((t) => !sbsHidden.has(t.id)).flatMap((t) => t.groups).map((g) => {
       const fs = W.FILTERS.filter((f) => f.group === g && !f.hidden && !f.target);
       const rowsH = fs.map((f) => {
         if (cs.every((r) => { const v = W.latest(r, f.key); return v == null || (Array.isArray(v) && !v.length); })) return "";
@@ -850,6 +851,9 @@
     el.innerHTML = `<div class="ff-bar">
         <div class="sbs-pick">${[0, 1, 2].map((i) => `<label><span class="sw" style="background:var(${cols[i]})"></span><select data-i="${i}" aria-label="Country ${i + 1}">${opts(sbsIsos[i], i === 2)}</select></label>`).join("")}</div>
         <div class="ff-actions"><button type="button" class="primary" id="sbsPrint">Print or save as PDF</button><button type="button" class="ghost" id="sbsClose">Close</button></div></div>
+      <div class="secchips" role="group" aria-label="Sections to include"><span class="sclab">Include:</span>${window.THEMES.map((t) => sbsHidden.has(t.id)
+        ? `<button type="button" class="secchip off" data-sec="${t.id}" title="Add ${esc(t.label)} back">+ ${esc(t.label)}</button>`
+        : `<button type="button" class="secchip" data-sec="${t.id}" title="Leave ${esc(t.label)} out">${esc(t.label)} <span aria-hidden="true">✕</span></button>`).join("")}${sbsHidden.size ? `<button type="button" class="linkbtn allon">Put everything back</button>` : ""}</div>
       <div class="ff-scroll"><article class="ffdoc sbsdoc">
         <header class="ff-head"><h1>${cs.map((r) => `${r.flag || ""} ${esc(r.name)}`).join(" <span class='vs'>vs</span> ")}</h1>
         <p class="ff-sub">Every measure on Which Countries?, side by side. The strip shows where each country sits among all countries, lowest to highest; the grey tick is the world median.</p></header>
@@ -863,6 +867,8 @@
       drawSideBySide();
     }));
     $("#sbsClose").onclick = closeSideBySide;
+    $$(".secchips [data-sec]", el).forEach((b) => (b.onclick = () => { const id = b.dataset.sec; sbsHidden.has(id) ? sbsHidden.delete(id) : sbsHidden.add(id); const sc = $(".ff-scroll", el).scrollTop; drawSideBySide(); $(".ff-scroll", el).scrollTop = sc; }));
+    $(".secchips .allon", el)?.addEventListener("click", () => { sbsHidden.clear(); drawSideBySide(); });
     $("#sbsPrint").onclick = () => { const t = document.title; document.title = cs.map((r) => r.name).join(" vs "); window.print(); document.title = t; };
   }
 

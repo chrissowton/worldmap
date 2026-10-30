@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "33";
+  const DATA_VERSION = "36";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -60,7 +60,8 @@
   for (const [key, s] of Object.entries(TS)) {
     if (CAT_TS[key]) continue;
     const all = Object.values(s).flat().filter((v) => typeof v === "number" && (key === "refugees_hosted" || key === "refugees_from" ? v > 0 : true));
-    TS_EXT[key] = [d3.quantile(all.sort((a, b) => a - b), 0.01), d3.quantile(all, 0.99)];
+    // the full span across every year and country, so a colour means the same value in every year of the player
+    TS_EXT[key] = d3.extent(all);
   }
   const span = (key) => TS_SPAN[key === "democracy" ? "regime" : key] || null;
   const timeFrom = (key) => span(key)?.[0] ?? null;
@@ -579,7 +580,7 @@
   const onMap = new Set(geo.map((d) => d.rec?.iso3).filter(Boolean));
   let k = 1;
 
-  let mapTopPad = 0;
+  let mapTopPad = 0, mapLeftPad = 0;
   const narrow = () => window.matchMedia("(max-width: 760px)").matches;
   function layout() {
     const box = $("#mapstage").getBoundingClientRect();
@@ -587,8 +588,8 @@
     svg.attr("viewBox", `0 0 ${w} ${h}`);
     citySize = Math.max(0.45, Math.min(1, w / 1100));
     // a little room round the world, and space at the top for the quiz card when it sits there
-    const padX = Math.max(16, w * 0.025), top = Math.max(16, mapTopPad), bottom = 16;
-    projection.fitExtent([[padX, top], [w - padX, Math.max(top + 120, h - bottom)]], { type: "FeatureCollection", features: geo });
+    const padX = Math.max(16, w * 0.025), top = Math.max(16, mapTopPad), bottom = 16, left = Math.max(padX, mapLeftPad);
+    projection.fitExtent([[left, top], [w - padX, Math.max(top + 120, h - bottom)]], { type: "FeatureCollection", features: geo });
     paths.attr("d", path);
     riverPaths.attr("d", path); lakePaths.attr("d", path);
     invalidatePoints();
@@ -787,9 +788,11 @@
     if (!(ext[1] > ext[0])) return null;
     const css = getComputedStyle(document.documentElement);
     const lo = css.getPropertyValue("--ramp-lo").trim(), hi = css.getPropertyValue("--ramp-hi").trim();
-    const interp = d3.interpolateRgb(lo, hi);
+    // several steps of colour (pale yellow → orange → red-brown → dark), so changes from year to year show clearly
+    const stops = [lo, css.getPropertyValue("--ramp-m1").trim() || lo, css.getPropertyValue("--ramp-m2").trim() || hi, hi];
+    const interp = d3.interpolateRgbBasis(stops);
     const s = (v) => (typeof v === "number" ? interp(Math.min(1, Math.max(0, (f.toT(v) - ext[0]) / (ext[1] - ext[0])))) : null);
-    s.f = f; s.ext = ext.map(f.fromT); s.lo = lo; s.hi = hi;
+    s.f = f; s.ext = ext.map(f.fromT); s.lo = lo; s.hi = hi; s.grad = stops.join(", ");
     return s;
   }
 
@@ -820,6 +823,7 @@
       .style("fill", (d) => fillFor(d.rec));
     drawDots();
     drawCities();
+    renderSolo();
     gDots.selectAll("circle").style("fill", (d) => fillFor(d));
     drawCarto(clsFor, fillFor);
     if (state.mode === "physical") { state.popSized = false; state.mapStyle = "std"; }
@@ -883,11 +887,10 @@
     if (!el.dataset.built) {
       el.dataset.built = "1";
       el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("tSpeed") : ""}
-        <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span><span class="tnote" id="tNote"></span>
+        <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span><span class="tavg" id="tAvg" aria-live="polite"></span><span class="tnote" id="tNote"></span>
         <button type="button" class="linkbtn" id="tLatest">Back to latest</button></div>
         <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div>
-        <div class="tavg" id="tAvg" aria-live="polite"></div>
-        <p class="tsigtext" id="tSigText" hidden></p></div>`;
+        <p class="tsigtext pop" id="tSigText" hidden></p></div>`;
       const range = $("#tRange");
       range.oninput = () => { stopPlay(); setYear(+range.value); };
       $("#tLatest").onclick = () => { stopPlay(); setYear(null); };
@@ -902,7 +905,7 @@
     $("#tYear").textContent = state.year ? state.year : "Latest";
     $("#tNote").textContent = !sp
       ? (state.filters.some((fl) => F[fl.key].time) ? "These filters have no years in common." : "Add a filter marked “yearly” (like population, HDI or democracy) to go back in time.")
-      : state.year ? `Showing ${state.year} for filters with yearly data.` : `Data from ${sp[0]} to ${sp[1]}. Drag or press play.`;
+      : state.year ? "" : `Data from ${sp[0]} to ${sp[1]}. Drag or press play.`;
     $("#tLatest").hidden = !state.year;
     // years with unusually big changes in the measures being played
     if (window.WPL && sp) {
@@ -915,8 +918,9 @@
     } else if (window.WPL) { window.WPL.marks(range, new Map()); window.WPL.light($("#tSig"), new Map(), null); $("#tSigText").hidden = true; }
     // the average of each measure being played, and which way it moved
     const avgKeys = sp && state.year ? [...new Set(state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key).concat(colourKey() && TS[colourKey()] && !CAT_TS[colourKey()] ? [colourKey()] : []))].slice(0, 3) : [];
-    $("#tAvg").innerHTML = window.WPL ? avgKeys.map((k) => window.WPL.avgHTML(k, state.year)).join("") : "";
-    $("#tAvg").hidden = !avgKeys.length;
+    const shares = sp && state.year && window.WPL ? shareFilters() : [];
+    $("#tAvg").innerHTML = window.WPL ? avgKeys.map((k) => window.WPL.avgHTML(k, state.year)).join("") + shares.map((sf) => window.WPL.shareHTML(sf.short, sf.label, state.year, sf.share)).join("") : "";
+    $("#tAvg").hidden = !avgKeys.length && !shares.length;
     $("#tPlay").textContent = playing ? "❚❚" : "▶";
     $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
     // keep the colour key clear of the year player
@@ -928,11 +932,42 @@
     render({ keepEditor: !!state.open && document.activeElement?.id === "tRange" });
     if (state.open && document.activeElement?.id !== "tRange") renderEditor();
   }
+  // yes/no and category filters with yearly data (democracy, type of government, demographic stage): the share of
+  // countries that pass the filter in a year
+  function shareFilters() {
+    return state.filters.filter((fl) => F[fl.key].time && isActive(fl) && (fl.key === "democracy" || CAT_TS[fl.key])).map((fl) => {
+      const key = fl.key === "democracy" ? "regime" : fl.key, f = F[fl.key];
+      const passY = (v) => {
+        if (fl.key === "democracy") return (v >= 2) === fl.value;
+        const name = CAT_TS[key][v];
+        if (f.type === "bool") return !!name === fl.value;
+        const hit = fl.values.includes(name);
+        return fl.mode === "none" ? !hit : hit;
+      };
+      const share = (y) => {
+        let n = 0, k = 0;
+        for (const r of rows) {
+          if (!r.sovereign) continue;
+          const v = TS[key]?.[r.iso3]?.[y - TS_YEARS[0]];
+          if (v == null) continue;
+          n++; if (passY(v)) k++;
+        }
+        return n >= 20 ? (100 * k) / n : null;
+      };
+      const label = phrase(fl) || f.label;
+      return { id: fl.key + JSON.stringify([fl.value, fl.values, fl.mode]), label, short: fl.key === "democracy" ? (fl.value ? "Democracies" : "Not democracies") : f.short || f.label, share };
+    });
+  }
   function timeSig() {
     const keys = state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key);
     const ck = colourKey();
     if (ck && TS[ck] && !CAT_TS[ck] && !keys.includes(ck)) keys.push(ck);
-    return window.WPL ? window.WPL.merged(keys) : new Map();
+    const m = window.WPL ? window.WPL.merged(keys) : new Map();
+    if (window.WPL) for (const sf of shareFilters()) for (const [y, v] of window.WPL.shareSig(sf.id, sf.label, TS_YEARS, sf.share)) {
+      const cur = m.get(y);
+      m.set(y, cur ? { level: Math.max(cur.level, v.level), text: cur.text + " " + v.text } : v);
+    }
+    return m;
   }
   function startPlay() {
     const sp = sliderSpan();
@@ -1218,7 +1253,7 @@
     const physLeg = window.WP ? window.WP.legendHTML(state, lastEval) : "";
     if (state.mode === "physical") {
       let h = physLeg;
-      if (cs) h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+      if (cs) h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.grad})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
       else if (act.length) h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every country filter</div>`;
       el.hidden = !h; el.innerHTML = h; return;
     }
@@ -1226,7 +1261,7 @@
     el.hidden = false;
     let h = state.popSized ? `<div class="lrow"><span class="sw city"></span>Circles sized by population</div>` : "";
     if (cs) {
-      h += `<div class="lrow"><span>${esc(cs.f.label)}${state.year && cs.f.time ? `, ${state.year}` : ""}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.lo}, ${cs.hi})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+      h += `<div class="lrow"><span>${esc(cs.f.label)}${state.year && cs.f.time ? `, ${state.year}` : ""}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.grad})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
     } else if (act.length) {
       h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every filter</div>`;
     }
@@ -1479,10 +1514,18 @@
     let opts = [...f.options];
     if (f.type === "multi") opts.sort((a, b) => (fl.values.includes(b) - fl.values.includes(a)) || (counts.get(b) - counts.get(a)) || a.localeCompare(b));
     const searchable = opts.length > 12;
+    const mode = f.modes ? fl.mode || "any" : "any";
+    const howText = { any: "Countries match if they have <b>any</b> of the ticked options (shaded ticks).", all: "Countries match if they have <b>all</b> of the ticked options (solid ticks).", none: "Countries match if they have <b>none</b> of the crossed-out options." }[mode];
     body.innerHTML = `${searchable ? `<input class="optsearch" id="optSearch" type="search" placeholder="Search ${opts.length} options" value="${esc(keepSearch)}">` : ""}
-      <div class="opts" role="group" aria-label="${esc(f.label)}"></div>
-      ${f.type === "multi" && !f.target ? `<p class="info">Countries match if they have <b>any</b> of the ticked options.</p>` : ""}`;
+      ${f.type === "multi" || opts.length > 3 ? `<div class="tickall"><button type="button" class="linkbtn" id="tickAll">Tick all</button> · <button type="button" class="linkbtn" id="tickNone">Untick all</button>
+        <span class="tcount">${fl.values.length} of ${opts.length} ticked</span></div>` : ""}
+      <div class="opts mode-${mode}" role="group" aria-label="${esc(f.label)}"></div>
+      ${f.type === "multi" && !f.target ? `<p class="info">${howText}</p>` : ""}`;
     const list = body.querySelector(".opts");
+    const ta = body.querySelector("#tickAll"), tn = body.querySelector("#tickNone");
+    // "Tick all" ticks every option that is shown (all of them, or those found by the search)
+    if (ta) ta.onclick = () => { const q = (body.querySelector("#optSearch")?.value || "").toLowerCase(); fl.values = [...new Set(fl.values.concat(opts.filter((o) => (!q || o.toLowerCase().includes(q)) && (counts.get(o) || fl.values.includes(o)))))]; render(); };
+    if (tn) tn.onclick = () => { fl.values = []; render(); };
     function draw(q) {
       q = (q || "").toLowerCase();
       list.innerHTML = opts.filter((o) => !q || o.toLowerCase().includes(q)).slice(0, 300).map((o) => {
@@ -1524,7 +1567,7 @@
       el.innerHTML = window.WP.detailHTML(`${t}:${state.feat.i}`) + footHTML();
       $("#fback").onclick = () => { state.feat = null; render(); };
       $("#fzoom").onclick = () => zoomTo(window.WP.bounds(window.WP.byRef(`${t}:${state.feat.i}`)));
-      el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.feat = null; state.tab = "countries"; state.selected = b.dataset.iso; render(); }));
+      el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.feat = null; state.tab = "countries"; state.selected = b.dataset.iso; render(); zoomToCountry(b.dataset.iso); }));
       bindCommon(el);
       return;
     }
@@ -1534,12 +1577,30 @@
     bindCommon(el);
     el.querySelectorAll(".frow").forEach((b) => (b.onclick = () => { const [ft, fi] = b.dataset.ref.split(":"); state.feat = { t: ft, i: +fi }; render(); }));
   }
-  function zoomTo(b) {
+  // zoom so a country fills about 38% of the map (its biggest piece, so far-flung islands don't shrink it)
+  function zoomToCountry(iso) {
+    if (state.view !== "map") return;
+    const g = geo.find((d) => d.rec?.iso3 === iso);
+    if (!g) return;
+    let target = g;
+    if (g.geometry?.type === "MultiPolygon") {
+      const parts = g.geometry.coordinates.map((c) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: c } }));
+      const areas = parts.map((p) => d3.geoArea(p)), biggest = parts[areas.indexOf(Math.max(...areas))];
+      const bb = path.bounds(biggest), all = path.bounds(g);
+      // keep the whole country if its other parts are close by (e.g. Japan, Indonesia), otherwise the main part
+      const spread = (all[1][0] - all[0][0]) * (all[1][1] - all[0][1]), main = (bb[1][0] - bb[0][0]) * (bb[1][1] - bb[0][1]);
+      target = spread > main * 3 ? biggest : g;
+    }
+    zoomTo(path.bounds(target), 0.38);
+  }
+  function zoomTo(b, frac = 0.8) {
     if (!b) return;
     const [[x0, y0], [x1, y1]] = b;
     const vb = svg.attr("viewBox").split(" ").map(Number);
-    const kk = Math.max(1, Math.min(14, 0.8 / Math.max((x1 - x0) / vb[2], (y1 - y0) / vb[3])));
-    const tx = vb[2] / 2 - kk * (x0 + x1) / 2, ty = vb[3] / 2 - kk * (y0 + y1) / 2;
+    // the part of the map not covered by the quiz card
+    const left = Math.min(mapLeftPad || 0, vb[2] * 0.5), visW = vb[2] - left;
+    const kk = Math.max(1, Math.min(14, frac / Math.max((x1 - x0) / visW, (y1 - y0) / vb[3])));
+    const tx = left + visW / 2 - kk * (x0 + x1) / 2, ty = vb[3] / 2 - kk * (y0 + y1) / 2;
     svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(kk));
   }
   function footHTML() {
@@ -1604,7 +1665,7 @@
     bindSortButtons();
     $("#sortPop").onclick = () => { state.citySort = "pop"; state.sortDir = null; render(); };
     el.querySelectorAll(".row").forEach((b) => {
-      b.onclick = () => { state.selected = b.dataset.iso; state.open = null; render(); };
+      b.onclick = () => { state.selected = b.dataset.iso; state.open = null; render(); zoomToCountry(b.dataset.iso); };
       b.onmouseenter = () => gCities.selectAll("circle").filter((d) => d.id === +b.dataset.city).classed("hover", true).raise();
       b.onmouseleave = () => gCities.selectAll("circle").classed("hover", false);
     });
@@ -1681,7 +1742,7 @@
       const k = b.dataset.k; expandedNear.has(k) ? expandedNear.delete(k) : expandedNear.add(k); render();
     }));
     el.querySelectorAll(".row").forEach((b) => {
-      b.onclick = () => { state.selected = b.dataset.iso; state.open = null; render(); };
+      b.onclick = () => { state.selected = b.dataset.iso; state.open = null; render(); zoomToCountry(b.dataset.iso); };
       b.onmouseenter = () => highlight(b.dataset.iso, true);
       b.onmouseleave = () => highlight(b.dataset.iso, false);
     });
@@ -1983,6 +2044,7 @@
       <p class="sub">${esc([r.capital && "Capital: " + r.capital, r.subregion].filter(Boolean).join(" · "))}${r.sovereign ? "" : " · Territory or partially recognised"}</p>
       ${badge}
       <dl class="pkeys">${keyFacts}</dl>
+      ${window.WK ? `<button type="button" class="linkbtn wsadd" id="wsCountry">＋ Add these key facts to my worksheet</button>` : ""}
       <button type="button" class="ffopen" id="ffOpen">📄 Country factfile <span>the full picture, to print or download</span></button>
       ${state.year ? `<p class="sub">Measures with yearly data show <b>${state.year}</b>; the rest show the latest figures.</p>` : ""}
       ${state.mode === "physical" && window.WP ? `<div class="pphys">${window.WP.profileHTML(r)}</div>` : ""}
@@ -1996,7 +2058,8 @@
     $("#back").onclick = () => { state.selected = null; render(); };
     if (state.mode !== "physical") window.WV?.bindProfile(el, r);
     $("#ffOpen").onclick = () => window.openFactfile?.(r.iso3);
-    el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.selected = b.dataset.iso; render(); }));
+    $("#wsCountry") && ($("#wsCountry").onclick = () => window.WK.addCountry(r.iso3));
+    el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.selected = b.dataset.iso; render(); zoomToCountry(b.dataset.iso); }));
     bindSdg(el);
     el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir }; render(); }));
   }
@@ -2067,6 +2130,40 @@
     const iso = cid ? cities[+cid].iso3 : t.getAttribute && t.getAttribute("data-iso");
     if (iso && byIso.get(iso)) { state.selected = iso; state.open = null; render(); }
   });
+
+  // Double-click a country to see just that one (the rest fade away); double-click again, press Esc or
+  // use "Show all" to bring the rest back
+  svg.on("dblclick", (evt) => {
+    const t = evt.target;
+    const iso = t.getAttribute && t.getAttribute("data-iso");
+    if (!iso || !byIso.get(iso)) { if (state.solo) setSolo(null); return; }
+    setSolo(state.solo === iso ? null : iso);
+  });
+  function setSolo(iso) {
+    state.solo = iso;
+    if (iso) {
+      state.selected = iso;
+      zoomToCountry(iso);
+    } else svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+    render();
+  }
+  function renderSolo() {
+    const stage = $("#mapstage");
+    stage.classList.toggle("solo", !!state.solo);
+    paths.classed("soloed", (d) => !!state.solo && d.rec?.iso3 === state.solo);
+    let chip = $("#soloChip");
+    if (!state.solo) { if (chip) chip.hidden = true; return; }
+    if (!chip) {
+      chip = document.createElement("div");
+      chip.id = "soloChip"; chip.className = "solochip";
+      stage.appendChild(chip);
+    }
+    const r = byIso.get(state.solo);
+    chip.hidden = false;
+    chip.innerHTML = `<span>${r.flag || ""} Only <b>${esc(r.name)}</b></span><button type="button" class="linkbtn">Show all countries</button>`;
+    chip.querySelector("button").onclick = () => setSolo(null);
+  }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.solo && !document.querySelector(".ff-overlay:not([hidden])")) setSolo(null); });
 
   // ---------- Add-a-filter search ----------
   const input = $("#addInput"), menu = $("#addMenu");
@@ -2184,7 +2281,7 @@
     nav.querySelectorAll("button").forEach((b) => (b.onclick = (ev) => {
       ev.stopPropagation();
       if (sheet) openSheet(null);  // on a phone the filter list replaces the sheet
-      if (openTheme === b.dataset.theme && b.classList.contains("theme-btn")) closeThemes(); else showTheme(b.dataset.theme);
+      if (openTheme === b.dataset.theme && b.classList.contains("theme-btn")) closeThemes(); else { showTheme(b.dataset.theme); window.WQ?.setTopic(b.dataset.theme); }
     }));
   }
   function showTheme(id) {
@@ -2376,7 +2473,7 @@
   }
   function clearAll() {
     state.filters = []; state.open = null; state.colourBy = ""; state.sort = ""; state.sortDir = null; state.tab = "countries";
-    state.flow = null; state.selected = null; state.mapStyle = "std"; state.popSized = false; state.feat = null;
+    state.flow = null; state.selected = null; state.mapStyle = "std"; state.popSized = false; state.feat = null; state.solo = null;
     stopPlay(); if (state.year) { state.year = null; applyYear(null); }
     window.WV?.clearYears?.();   // the Compare and Charts players too
     svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
@@ -2496,6 +2593,8 @@
     lastOpen = state.open;
     // on a phone, picking a country (on the map or in a chart) opens its profile in the list sheet
     if (phone.matches && state.selected && state.selected !== lastSel && sheet !== "list") openSheet("list");
+    // and the quiz asks a question about it
+    if (state.selected && state.selected !== lastSel) window.WQ?.askAbout(state.selected);
     lastSel = state.selected;
   }
   document.querySelectorAll("#tabbar button").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openSheet(b.dataset.t); }));
@@ -2633,6 +2732,7 @@
   window.WV?.init();
   window.WQ?.init();
   window.WN?.init();
+  window.WK?.init();
 
   // ---------- Go ----------
   new ResizeObserver(() => layout()).observe($("#mapstage"));
@@ -2642,9 +2742,10 @@
   function floatChanged() {
     clearTimeout(floatChanged.t);
     floatChanged.t = setTimeout(() => {
-      const st = $("#starter");
-      const pad = !narrow() && st && !st.hidden && !st.classList.contains("moved") && st.offsetHeight ? st.offsetTop + st.offsetHeight + 6 : 0;
-      if (Math.abs(pad - mapTopPad) > 4) { mapTopPad = pad; layout(); }
+      // the quiz card sits in the Pacific, on the left: move the world over to make room for it
+      const st = $("#starter"), stage = $("#mapstage");
+      const pad = !narrow() && st && !st.hidden && st.offsetWidth && stage.offsetWidth >= 700 ? st.offsetLeft + st.offsetWidth + 10 : 0;
+      if (Math.abs(pad - mapLeftPad) > 4) { mapLeftPad = pad; layout(); }
     }, 80);
   }
   function makeFloating(el, handleSel, store) {
@@ -2681,8 +2782,10 @@
     el.addEventListener("dblclick", (e) => { if (e.target.closest(handleSel) && !e.target.closest("button, input, select")) reset(); });
     new ResizeObserver(() => { if (el.classList.contains("moved") && el.offsetWidth) { clearTimeout(el._rs); el._rs = setTimeout(save, 300); } floatChanged(); }).observe(el);
   }
-  // (the quiz card and the filter editor now sit in fixed places: above the map and in the panel)
+  // (the filter editor sits in the panel; the quiz card sits in the Pacific and the map makes room for it)
   void makeFloating;
+  new ResizeObserver(floatChanged).observe($("#starter"));
+  window.addEventListener("resize", floatChanged);
   layout();
   render();
 })();

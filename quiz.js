@@ -49,11 +49,29 @@
     { id: "p-haz", label: "Hazards", g: "hazards" },
   ];
   const isPhys = () => W?.state.mode === "physical";
-  const topicsNow = () => (isPhys() ? TOPICS_P : TOPICS);
-  const curTopic = () => Q.topics[isPhys() ? "physical" : "human"];
-  const topicOf = (id) => TOPICS.concat(TOPICS_P).find((t) => t.id === id) || topicsNow()[0];
-  // is a question in the current mode and topic?
-  const inTopic = (q, topic) => (isPhys() ? q.topic.startsWith("p-") && (topic === "p-any" || q.topic === topic) : !q.topic.startsWith("p-") && (topic === "any" || q.topic === topic));
+  // The quiz's topics are the same themes as the filter panel (People, Attitudes & values…); each theme covers
+  // some of the question topics above
+  const THEME_OF = {
+    pop: "people", health: "people", gender: "people", lang: "people", religion: "people", sport: "people",
+    att: "attitudes", wealth: "wealth", trade: "wealth", tech: "wealth", politics: "world", refugees: "world",
+    geo: "places", cities: "places", climate: "planet",
+    "p-mtn": "landscape", "p-land": "landscape", "p-water": "water", "p-coast": "water", "p-volc": "tectonics", "p-quake": "tectonics",
+    "p-plate": "tectonics", "p-bio": "biomes", "p-haz": "hazards",
+  };
+  const themeList = () => {
+    const TH = isPhys() ? window.PHYS_THEMES || [] : window.THEMES || [];
+    return [{ id: isPhys() ? "p-any" : "any", label: "Surprise me", g: "" }].concat(TH.map((t) => ({ id: t.id, label: t.label, g: W?.gslug ? W.gslug(t.groups[0]) : "" })));
+  };
+  const topicsNow = themeList;
+  const curTopic = () => { const t = Q.topics[isPhys() ? "physical" : "human"]; return themeList().some((x) => x.id === t) ? t : isPhys() ? "p-any" : "any"; };
+  const topicOf = (id) => themeList().find((t) => t.id === id) || TOPICS.concat(TOPICS_P).find((t) => t.id === id) || themeList()[0];
+  // is a question in the current mode and topic (a theme)?
+  const inTopic = (q, topic) => {
+    const phys = q.topic.startsWith("p-");
+    if (phys !== isPhys()) return false;
+    if (topic === "any" || topic === "p-any") return true;
+    return THEME_OF[q.topic] === topic;
+  };
 
   // ---------- Text helpers ----------
   const NUMWORDS = { zero: 0, none: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, twenty: 20 };
@@ -300,6 +318,16 @@
     arable_pct: { hi: "the largest share of land used for crops" },
     mountain_pct: { hi: "the largest share of land in mountain ranges" },
   });
+  // attitudes and values (surveys)
+  Object.assign(M, {
+    happiness_score: { hi: "the happiest people (World Happiness Report)", lo: "the least happy people (World Happiness Report)", of: (c) => `On the World Happiness Report's 0–10 scale, how happy are people in ${c}?`, tol: { abs: 0.6 } },
+    att_trust: { hi: "the most people saying “most people can be trusted”", lo: "the fewest people saying “most people can be trusted”", of: (c) => `What percentage of people in ${c} say “most people can be trusted”?`, tol: { abs: 8 } },
+    att_religion_important: { hi: "the most people saying religion is very important in their life", lo: "the fewest people saying religion is very important in their life", of: (c) => `What percentage of people in ${c} say religion is very important in their life?`, tol: { abs: 10 } },
+    att_very_proud: { hi: "the most people very proud of their nationality", lo: "the fewest people very proud of their nationality", of: (c) => `What percentage of people in ${c} are very proud of their nationality?`, tol: { abs: 10 } },
+    wgm_trust_science: { hi: "the most people who trust science a lot", lo: "the fewest people who trust science a lot", of: (c) => `What percentage of people in ${c} trust science “a lot”?`, tol: { abs: 8 } },
+    wrp_climate_serious: { hi: "the most people seeing climate change as a very serious threat", lo: "the fewest people seeing climate change as a very serious threat", of: (c) => `What percentage of people in ${c} see climate change as a very serious threat?`, tol: { abs: 10 } },
+    att_fight: { hi: "the most people willing to fight for their country", lo: "the fewest people willing to fight for their country", of: (c) => `What percentage of people in ${c} say they would fight for their country?`, tol: { abs: 10 } },
+  });
   // "Which country has had the most…" reads better than "has" for earthquakes
   const TOPIC_OF = {
     highest_m: "p-mtn", mean_elevation_m: "p-mtn", lowest_m: "p-mtn", mountain_pct: "p-mtn", coastline_km: "p-coast", coast_ratio: "p-coast", glacier_pct: "p-coast",
@@ -315,6 +343,7 @@
     tourists: "trade", tourism_receipts_pct: "trade", exports_usd: "trade", trade_pct: "trade", exp_fuel_pct: "trade", remittances_pct: "refugees",
     internet: "tech", ai_users_pct: "tech", rnd_pct: "tech", mobile_per100: "tech",
     olympic_medals: "sport", olympic_golds: "sport", medals_per_million: "sport",
+    happiness_score: "att", att_trust: "att", att_religion_important: "att", att_very_proud: "att", wgm_trust_science: "att", wrp_climate_serious: "att", att_fight: "att",
     refugees_hosted: "refugees", refugees_from: "refugees", refugees_hosted_per1000: "refugees", idps: "refugees", migrants_pct: "refugees",
   };
   const REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"];
@@ -1037,6 +1066,25 @@
     }
     return null;
   }
+  // a question about one country (when someone clicks a country), in the current mode
+  function askAbout(iso) {
+    if (!W || Q.mode !== "open" || Q.acting) return false;
+    bank ||= buildBank();
+    const name = W.byIso.get(iso)?.name;
+    const pool = bank.filter((q) => (q.topic.startsWith("p-") === isPhys()) && q.id.split(":").includes(iso));
+    const fresh = pool.filter((q) => !seen.has(q.id));
+    for (const spec of shuffle((fresh.length ? fresh : pool).slice())) {
+      const q = spec.make();
+      if (q) { Q.cur = { ...q, id: spec.id, topic: spec.topic }; Q.mc = false; Q.picked = null; Q.done = false; Q.about = name; drawQuestion(); return true; }
+    }
+    return false;
+  }
+  function setTopic(id) {
+    if (!themeList().some((t) => t.id === id)) return;
+    Q.topics[isPhys() ? "physical" : "human"] = id; store.set("wcq-topics", Q.topics);
+    document.querySelectorAll(".qz-topic").forEach((x) => x.setAttribute("aria-checked", String(x.dataset.t === id)));
+    if (Q.mode === "open") ask();
+  }
   function bankSize(topic) { bank ||= buildBank(); return bank.filter((q) => inTopic(q, topic)).length; }
 
   // ---------- Card ----------
@@ -1129,12 +1177,14 @@
         <div class="qz-row"><button type="submit" class="primary" id="qzSubmit">Submit guess</button>
           <button type="button" class="linkbtn" id="qzMC">${nOpts === 2 ? "Show the two options" : `Show ${nOpts} options`}</button>
           <button type="button" class="linkbtn qz-skip" id="qzSkip">Skip</button>
+          ${window.WK ? `<button type="button" class="linkbtn qz-ws" id="qzWs" title="Add this question to your worksheet (the answer goes in the answer key)">＋ Worksheet</button>` : ""}
           <label class="qz-always"><input type="checkbox" id="qzAlways" ${always ? "checked" : ""}> Always show options</label></div>
         <p class="qz-msg" id="qzMsg" aria-live="polite"></p>
       </form>
       <div class="qz-res" id="qzRes" hidden></div>`;
     $("#qzForm").onsubmit = (e) => { e.preventDefault(); submit(); };
     $("#qzMC").onclick = showOptions;
+    $("#qzWs") && ($("#qzWs").onclick = () => { q._opts ||= q.options ? q.options() : numberOptions(q); window.WK.addQuestion(q, /any$/.test(q.topic) ? "Puzzle" : topicOf(THEME_OF[q.topic] || q.topic).label); });
     $("#qzSkip").onclick = () => { seen.add(q.id); store.set("wcq-seen", [...seen].slice(-6000)); ask(); };
     $("#qzAlways").onchange = (e) => {
       always = e.target.checked; store.set("wcq-mc", always);
@@ -1197,7 +1247,7 @@
       <p class="qz-explain">${q.explain()}</p>
       <div class="qz-row">${q.action ? `<button type="button" class="ghost" id="qzAct">${esc(q.action.label)}</button>` : ""}<button type="button" class="primary" id="qzNext">Next question →</button></div>`;
     $("#qzNext").onclick = ask;
-    if (q.action) $("#qzAct").onclick = () => q.action.run();
+    if (q.action) $("#qzAct").onclick = () => { Q.acting = true; q.action.run(); setTimeout(() => (Q.acting = false), 600); };
     $("#qzNext").focus({ preventScroll: true });
   }
 
@@ -1216,5 +1266,5 @@
       if (Q.mode === "open" && !Q.cur) ask();
     };
   }
-  window.WQ = { init, renderCard, get size() { return bankSize("any"); }, _test: { check, buildBank: () => (bank ||= buildBank()), resolveCountry, parseNumber, numberOptions, nextQuestion, Q, seen } };
+  window.WQ = { init, renderCard, askAbout, setTopic, get size() { return bankSize("any"); }, _test: { check, buildBank: () => (bank ||= buildBank()), resolveCountry, parseNumber, numberOptions, nextQuestion, Q, seen } };
 })();
