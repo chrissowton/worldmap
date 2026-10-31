@@ -1863,3 +1863,55 @@ body { margin: 0; }
   body.print-ws .no-print, body.print-ws .ws-note:empty { display: none !important; }
   body.print-ws .ff-scroll { overflow: visible; }
 }
+
+/* ---------- Insights: changing stage as one list with evidence ---------- */
+.igrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 2px 14px; }
+.istrow .ipair { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+.istrow .iev { flex-basis: 100%; color: var(--muted); font-size: 11.5px; line-height: 1.3; }
+.inum { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+.inum.up { background: color-mix(in srgb, #2e9d55 16%, var(--surface)); color: #23804a; }
+.inum.down { background: color-mix(in srgb, #d6453d 14%, var(--surface)); color: #b8322a; }
+.idown { margin: 6px 0 0; font-size: 12.5px; }
+.vnote a { color: var(--accent); }
+
+/* =====================================================================
+   v38: the quiz no longer opens by itself. A small box at the top of the control panel opens it;
+   the card sits low in the South Atlantic / Southern Ocean, centred under southern Africa, and the map keeps its full size.
+   ===================================================================== */
+.cp-quiz { display: flex; align-items: center; gap: 10px; width: calc(100% - 4px); margin: 2px 2px 12px; padding: 8px 10px; text-align: left;
+  border: 1.5px solid color-mix(in srgb, var(--quiz) 45%, var(--line)); border-radius: 10px; background: var(--quiz-bg); color: var(--ink); cursor: pointer; font: inherit; }
+.cp-quiz:hover { border-color: var(--quiz); }
+.cp-quiz[aria-pressed="true"] { border-color: var(--quiz); background: color-mix(in srgb, var(--quiz) 14%, var(--surface)); }
+.cp-quiz .cp-ic { font-size: 18px; }
+.cp-quiz b { display: block; font-size: 13.5px; color: var(--quiz); }
+.cp-quiz small { display: block; font-size: 11.5px; color: var(--muted); }
+.cp-quiz .cp-quiz-go { margin-left: auto; font-size: 20px; color: var(--quiz); line-height: 1; }
+.cp-quiz:focus-visible { outline: 2px solid var(--quiz); outline-offset: 2px; }
+@media (min-width: 761px) {
+  .mapstage > .starter.quiz { top: auto; bottom: 12px; left: var(--qx, 50%); transform: none;
+    width: min(600px, calc(100% - 24px)); max-height: 46%; padding: 9px 14px 10px; }
+  .mapstage > .starter.quiz:not([style*="--qx"]) { left: 50%; transform: translateX(-50%); }
+  .mapstage > .starter.quiz .qz-head h2 { font-size: 16px; }
+  .mapstage > .starter.quiz .qz-topics { margin: 5px 0 6px; }
+  .mapstage > .starter.quiz .qz-q { padding-top: 6px; }
+  .mapstage > .starter.quiz .qz-opts { grid-template-columns: 1fr 1fr; }
+  .mapstage > .starter.quiz .qz-more { display: inline-block; margin: 6px 16px 0 0; vertical-align: top; }
+  .mapstage > .starter.quiz .qz-more[open] { display: block; margin-right: 0; }
+}
+@media (max-width: 760px) { .cp-quiz { display: none; } }
+@media (min-width: 761px) {
+  .mapstage > .starter.quiz { width: min(680px, calc(100% - 24px)); }
+  .mapstage > .starter.quiz .qz-head { display: inline-flex; padding-right: 0; margin-right: 10px; vertical-align: middle; }
+  .mapstage > .starter.quiz .qz-topics { display: inline-flex; flex-wrap: wrap; vertical-align: middle; margin: 0 22px 6px 0; gap: 3px; }
+  .mapstage > .starter.quiz .qz-topic { font-size: 11.5px; padding: 2px 8px; }
+  .mapstage > .starter.quiz .qz-always { flex-basis: auto; margin-left: 4px; }
+  .mapstage > .starter.quiz .qz-row { margin-top: 6px; align-items: center; }
+  .mapstage > .starter.quiz .qz-text { margin: 0 0 6px; }
+}
+@media (min-width: 761px) { .mapstage > .starter.quiz { width: min(680px, calc(100% - 86px)); } }
+@media (min-width: 761px) {
+  .mapstage > .starter.quiz { resize: both; min-width: 300px; min-height: 120px; }
+  .mapstage > .starter.quiz .qz-head { cursor: move; user-select: none; }
+  .mapstage > .starter.quiz.moved { max-height: calc(100% - 12px); max-width: calc(100% - 12px); }
+  .mapstage > .starter.quiz.dragging { opacity: .92; }
+}

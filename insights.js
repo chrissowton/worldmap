@@ -80,6 +80,17 @@
     }).join("");
   }
   const note = (t) => { $("#iNote").dataset.extra = t; };
+  // The right-hand pane shows the insight on a small world map (coloured by group) with the countries listed below
+  function pane(o) {
+    const groupMap = o.groupMap, order = o.groups.map((g) => g[0]);
+    V.list = {
+      title: o.title, note: o.note || "Hover over a group on the map to see it; click i for a country's profile.", cols: o.cols, rows: o.rows, asc: !!o.asc, pinned: [], max: 0, toggle: (iso) => { W.state.selected = iso; },
+      key: { label: o.keyLabel, groups: order, colour: (g) => (o.groups.find((x) => x[0] === g) || [])[1] || "var(--muted)", groupOf: (r) => groupMap.get(r.iso3) ?? null,
+        focus: V.ins.focus && order.includes(V.ins.focus) ? V.ins.focus : null, setFocus: (k) => { V.ins.focus = V.ins.focus === k ? null : k; } },
+    };
+    if (V.ins.focus && order.includes(V.ins.focus)) V.list.rows = V.list.rows.filter((x) => groupMap.get(x.iso) === V.ins.focus);
+  }
+  const PF = (label, format, extra = {}) => ({ key: "__" + label, label, short: label, format, ...extra });
   function goCompare(x, y, pins) { V.cmp.x = x; V.cmp.y = y; V.cmp.logx = null; V.cmp.logy = null; V.cmp.year = null; if (pins) V.cmp.pins = pins.slice(0, 8); W.setView("compare"); }
   function goLine(key, pins) { Object.assign(V.trend, { key, type: "line", agg: null, year: null, from: null, log: null, pins: pins.slice(0, 6), conts: false, world: true }); W.setView("trends"); }
 
@@ -142,8 +153,25 @@
     $("#iA").onchange = (e) => { s.a = e.target.value; W.render(); };
     $("#iDiff").onchange = (e) => { s.diff = e.target.checked; W.render(); };
     $$(".irow", body).forEach((b) => (b.onclick = () => goCompare(b.dataset.b, b.dataset.a)));
+    // the pane maps one pair (the strongest, or the one the pointer is over): where are countries high or low on both?
+    const mapPair = (p) => {
+      if (!p) { V.list = null; return; }
+      const fa = F[p.a], fb = F[p.b];
+      const pts = rs.map((r) => ({ r, x: latest(r, p.a), y: latest(r, p.b) })).filter((q) => q.x != null && q.y != null);
+      const ma = d3.median(pts, (q) => q.x), mb = d3.median(pts, (q) => q.y);
+      const sa = fa.short || fa.label, sb = fb.short || fb.label;
+      const G = [[`High ${sa}, high ${sb}`, "#1c7a8c"], [`Low ${sa}, low ${sb}`, "#e0a000"], [`High ${sa}, low ${sb}`, "#d6453d"], [`Low ${sa}, high ${sb}`, "#8a5cd6"]];
+      const gm = new Map(pts.map((q) => [q.r.iso3, G[q.x >= ma ? (q.y >= mb ? 0 : 2) : (q.y >= mb ? 3 : 1)][0]]));
+      pane({ title: `${fa.label} and ${fb.label}`, note: `Above or below the median country on each. ${p.r > 0 ? "A positive link shows up as lots of countries in the first two colours." : "A negative link shows up as lots of countries in the last two colours."}`,
+        cols: [fa, fb], rows: pts.map((q) => ({ iso: q.r.iso3, vals: [q.x, q.y] })), groups: G, groupMap: gm, keyLabel: "Where the two measures sit" });
+    };
+    const allPairs = pos.concat(neg);
+    const pi = Math.min(s.pairI || 0, Math.max(0, allPairs.length - 1));
+    mapPair(allPairs[pi]);
+    $$(".irow", body).forEach((b, i) => (b.onmouseenter = () => { if ((s.pairI || 0) === i) return; s.pairI = i; mapPair(allPairs[i]); W.refreshList?.(); }));
     s.srcKeys = s.a ? [s.a] : [];
-    note(`The number is a rank correlation (Spearman's ρ) from −1 to +1, using each country's latest figures: +1 means the countries line up in exactly the same order on both measures. <b>A link doesn't prove that one causes the other</b>: both may depend on something else, such as wealth. Click a pair to see it in Compare.`);
+    note(`The number is a rank correlation (Spearman's ρ) from −1 to +1, using each country's latest figures: +1 means the countries line up in exactly the same order on both measures. <b>A link doesn't prove that one causes the other</b>: both may depend on something else, such as wealth. Point at a pair to map it on the right; click it to see it in Compare.
+      Find out more: <a href="https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient" target="_blank" rel="noopener">Spearman's rank correlation (Wikipedia) ↗</a> · <a href="https://geographyfieldwork.com/SpearmansRankCalculator.html" target="_blank" rel="noopener">Calculator and significance test (Geography Fieldwork) ↗</a>`);
   }
 
   // ======================= Biggest changes =======================
@@ -171,6 +199,14 @@
     $("#iCy").onchange = (e) => { s.cy = +e.target.value; W.render(); };
     $$(".seg button[data-m]", body).forEach((b) => (b.onclick = () => { s.mode = b.dataset.m; W.render(); }));
     $$(".irow", body).forEach((b) => (b.onclick = () => goLine(s.ck, [b.dataset.iso, ...(b.closest("section").querySelectorAll(".irow").length ? [...b.closest("section").querySelectorAll(".irow")].map((x) => x.dataset.iso).filter((x) => x !== b.dataset.iso).slice(0, 2) : [])])));
+    {
+      const G = [["Big rise (top quarter)", "#1c7a8c"], ["Rose", "#7cc4cf"], ["About the same", "#c9d2d5"], ["Fell", "#f0a39c"], ["Big fall (bottom quarter)", "#d6453d"]];
+      const ks = rows.map((x) => x.k).sort(d3.ascending), lo = d3.quantileSorted(ks, 0.25), hi = d3.quantileSorted(ks, 0.75);
+      const same = (x) => Math.abs(x.p ?? 0) < 1;
+      const gm = new Map(rows.map((x) => [x.r.iso3, same(x) ? G[2][0] : x.k > 0 ? (x.k >= hi ? G[0][0] : G[1][0]) : (x.k <= lo ? G[4][0] : G[3][0])]));
+      pane({ title: `${f.label}, ${y0} to ${y1}`, cols: [PF("Change", s.mode === "pct" ? "pct" : f.format)], rows: rows.map((x) => ({ iso: x.r.iso3, vals: [s.mode === "pct" ? x.p : x.d] })),
+        groups: G, groupMap: gm, keyLabel: "Change since " + y0, note: "“About the same” means within 1% of the starting figure." });
+    }
     s.srcKeys = [s.ck];
     V.csv = () => [["Country", `${f.label} ${y0}`, `${f.label} ${y1}`, "Change", "% change"], ...rows.sort((x, y) => y.k - x.k).map((x) => [x.r.name, x.a, x.b, x.d, x.p])];
     note(`Compares each country's figure in ${y0} with ${y1} (or the closest year in the 4 before, if a year is missing). Click a country to see its line in Charts.`);
@@ -193,18 +229,18 @@
     }).filter(Boolean);
     if (DT.length) {
       const m = moved("dtm_stage", DT, (r) => tsAt("dtm_stage", r.iso3, y0), (r) => tsAt("dtm_stage", r.iso3, y1));
-      sections.push({ title: "Demographic transition stage", sub: `${y0} → ${y1}`, labels: DT.map((x) => x.split(" · ")[0]), m, key: "birth_rate" });
+      sections.push({ title: "Demographic transition stage", sub: `${y0} → ${y1}`, labels: DT.map((x) => x.split(" · ")[0]), m, key: "birth_rate", y0, y1, evidence: ["birth_rate", "death_rate", "fertility"] });
     }
     const hy1 = lastYear("hdi"), hy0 = hy1 - span;
     if (hy1) {
       const m = moved("hdi", null, (r) => hdiGroup(tsAt("hdi", r.iso3, hy0)), (r) => hdiGroup(tsAt("hdi", r.iso3, hy1)));
-      sections.push({ title: "Human development group", sub: `${hy0} → ${hy1}`, labels: HDI_GROUPS.map((x) => x[1]), m, key: "hdi" });
+      sections.push({ title: "Human development group", sub: `${hy0} → ${hy1}`, labels: HDI_GROUPS.map((x) => x[1]), m, key: "hdi", y0: hy0, y1: hy1, evidence: ["hdi", "life_expectancy", "gdp_per_capita"], unit: "groups" });
     }
     const REG = W.CAT_TS.regime || [];
     const ry1 = lastYear("regime") || 2025, ry0 = ry1 - span;
     if (REG.length) {
       const m = moved("regime", REG, (r) => tsAt("regime", r.iso3, ry0), (r) => tsAt("regime", r.iso3, ry1));
-      sections.push({ title: "Type of government", sub: `${ry0} → ${ry1}`, labels: REG, m, key: "libdem", upWord: "More democratic", downWord: "Less democratic" });
+      sections.push({ title: "Type of government", sub: `${ry0} → ${ry1}`, labels: REG, m, key: "libdem", upWord: "More democratic", downWord: "Less democratic", both: true, y0: ry0, y1: ry1, evidence: ["libdem"], unit: "steps" });
     }
     // close to the next HDI group and rising
     const near = rs.map((r) => {
@@ -215,14 +251,38 @@
       return { r, v, next };
     }).filter(Boolean).sort((a, b) => (a.next[0] - a.v) - (b.next[0] - b.v));
     const chip = (lab) => `<span class="istage">${esc(lab)}</span>`;
-    const list = (sec, up) => sec.m.filter((x) => x.up === up).sort((a, b) => Math.abs(b.b - b.a) - Math.abs(a.b - a.a) || a.r.name.localeCompare(b.r.name))
-      .map((x) => `<button type="button" class="irow" data-iso="${x.r.iso3}" data-k="${sec.key}"><span class="ipair"><span class="fl">${x.r.flag || ""}</span> <b>${esc(x.r.name)}</b></span><span class="isteps">${chip(sec.labels[x.a])} → ${chip(sec.labels[x.b])}</span></button>`).join("");
+    const ev = (r, keys, ya, yb) => keys.filter((k) => F[k] && TS[k]).map((k) => { const a = tsAt(k, r.iso3, ya), b = tsAt(k, r.iso3, yb); return a == null || b == null ? "" : `${F[k].short || F[k].label} ${fmtShort(F[k], a)} → ${fmtShort(F[k], b)}`; }).filter(Boolean).join(" · ");
+    const row = (sec, x) => {
+      const n = Math.abs(x.b - x.a);
+      return `<button type="button" class="irow istrow" data-iso="${x.r.iso3}" data-k="${sec.key}"><span class="ipair"><span class="fl">${x.r.flag || ""}</span> <b>${esc(x.r.name)}</b>
+        <small class="iev">${esc(ev(x.r, sec.evidence, sec.y0, sec.y1))}</small></span>
+        <span class="isteps">${chip(sec.labels[x.a])} → ${chip(sec.labels[x.b])}${n > 1 ? ` <span class="inum ${x.up ? "up" : "down"}">${x.up ? "+" : "−"}${n} ${sec.unit || "stages"}</span>` : ""}</span></button>`;
+    };
+    const sorted = (sec, up) => sec.m.filter((x) => x.up === up).sort((a, b) => Math.abs(b.b - b.a) - Math.abs(a.b - a.a) || a.r.name.localeCompare(b.r.name));
     body.innerHTML = `<div class="ictrls"><label class="fld"><span>Over the last</span><select id="iSy">${[10, 20, 30].map((n) => `<option value="${n}" ${n === span ? "selected" : ""}>${n} years</option>`).join("")}</select></label></div>
-      ${sections.map((sec) => `<h2 class="isec">${esc(sec.title)} <small>${sec.sub}</small></h2><div class="icols">
-        <section><h3>${sec.upWord || "Moved up"} (${sec.m.filter((x) => x.up).length})</h3>${list(sec, true) || "<p class='sub'>None.</p>"}</section>
-        <section><h3>${sec.downWord || "Moved down"} (${sec.m.filter((x) => !x.up).length})</h3>${list(sec, false) || "<p class='sub'>None.</p>"}</section></div>`).join("")}
+      ${sections.map((sec) => {
+        const ups = sorted(sec, true), downs = sorted(sec, false);
+        const two = sec.both;  // government: countries move both ways, so two columns
+        return `<h2 class="isec">${esc(sec.title)} <small>${sec.sub} · ${ups.length} moved ${sec.upWord ? sec.upWord.toLowerCase() : "up"}${downs.length ? `, ${downs.length} ${sec.downWord ? sec.downWord.toLowerCase() : "down"}` : ""}</small></h2>
+          ${two ? `<div class="icols"><section><h3>${sec.upWord} (${ups.length})</h3>${ups.map((x) => row(sec, x)).join("") || "<p class='sub'>None.</p>"}</section>
+            <section><h3>${sec.downWord} (${downs.length})</h3>${downs.map((x) => row(sec, x)).join("") || "<p class='sub'>None.</p>"}</section></div>`
+          : `<div class="igrid">${ups.map((x) => row(sec, x)).join("") || "<p class='sub'>None.</p>"}</div>
+            ${downs.length ? `<p class="sub idown">Moved back: ${downs.map((x) => `${esc(x.r.name)} (${esc(sec.labels[x.a])} → ${esc(sec.labels[x.b])})`).join(", ")}.</p>` : ""}`}`;
+      }).join("")}
       <h2 class="isec">About to move up a human development group <small>within 0.02 of the next group and rising</small></h2>
-      <div class="ilist">${near.map((x) => `<button type="button" class="irow" data-iso="${x.r.iso3}" data-k="hdi"><span class="ipair"><span class="fl">${x.r.flag || ""}</span> <b>${esc(x.r.name)}</b> <small>HDI ${x.v.toFixed(3)}</small></span><span class="isteps">→ ${chip(x.next[1])} at ${x.next[0].toFixed(3)}</span></button>`).join("") || "<p class='sub'>None right now.</p>"}</div>`;
+      <div class="igrid">${near.map((x) => `<button type="button" class="irow" data-iso="${x.r.iso3}" data-k="hdi"><span class="ipair"><span class="fl">${x.r.flag || ""}</span> <b>${esc(x.r.name)}</b> <small>HDI ${x.v.toFixed(3)}</small></span><span class="isteps">→ ${chip(x.next[1])} at ${x.next[0].toFixed(3)}</span></button>`).join("") || "<p class='sub'>None right now.</p>"}</div>`;
+    // pane: the demographic transition, mapped by how far each country moved
+    if (sections[0]) {
+      const sec = sections[0], G = [["Up 2 or more stages", "#1c7a8c"], ["Up 1 stage", "#7cc4cf"], ["Same stage", "#c9d2d5"], ["Moved back", "#d6453d"]];
+      const gm = new Map(), rowsP = [];
+      for (const r of rs) {
+        const a = tsAt("dtm_stage", r.iso3, sec.y0), b = tsAt("dtm_stage", r.iso3, sec.y1);
+        if (a == null || b == null) continue;
+        gm.set(r.iso3, b - a >= 2 ? G[0][0] : b - a === 1 ? G[1][0] : b === a ? G[2][0] : G[3][0]);
+        rowsP.push({ iso: r.iso3, vals: [b - a, b + 1] });
+      }
+      pane({ title: `Demographic transition, ${sec.y0} to ${sec.y1}`, cols: [PF("Stages moved", "count"), PF("Stage now", "count")], rows: rowsP, groups: G, groupMap: gm, keyLabel: "Stages moved" });
+    }
     $("#iSy").onchange = (e) => { s.stages = +e.target.value; W.render(); };
     $$(".irow", body).forEach((b) => (b.onclick = () => goLine(b.dataset.k, [b.dataset.iso])));
     s.srcKeys = ["dtm_stage", "hdi", "regime"];
@@ -266,6 +326,18 @@
     $("#iThr").onchange = (e) => { const v = parseFloat(String(e.target.value).replace(/[, %$]/g, "").replace(/(\d)(k)$/i, "$1e3").replace(/(\d)(m)$/i, "$1e6").replace(/(\d)(bn|b)$/i, "$1e9")); if (Number.isFinite(v)) { s.thr = v; W.render(); } };
     $$(".ipresets button", body).forEach((b) => (b.onclick = () => { const [k, t] = PRESETS[+b.dataset.i]; s.xk = k; s.thr = t; W.render(); }));
     $$(".irow", body).forEach((b) => (b.onclick = () => goLine(s.xk, [b.dataset.iso, ...rows.slice(0, 3).map((x) => x.r.iso3).filter((x) => x !== b.dataset.iso)].slice(0, 4))));
+    {
+      const G = [["Already past the line", "#1c7a8c"], ["By 2030", "#d6453d"], ["2031–2040", "#f0a039"], ["2041–2060", "#f7d68a"], ["Not heading there (or after 2060)", "#c9d2d5"]];
+      const gm = new Map(), y1 = lastYear(s.xk);
+      for (const r of countries()) {
+        const v = tsAt(s.xk, r.iso3, y1);
+        if (v == null) continue;
+        const p = project(s.xk, r.iso3, s.thr);
+        gm.set(r.iso3, !p ? G[0][0] : p.never || p.year > 2060 ? G[4][0] : p.year <= 2030 ? G[1][0] : p.year <= 2040 ? G[2][0] : G[3][0]);
+      }
+      pane({ title: `When countries reach ${fmtShort(f, s.thr)}`, cols: [PF("Year", "year")], asc: true, rows: rows.map((x) => ({ iso: x.r.iso3, vals: [x.p.year] })),
+        groups: G, groupMap: gm, keyLabel: "When, at today's speed", note: "“Already past the line” includes countries on the far side of it." });
+    }
     s.srcKeys = [s.xk];
     V.csv = () => [["Country", `${f.label} now`, "Ten years before", "Projected year"], ...rows.map((x) => [x.r.name, x.p.v1, x.p.v0, x.p.year])];
     note(`A simple projection: if each country keeps changing at the same speed as over the last ten years (${SUM.has(s.xk) ? "the same percentage growth each year" : "the same amount each year"}). Real trends speed up and slow down, so treat the years as a rough guide, not a forecast.`);
@@ -297,6 +369,13 @@
     $("#iOx").onchange = (e) => { s.ox = e.target.value; W.render(); };
     $("#iOy").onchange = (e) => { s.oy = e.target.value; W.render(); };
     $$(".irow", body).forEach((b) => (b.onclick = () => goCompare(s.ox, s.oy, [b.dataset.iso])));
+    if (rows.length) {
+      const G = [["Much higher than expected", "#1c7a8c"], ["Higher than expected", "#9fd3da"], ["Lower than expected", "#f5b3ac"], ["Much lower than expected", "#d6453d"]];
+      const rs2 = rows.map((p) => Math.abs(p.res)).sort(d3.ascending), big = d3.quantileSorted(rs2, 0.75);
+      const gm = new Map(rows.map((p) => [p.r.iso3, G[p.res >= 0 ? (p.res >= big ? 0 : 1) : (-p.res >= big ? 3 : 2)][0]]));
+      pane({ title: `${fy.label}: compared with what ${lowerL(fx.label)} predicts`, cols: [PF("Difference", fy.format), fy], rows: rows.map((p) => ({ iso: p.r.iso3, vals: [p.res, p.y] })),
+        groups: G, groupMap: gm, keyLabel: "Compared with the line of best fit", note: "“Much” means the quarter of countries furthest from the line." });
+    }
     s.srcKeys = [s.oy, s.ox];
     V.csv = () => [["Country", fx.label, fy.label, "Expected", "Difference"], ...rows.map((p) => [p.r.name, p.x, p.y, +p.exp.toFixed(3), +p.res.toFixed(3)])];
     note(`“Expected” comes from a straight line of best fit through all the countries${logx ? ` (using a log scale for ${esc(lowerL(fx.label))})` : ""}. Countries far from the line are the interesting ones to explain: history, resources, conflict or policy often play a part. Click a country to see it in Compare.`);

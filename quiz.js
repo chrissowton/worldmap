@@ -16,7 +16,7 @@
   };
   const seen = new Set(store.get("wcq-seen", []));
   const score = Object.assign({ right: 0, asked: 0, streak: 0, best: 0 }, store.get("wcq-score", {}));
-  const Q = { topics: Object.assign({ human: "any", physical: "p-any" }, store.get("wcq-topics", {})), cur: null, mc: false, picked: null, done: false, mode: window.matchMedia("(max-width: 760px)").matches ? "min" : "open", prevFilters: false };
+  const Q = { topics: Object.assign({ human: "any", physical: "p-any" }, store.get("wcq-topics", {})), cur: null, mc: false, picked: null, done: false, mode: "min", prevFilters: false };
 
   // ---------- Topics (colours match the filter categories) ----------
   const TOPICS = [
@@ -1095,7 +1095,6 @@
     const filtersOn = st.filters.length > 0;
     // adding filters tucks the quiz away; clearing them brings it back
     if (filtersOn && !Q.prevFilters && Q.mode === "open" && !Q.keepOpen) Q.mode = "min";
-    if (!filtersOn && Q.prevFilters && Q.mode === "min") Q.mode = "open";
     Q.prevFilters = filtersOn; Q.keepOpen = false;
     const hide = !!st.flow || st.view !== "map";
     el.hidden = hide || Q.mode !== "open";
@@ -1106,7 +1105,7 @@
       pill.onclick = () => { Q.mode = "open"; Q.keepOpen = true; renderCard(); if (!Q.cur) ask(); };
       ($("#mapstage") || $("#mapwrap")).appendChild(pill);
     }
-    pill.hidden = hide || Q.mode !== "min";
+    pill.hidden = true; // the "Ask the map a question" box at the top of the panel opens the card
     pill.innerHTML = Q.cur && !Q.done ? "🎯 Back to your question" : "🎯 Quiz";
     const qb = $("#quizBtn");
     if (qb) qb.setAttribute("aria-pressed", String(Q.mode === "open"));
@@ -1119,7 +1118,7 @@
     el.classList.add("quiz");
     el.innerHTML = `
       <button class="iconbtn hide" type="button" aria-label="Close the quiz">×</button>
-      <div class="qz-head"><h2>Ask the map a question</h2><span class="qz-score" id="qzScore"></span></div>
+      <div class="qz-head" title="Drag to move · drag the bottom-right corner to resize · double-click to put it back"><h2>Ask the map a question</h2><span class="qz-score" id="qzScore"></span></div>
       <p class="qz-intro">Pick a topic, then type your guess or ask for options.</p>
       <div class="qz-topics" role="radiogroup" aria-label="Topic">${topicsNow().map((t) => `<button type="button" role="radio" class="qz-topic" data-t="${t.id}" ${t.g ? `data-g="${t.g}"` : ""} aria-checked="${curTopic() === t.id}">${esc(t.label)}</button>`).join("")}</div>
       <div class="qz-q" id="qzQ"></div>
@@ -1257,8 +1256,12 @@
     const b = document.createElement("button");
     b.type = "button"; b.id = "quizBtn"; b.className = "cp-tool"; b.innerHTML = `<span class="cp-ic" aria-hidden="true">🎯</span>Quiz`;
     b.title = "Test yourself with questions from the map's data";
-    const tools = $("#cpLearn") || $(".viewtools");
-    if (tools) tools.insertBefore(b, tools.firstChild);
+    // a small box at the top of the control panel, above the filters
+    b.className = "cp-quiz";
+    b.innerHTML = `<span class="cp-ic" aria-hidden="true">🎯</span><span><b>Ask the map a question</b><small>Test yourself on the map</small></span><span class="cp-quiz-go" aria-hidden="true">›</span>`;
+    const top = $("#cpanel .cp-scroll");
+    if (top) top.insertBefore(b, top.firstChild);
+    else ($("#cpLearn") || $(".viewtools"))?.prepend(b);
     b.onclick = () => {
       Q.mode = Q.mode === "open" ? "min" : "open"; Q.keepOpen = Q.mode === "open";
       if (W.state.view !== "map") W.setView("map");

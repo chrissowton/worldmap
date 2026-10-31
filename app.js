@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "36";
+  const DATA_VERSION = "38";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -580,7 +580,7 @@
   const onMap = new Set(geo.map((d) => d.rec?.iso3).filter(Boolean));
   let k = 1;
 
-  let mapTopPad = 0, mapLeftPad = 0;
+  let mapTopPad = 0, mapLeftPad = 0, mapBottomPad = 0;
   const narrow = () => window.matchMedia("(max-width: 760px)").matches;
   function layout() {
     const box = $("#mapstage").getBoundingClientRect();
@@ -589,7 +589,17 @@
     citySize = Math.max(0.45, Math.min(1, w / 1100));
     // a little room round the world, and space at the top for the quiz card when it sits there
     const padX = Math.max(16, w * 0.025), top = Math.max(16, mapTopPad), bottom = 16, left = Math.max(padX, mapLeftPad);
-    projection.fitExtent([[left, top], [w - padX, Math.max(top + 120, h - bottom)]], { type: "FeatureCollection", features: geo });
+    const fc = { type: "FeatureCollection", features: geo };
+    projection.fitExtent([[left, top], [w - padX, Math.max(top + 120, h - bottom)]], fc);
+    if (mapBottomPad > 0) {
+      // the quiz card is open at the bottom: move the world up out of its way, shrinking it a little only if it must
+      const s0 = projection.scale();
+      projection.fitExtent([[left, top], [w - padX, Math.max(top + 120, h - mapBottomPad)]], fc);
+      if (projection.scale() < s0 * 0.86) projection.scale(s0 * 0.86);
+      // keep it centred across, and right up at the top
+      const b = path.bounds(fc), t = projection.translate();
+      projection.translate([t[0] + (left + w - padX) / 2 - (b[0][0] + b[1][0]) / 2, t[1] + top - b[0][1]]);
+    }
     paths.attr("d", path);
     riverPaths.attr("d", path); lakePaths.attr("d", path);
     invalidatePoints();
@@ -2711,7 +2721,7 @@
     applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, SURVEY_KEYS, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
     pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
     get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; },
-    render: (o) => render(o), setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
+    render: (o) => render(o), refreshList: () => { if (!state.selected && state.view !== "map" && window.WV_H?.V?.list) renderChartList(); }, setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
     mapSVG: () => svg.node(), clearAll: () => clearAll(),
     resultsCSV: () => {
       const { act, res } = lastEval;
@@ -2735,18 +2745,27 @@
   window.WK?.init();
 
   // ---------- Go ----------
-  new ResizeObserver(() => layout()).observe($("#mapstage"));
+  new ResizeObserver(() => { layout(); floatChanged?.(); }).observe($("#mapstage"));
 
   // ---------- Cards that can be moved and resized: the quiz card and the filter editor ----------
   // Drag them by their title; drag the bottom-right corner to resize; double-click the title to put them back.
   function floatChanged() {
     clearTimeout(floatChanged.t);
     floatChanged.t = setTimeout(() => {
-      // the quiz card sits in the Pacific, on the left: move the world over to make room for it
+      // the quiz card sits at the bottom of the map, centred under southern Africa (open ocean), so the map keeps its full size
       const st = $("#starter"), stage = $("#mapstage");
-      const pad = !narrow() && st && !st.hidden && st.offsetWidth && stage.offsetWidth >= 700 ? st.offsetLeft + st.offsetWidth + 10 : 0;
-      if (Math.abs(pad - mapLeftPad) > 4) { mapLeftPad = pad; layout(); }
-    }, 80);
+      if (mapLeftPad) { mapLeftPad = 0; layout(); }
+      const open = st && !st.hidden && !narrow() && st.offsetWidth > 0;
+      // the card may cover the Southern Ocean (about 60px) but not much more
+      // if the card has been moved, the map only makes room when the card is still low down
+      const moved = open && st.classList.contains("moved"), sh = stage.offsetHeight;
+      const bp = !open ? 0 : moved ? (st.offsetTop > sh * 0.45 ? Math.max(0, sh - st.offsetTop - 60) : 0) : Math.max(0, st.offsetHeight + 12 - 60);
+      if (Math.abs(bp - mapBottomPad) > 6) { mapBottomPad = bp; layout(); }
+      if (!open) return;
+      const W0 = stage.offsetWidth, w = st.offsetWidth;
+      const x = projection([25, -30])[0];
+      st.style.setProperty("--qx", Math.round(Math.max(12, Math.min(W0 - w - 62, x - w / 2))) + "px"); // clear of the zoom buttons
+    }, 60);
   }
   function makeFloating(el, handleSel, store) {
     if (!el) return;
@@ -2780,10 +2799,16 @@
       window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
     });
     el.addEventListener("dblclick", (e) => { if (e.target.closest(handleSel) && !e.target.closest("button, input, select")) reset(); });
-    new ResizeObserver(() => { if (el.classList.contains("moved") && el.offsetWidth) { clearTimeout(el._rs); el._rs = setTimeout(save, 300); } floatChanged(); }).observe(el);
+    new ResizeObserver(() => {
+      // resizing from the corner sets an inline width/height: keep that too
+      if (el.offsetWidth && !el.classList.contains("dragging") && (el.classList.contains("moved") || el.style.height || el.style.width)) {
+        clearTimeout(el._rs); el._rs = setTimeout(() => { if (!el.classList.contains("moved")) apply({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }); save(); }, 300);
+      }
+      floatChanged();
+    }).observe(el);
   }
-  // (the filter editor sits in the panel; the quiz card sits in the Pacific and the map makes room for it)
-  void makeFloating;
+  // the quiz card: drag it by its title, resize it from the bottom-right corner, double-click the title to put it back
+  makeFloating($("#starter"), ".qz-head", "wcq-card");
   new ResizeObserver(floatChanged).observe($("#starter"));
   window.addEventListener("resize", floatChanged);
   layout();
