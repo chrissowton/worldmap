@@ -1,0 +1,95 @@
+name,local_names,length_km,countries,source_countries,mouth_countries
+Nile,An Nīl,6650,EGY|RWA|SDN|SSD|TZA|UGA,RWA,EGY
+Amazon,,6400,BRA|PER,PER,BRA
+Yangtze,,6300,CHN,,
+Yenisey-Angara,,5539,RUS,,
+Huang He,,5464,CHN,,
+Ob-Irtysh,,5410,RUS,,
+Río de la Plata/Paraná,,4880,ARG|BRA|PRY|URY,BRA,ARG|URY
+Congo,Zaïre,4700,AGO|COD|COG|ZMB,ZMB,COD
+Amur,,4444,CHN|MNG|RUS,CHN,RUS
+Lena,,4400,RUS,,
+Mekong,Lancang Jiang|Mae Nam Khong|Mènam Khong|Sông Tiên Giang,4350,CHN|KHM|LAO|MMR|THA|VNM,CHN,VNM
+Mackenzie,,4241,CAN,,
+Niger,,4200,BEN|GIN|MLI|NER|NGA,GIN,NGA
+Brahmaputra,Yarlung Zangbo Jiang,3969,BGD|CHN|IND,CHN,BGD
+Missouri,,3768,USA,,
+Tocantins,,3650,BRA,,
+Volga,,3645,RUS,,
+Indus,Yin-tu Ho,3610,CHN|IND|PAK,CHN,PAK
+Euphrates,,3596,IRN|IRQ|SYR|TUR,TUR,IRQ
+Mississippi,,3544,USA,,
+Yukon,,3190,CAN|USA,CAN,USA
+São Francisco,,3180,BRA,,
+Syr Darya,,3078,KAZ|KGZ|TJK|UZB,KGZ,KAZ
+Salween,Nu Jiang,3060,CHN|MMR|THA,CHN,MMR
+Saint Lawrence,,3058,CAN|USA,,CAN
+Rio Grande,,3057,MEX|USA,USA,MEX
+mouth shared with Mexico,Rio Grande,3057,USA,USA,
+Danube,Donau|Duna|Dunaj|Dunav|Dunay|Dunărea,2888,AUT|BGR|DEU|HRV|HUN|MDA|ROU|SRB|SVK|UKR,DEU,ROU
+Irrawaddy,,2809,CHN|MMR,CHN,MMR
+Zambezi,Rio Zambeze,2740,AGO|BWA|MOZ|MWI|NAM|TZA|ZMB|ZWE,ZMB,MOZ
+Ganges,,2704,BGD|IND,IND,BGD
+Amu Darya,,2620,AFG|TJK|TKM|UZB,TJK,UZB
+Nelson,,2570,CAN,,
+Paraguay,,2549,ARG|BRA|PRY,BRA,PRY
+Kolyma,,2513,RUS,,
+River Murray,,2508,AUS,,
+Ural,,2428,KAZ|RUS,RUS,KAZ
+Arkansas,,2348,USA,,
+Colorado,,2333,MEX|USA,USA,MEX
+Dnieper,Dnepr|Dnipro|Dnyapro,2287,BLR|RUS|UKR,RUS,UKR
+Ubangi,Oubangui|Oubangui  river [s],2270,CAF|COD|COG,CAF,COD|COG
+Columbia,,2250,CAN|USA,CAN,USA
+Rio Negro,,2250,BRA|COL|VEN,COL,BRA
+Pearl,Zhu Jiang,2200,CHN|VNM,VNM,CHN
+Red,,2188,CHN|USA|VNM,CHN,VNM
+Ohio,,2102,USA,,
+Orinoco,,2101,COL|VEN,VEN,
+Orinoco  and mouth,,2101,COL|VEN,VEN,
+Orange,,2092,LSO|NAM|ZAF,LSO,NAM
+Tigris,,1950,IRN|IRQ|SYR|TUR,TUR,IRQ
+Don,,1870,RUS,,
+Pechora,,1809,RUS,,
+Limpopo,Limpoporivier,1800,BWA|ZAF|ZWE,ZAF,
+Rio Limpopo,,1800,BWA|MOZ|ZAF,ZAF,MOZ
+Snake,,1670,USA,,
+Senegal,,1641,GIN|MLI|MRT|SEN,GIN,MRT
+Uruguay,,1610,ARG|BRA|URY,BRA,URY
+Okavango,Rio Cubango,1600,AGO|BWA|NAM,AGO,BWA
+Blue Nile,,1600,ETH|SDN,ETH,SDN
+Volta,,1600,BFA|GHA,BFA,GHA
+Churchill,,1600,CAN,,
+Darling River,,1545,AUS,,
+Murrumbidgee River,,1485,AUS,,
+Godavari,,1465,IND,,
+Dniester,Dnister   and mouth|Nistru,1411,MDA|UKR,UKR,
+Sutlej,,1372,CHN|IND|PAK,CHN,PAK
+Yamuna,,1370,IND,,
+Fraser,,1368,CAN,,
+Lachlan River,,1339,AUS,,
+Narmada,,1289,IND,,
+Ottawa,,1271,CAN,,
+Elbe,Labe,1252,CZE|DEU,CZE,DEU
+Rhine,Rhein|Rhin|Rijn,1233,CHE|DEU|FRA|NLD,CHE,NLD
+Athabasca,,1231,CAN,,
+North Saskatchewan,,1220,CAN,,
+Vistula,Wisla   and mouth,1213,BLR|POL|UKR,POL,
+Vaal [s],,1210,ZAF,,
+Mun,,1162,THA,,
+Chindwin,,1158,MMR,,
+Red river,Yuan Jiang  source,1149,CHN|VNM,,VNM
+Helmand,,1130,AFG|IRN,AFG,
+Sepik,,1126,IDN|PNG,PNG,
+Sepik  and mouth,,1126,IDN|PNG,PNG,
+Liard,,1115,CAN,,
+Cooper Creek,,1113,AUS,,
+Draa,,1100,MAR,,
+Gambia,Gambie,1094,GIN|GMB|SEN,GIN,GMB
+Chenab,,1086,IND|PAK,IND,PAK
+Ghaghara,,1080,CHN|IND|NPL,CHN,IND
+Fly,,1050,IDN|PNG,PNG,
+Fly  and mouth,,1050,IDN|PNG,PNG,
+Loire,,1012,FRA,,
+Tagus,,1006,ESP|PRT,ESP,PRT
+Flinders River,,1004,AUS,,

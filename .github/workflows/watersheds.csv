@@ -1,0 +1,206 @@
+iso3,drains_to,via,basin,area_km2
+DZA,Atlantic Ocean,,Niger,2261741
+DZA,Internal (no outlet to the sea),,Lake Chad,2497738
+AGO,Atlantic Ocean,,Congo,3730881
+AGO,Indian Ocean,,Zambezi,1332412
+AGO,Internal (no outlet to the sea),,Okavango Basin,863866
+BWA,Atlantic Ocean,,Orange,941351
+BWA,Indian Ocean,,Zambezi,1332412
+BWA,Internal (no outlet to the sea),,Okavango Basin,863866
+BEN,Atlantic Ocean,,Niger,2261741
+BEN,Atlantic Ocean,,Volta,410991
+BDI,Atlantic Ocean,,Congo,3730881
+BDI,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+TCD,Atlantic Ocean,,Niger,2261741
+TCD,Internal (no outlet to the sea),,Lake Chad,2497738
+COG,Atlantic Ocean,,Congo,3730881
+COD,Atlantic Ocean,,Congo,3730881
+COD,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+COD,Indian Ocean,,Zambezi,1332412
+CMR,Atlantic Ocean,,Congo,3730881
+CMR,Atlantic Ocean,,Niger,2261741
+CMR,Internal (no outlet to the sea),,Lake Chad,2497738
+CAF,Atlantic Ocean,,Congo,3730881
+CAF,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+CAF,Internal (no outlet to the sea),,Lake Chad,2497738
+EGY,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+ETH,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+GAB,Atlantic Ocean,,Congo,3730881
+GHA,Atlantic Ocean,,Volta,410991
+GIN,Atlantic Ocean,,Niger,2261741
+GIN,Atlantic Ocean,,Senegal,456397
+CIV,Atlantic Ocean,,Niger,2261741
+CIV,Atlantic Ocean,,Volta,410991
+KEN,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+LSO,Atlantic Ocean,,Orange,941351
+LBY,Internal (no outlet to the sea),,Lake Chad,2497738
+MWI,Atlantic Ocean,,Congo,3730881
+MWI,Indian Ocean,,Zambezi,1332412
+MLI,Atlantic Ocean,,Niger,2261741
+MLI,Atlantic Ocean,,Senegal,456397
+MLI,Atlantic Ocean,,Volta,410991
+MRT,Atlantic Ocean,,Niger,2261741
+MRT,Atlantic Ocean,,Senegal,456397
+MOZ,Indian Ocean,,Zambezi,1332412
+NER,Atlantic Ocean,,Niger,2261741
+NER,Internal (no outlet to the sea),,Lake Chad,2497738
+NGA,Atlantic Ocean,,Niger,2261741
+NGA,Internal (no outlet to the sea),,Lake Chad,2497738
+SSD,Atlantic Ocean,,Congo,3730881
+SSD,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+RWA,Atlantic Ocean,,Congo,3730881
+RWA,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+ZAF,Atlantic Ocean,,Orange,941351
+SEN,Atlantic Ocean,,Senegal,456397
+SLE,Atlantic Ocean,,Niger,2261741
+SDN,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+SDN,Internal (no outlet to the sea),,Lake Chad,2497738
+TGO,Atlantic Ocean,,Volta,410991
+TZA,Atlantic Ocean,,Congo,3730881
+TZA,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+TZA,Indian Ocean,,Zambezi,1332412
+UGA,Atlantic Ocean,,Congo,3730881
+UGA,Atlantic Ocean,Mediterranean Sea,Nile,3254853
+BFA,Atlantic Ocean,,Niger,2261741
+BFA,Atlantic Ocean,,Volta,410991
+NAM,Atlantic Ocean,,Orange,941351
+NAM,Indian Ocean,,Zambezi,1332412
+NAM,Internal (no outlet to the sea),,Okavango Basin,863866
+ZMB,Atlantic Ocean,,Congo,3730881
+ZMB,Indian Ocean,,Zambezi,1332412
+ZWE,Indian Ocean,,Zambezi,1332412
+ZWE,Internal (no outlet to the sea),,Okavango Basin,863866
+AUS,Indian Ocean,Great Australian Bight,Murray-Darling,1050116
+AUS,Internal (no outlet to the sea),,Lake Eyre,1212198
+KGZ,Internal (no outlet to the sea),,Tarim Basin,1152448
+KGZ,Internal (no outlet to the sea),Aral Sea basin,Amu Darya,534739
+KGZ,Internal (no outlet to the sea),,Syr Darya,782617
+KAZ,Internal (no outlet to the sea),,Tarim Basin,1152448
+KAZ,Internal (no outlet to the sea),,Amu Darya,534739
+KAZ,Internal (no outlet to the sea),,Syr Darya,782617
+KAZ,Internal (no outlet to the sea),,Lake Balkash,510015
+RUS,Arctic Ocean,,Kolyma,679934
+RUS,Arctic Ocean,,Lena,2306743
+RUS,Arctic Ocean,,Ob,2972493
+RUS,Arctic Ocean,,Pechora,289532
+RUS,Arctic Ocean,,Yenisei,2554388
+RUS,Atlantic Ocean,Black Sea,Don,458694
+RUS,Atlantic Ocean,,Dnieper,533966
+RUS,Pacific Ocean,,Amur,1929955
+RUS,Internal (no outlet to the sea),Caspian Sea basin,Volga,1410951
+TJK,Internal (no outlet to the sea),,Tarim Basin,1152448
+TJK,Internal (no outlet to the sea),Aral Sea Basin,Amu Darya,534739
+TJK,Internal (no outlet to the sea),,Syr Darya,782617
+TKM,Internal (no outlet to the sea),Aral Sea basin,Amu Darya,534739
+UZB,Internal (no outlet to the sea),Aral Sea basin,Amu Darya,534739
+UZB,Internal (no outlet to the sea),,Syr Darya,782617
+MMR,Indian Ocean,,Brahmaputra,651335
+MMR,Indian Ocean,,Ganges,1016124
+MMR,Indian Ocean,,Irrawaddy,413710
+MMR,Indian Ocean,,Salween,271914
+MMR,Pacific Ocean,,Mekong,805604
+KHM,Pacific Ocean,,Mekong,805604
+CHN,Arctic Ocean,,Ob,2972493
+CHN,Indian Ocean,,Brahmaputra,651335
+CHN,Indian Ocean,,Ganges,1016124
+CHN,Indian Ocean,,Indus,1081718
+CHN,Indian Ocean,,Irrawaddy,413710
+CHN,Indian Ocean,,Salween,271914
+CHN,Pacific Ocean,,Amur,1929955
+CHN,Pacific Ocean,,Huang He,944970
+CHN,Pacific Ocean,,Mekong,805604
+CHN,Pacific Ocean,,Yangtze,1722193
+CHN,Internal (no outlet to the sea),,Tarim Basin,1152448
+CHN,Internal (no outlet to the sea),,Amu Darya,534739
+CHN,Internal (no outlet to the sea),,Syr Darya,782617
+CHN,Internal (no outlet to the sea),,Lake Balkash,510015
+LAO,Pacific Ocean,,Mekong,805604
+THA,Indian Ocean,,Salween,271914
+THA,Pacific Ocean,,Mekong,805604
+VNM,Pacific Ocean,,Mekong,805604
+ALB,Atlantic Ocean,Black Sea,Danube,795656
+AUT,Atlantic Ocean,,Rhine-Maas,198735
+AUT,Atlantic Ocean,Black Sea,Danube,795656
+BEL,Atlantic Ocean,,Seine,78919
+BEL,Atlantic Ocean,,Rhine-Maas,198735
+BIH,Atlantic Ocean,Black Sea,Danube,795656
+BLR,Atlantic Ocean,Black Sea,Dnieper,533966
+BGR,Atlantic Ocean,Black Sea,Danube,795656
+CZE,Atlantic Ocean,Black Sea,Danube,795656
+FRA,Atlantic Ocean,,Loire,115282
+FRA,Atlantic Ocean,,Seine,78919
+FRA,Atlantic Ocean,,Rhine-Maas,198735
+FRA,Atlantic Ocean,Adriatic Sea,Po,76997
+FRA,Atlantic Ocean,Mediterranean Sea,Rhone,100543
+DEU,Atlantic Ocean,,Rhine-Maas,198735
+DEU,Atlantic Ocean,Black Sea,Danube,795656
+HRV,Atlantic Ocean,Black Sea,Danube,795656
+HUN,Atlantic Ocean,Black Sea,Danube,795656
+ITA,Atlantic Ocean,,Rhine-Maas,198735
+ITA,Atlantic Ocean,Black Sea,Danube,795656
+ITA,Atlantic Ocean,Adriatic Sea,Po,76997
+ITA,Atlantic Ocean,Mediterranean Sea,Rhone,100543
+UNK,Atlantic Ocean,Black Sea,Danube,795656
+SVK,Atlantic Ocean,Black Sea,Danube,795656
+LIE,Atlantic Ocean,,Rhine-Maas,198735
+LUX,Atlantic Ocean,,Rhine-Maas,198735
+MDA,Atlantic Ocean,Black Sea,Danube,795656
+MNE,Atlantic Ocean,Black Sea,Danube,795656
+MKD,Atlantic Ocean,Black Sea,Danube,795656
+NLD,Atlantic Ocean,,Rhine-Maas,198735
+POL,Atlantic Ocean,Black Sea,Danube,795656
+SRB,Atlantic Ocean,Black Sea,Danube,795656
+ROU,Atlantic Ocean,Black Sea,Danube,795656
+SVN,Atlantic Ocean,Black Sea,Danube,795656
+CHE,Atlantic Ocean,,Rhine-Maas,198735
+CHE,Atlantic Ocean,Black Sea,Danube,795656
+CHE,Atlantic Ocean,Adriatic Sea,Po,76997
+CHE,Atlantic Ocean,Mediterranean Sea,Rhone,100543
+UKR,Atlantic Ocean,Black Sea,Danube,795656
+UKR,Atlantic Ocean,,Don,458694
+UKR,Atlantic Ocean,,Dnieper,533966
+IRN,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+IRQ,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+JOR,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+KWT,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+SAU,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+SYR,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+TUR,Indian Ocean,Persian Gulf,Tigris and Euphrates,918044
+CAN,Arctic Ocean,,Mackenzie,1706388
+CAN,Atlantic Ocean,,Nelson (Hudson Bay),1093141
+MEX,Atlantic Ocean,Gulf of America,Rio Grande/Bravo,607965
+MEX,Pacific Ocean,Gulf of California,Colorado,703148
+USA,Atlantic Ocean,Gulf of America,Mississippi*,3202185
+USA,Pacific Ocean,,"US only 23,820 sq km); Colorado",703148
+ARG,Atlantic Ocean,,Paraná,2582704
+BOL,Atlantic Ocean,,Amazon,6145186
+BOL,Atlantic Ocean,,Paraná,2582704
+BRA,Atlantic Ocean,,Amazon,6145186
+BRA,Atlantic Ocean,,Orinoco,953675
+BRA,Atlantic Ocean,,Paraná,2582704
+BRA,Atlantic Ocean,,São Francisco,617814
+BRA,Atlantic Ocean,,Tocantins,764213
+COL,Atlantic Ocean,,Amazon,6145186
+COL,Atlantic Ocean,,Orinoco,953675
+ECU,Atlantic Ocean,,Amazon,6145186
+GUY,Atlantic Ocean,,Amazon,6145186
+GUY,Atlantic Ocean,,Orinoco,953675
+SUR,Atlantic Ocean,,Amazon,6145186
+PRY,Atlantic Ocean,,Paraná,2582704
+PER,Atlantic Ocean,,Amazon,6145186
+VEN,Atlantic Ocean,,Amazon,6145186
+VEN,Atlantic Ocean,,Orinoco,953675
+AFG,Indian Ocean,,Indus,1081718
+AFG,Internal (no outlet to the sea),,Amu Darya,534739
+BGD,Indian Ocean,,Brahmaputra,651335
+BGD,Indian Ocean,,Ganges,1016124
+IND,Indian Ocean,,Brahmaputra,651335
+IND,Indian Ocean,,Ganges,1016124
+IND,Indian Ocean,,Indus,1081718
+IND,Indian Ocean,,Irrawaddy,413710
+NPL,Indian Ocean,,Brahmaputra,651335
+NPL,Indian Ocean,,Ganges,1016124
+NPL,Indian Ocean,,Indus,1081718
+PAK,Indian Ocean,,Indus,1081718
+PAK,Internal (no outlet to the sea),,Tarim Basin,1152448
+PAK,Internal (no outlet to the sea),Aral Sea basin,Amu Darya,534739

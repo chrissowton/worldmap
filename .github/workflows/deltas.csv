@@ -1,0 +1,25 @@
+# River deltas. Shapes follow the usual textbook examples; "-" means not usually classed by shape. Edited by hand.
+name,river,countries,lat,lon,shape,note
+Nile Delta,Nile,EGY,31.0,31.0,Arcuate,Fan-shaped; the original "delta" (Δ)
+Mississippi River Delta,Mississippi,USA,29.2,-89.3,Bird's-foot,River-dominated
+Ganges–Brahmaputra Delta,Ganges and Brahmaputra,BGD|IND,22.3,89.5,-,The world's largest delta; home of the Sundarbans
+Mekong Delta,Mekong,VNM,9.8,106.0,-,
+Niger Delta,Niger,NGA,4.8,6.0,Arcuate,
+Danube Delta,Danube,ROU|UKR,45.1,29.4,Arcuate,
+Rhône Delta (Camargue),Rhône,FRA,43.5,4.5,Arcuate,
+Lena Delta,Lena,RUS,72.8,126.5,Arcuate,
+Tiber Delta,Tiber,ITA,41.74,12.23,Cuspate,Shaped like a pointed tooth by waves
+Ebro Delta,Ebro,ESP,40.7,0.8,Cuspate,
+Po Delta,Po,ITA,44.95,12.4,-,
+Indus Delta,Indus,PAK,24.0,67.5,-,
+Yangtze River Delta,Yangtze,CHN,31.4,121.5,-,
+Pearl River Delta,Pearl,CHN,22.5,113.6,-,
+Yellow River Delta,Yellow River (Huang He),CHN,37.7,119.1,-,
+Irrawaddy Delta,Irrawaddy,MMR,16.0,95.3,-,
+Volga Delta,Volga,RUS,46.0,48.0,-,Europe's largest delta
+Rhine–Meuse–Scheldt Delta,Rhine,NLD,51.85,4.3,-,
+Orinoco Delta,Orinoco,VEN,9.0,-61.5,-,
+Mackenzie Delta,Mackenzie,CAN,68.5,-134.5,-,
+Zambezi Delta,Zambezi,MOZ,-18.8,36.2,-,
+Okavango Delta,Okavango,BWA,-19.3,22.9,Inland,Spreads out in the Kalahari and never reaches the sea
+Inner Niger Delta,Niger,MLI,15.0,-4.5,Inland,

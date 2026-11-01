@@ -1,0 +1,1827 @@
+iso3,country,hdi_group,indicator,year,value
+AFG,Afghanistan,Low,hdi,2023,0.496
+AFG,Afghanistan,Low,hdi_rank,2023,181
+AFG,Afghanistan,Low,gii,2023,0.661
+AFG,Afghanistan,Low,gii_rank,2023,168
+AFG,Afghanistan,Low,gdi,2023,0.66
+AFG,Afghanistan,Low,gdi_group,2023,5
+AFG,Afghanistan,Low,mys,2023,2.514790058
+AFG,Afghanistan,Low,eys,2023,10.79014324
+AFG,Afghanistan,Low,ihdi,2023,0.321
+AFG,Afghanistan,Low,loss,2023,35.28225806
+ALB,Albania,Very High,hdi,2023,0.81
+ALB,Albania,Very High,hdi_rank,2023,71
+ALB,Albania,Very High,gii,2023,0.107
+ALB,Albania,Very High,gii_rank,2023,35
+ALB,Albania,Very High,gdi,2023,0.963
+ALB,Albania,Very High,gdi_group,2023,2
+ALB,Albania,Very High,mys,2023,10.17531099
+ALB,Albania,Very High,eys,2023,14.51014996
+ALB,Albania,Very High,ihdi,2023,0.705
+ALB,Albania,Very High,loss,2023,12.96296296
+DZA,Algeria,High,hdi,2023,0.763
+DZA,Algeria,High,hdi_rank,2023,96
+DZA,Algeria,High,gii,2023,0.443
+DZA,Algeria,High,gii_rank,2023,114
+DZA,Algeria,High,gdi,2023,0.887
+DZA,Algeria,High,gdi_group,2023,5
+DZA,Algeria,High,mys,2023,7.416386987
+DZA,Algeria,High,eys,2023,15.4951601
+DZA,Algeria,High,ihdi,2023,0.601
+DZA,Algeria,High,loss,2023,21.23197903
+AND,Andorra,Very High,hdi,2023,0.913
+AND,Andorra,Very High,hdi_rank,2023,32
+AND,Andorra,Very High,mys,2023,11.60999966
+AND,Andorra,Very High,eys,2023,14.54279041
+AND,Andorra,Very High,ihdi,2023,0.837
+AND,Andorra,Very High,loss,2023,8.324205915
+AGO,Angola,Medium,hdi,2023,0.616
+AGO,Angola,Medium,hdi_rank,2023,148
+AGO,Angola,Medium,gii,2023,0.515
+AGO,Angola,Medium,gii_rank,2023,139
+AGO,Angola,Medium,gdi,2023,0.906
+AGO,Angola,Medium,gdi_group,2023,4
+AGO,Angola,Medium,mys,2023,5.956173009
+AGO,Angola,Medium,eys,2023,12.1676
+AGO,Angola,Medium,ihdi,2023,0.36
+AGO,Angola,Medium,loss,2023,41.55844156
+ATG,Antigua and Barbuda,Very High,hdi,2023,0.851
+ATG,Antigua and Barbuda,Very High,hdi_rank,2023,53
+ATG,Antigua and Barbuda,Very High,gii,2023,0.24
+ATG,Antigua and Barbuda,Very High,gii_rank,2023,63
+ATG,Antigua and Barbuda,Very High,gdi,2023,1.031
+ATG,Antigua and Barbuda,Very High,gdi_group,2023,2
+ATG,Antigua and Barbuda,Very High,mys,2023,11.64750004
+ATG,Antigua and Barbuda,Very High,eys,2023,15.50299899
+ARG,Argentina,Very High,hdi,2023,0.865
+ARG,Argentina,Very High,hdi_rank,2023,47
+ARG,Argentina,Very High,gii,2023,0.264
+ARG,Argentina,Very High,gii_rank,2023,70
+ARG,Argentina,Very High,gdi,2023,0.988
+ARG,Argentina,Very High,gdi_group,2023,1
+ARG,Argentina,Very High,mys,2023,11.18458184
+ARG,Argentina,Very High,eys,2023,18.83120918
+ARG,Argentina,Very High,ihdi,2023,0.761
+ARG,Argentina,Very High,loss,2023,12.02312139
+ARM,Armenia,Very High,hdi,2023,0.811
+ARM,Armenia,Very High,hdi_rank,2023,69
+ARM,Armenia,Very High,gii,2023,0.18
+ARM,Armenia,Very High,gii_rank,2023,49
+ARM,Armenia,Very High,gdi,2023,1.006
+ARM,Armenia,Very High,gdi_group,2023,1
+ARM,Armenia,Very High,mys,2023,11.34497821
+ARM,Armenia,Very High,eys,2023,14.3838501
+ARM,Armenia,Very High,ihdi,2023,0.743
+ARM,Armenia,Very High,loss,2023,8.384710234
+AUS,Australia,Very High,hdi,2023,0.958
+AUS,Australia,Very High,hdi_rank,2023,7
+AUS,Australia,Very High,gii,2023,0.056
+AUS,Australia,Very High,gii_rank,2023,20
+AUS,Australia,Very High,gdi,2023,0.977
+AUS,Australia,Very High,gdi_group,2023,1
+AUS,Australia,Very High,mys,2023,12.86999989
+AUS,Australia,Very High,eys,2023,20.65477943
+AUS,Australia,Very High,ihdi,2023,0.873
+AUS,Australia,Very High,loss,2023,8.872651357
+AUT,Austria,Very High,hdi,2023,0.93
+AUT,Austria,Very High,hdi_rank,2023,22
+AUT,Austria,Very High,gii,2023,0.033
+AUT,Austria,Very High,gii_rank,2023,10
+AUT,Austria,Very High,gdi,2023,0.985
+AUT,Austria,Very High,gdi_group,2023,1
+AUT,Austria,Very High,mys,2023,12.36146506
+AUT,Austria,Very High,eys,2023,16.28428078
+AUT,Austria,Very High,ihdi,2023,0.861
+AUT,Austria,Very High,loss,2023,7.419354839
+AZE,Azerbaijan,High,hdi,2023,0.789
+AZE,Azerbaijan,High,hdi_rank,2023,81
+AZE,Azerbaijan,High,gii,2023,0.315
+AZE,Azerbaijan,High,gii_rank,2023,80
+AZE,Azerbaijan,High,gdi,2023,0.983
+AZE,Azerbaijan,High,gdi_group,2023,1
+AZE,Azerbaijan,High,mys,2023,11.06999969
+AZE,Azerbaijan,High,eys,2023,12.90977955
+AZE,Azerbaijan,High,ihdi,2023,0.735
+AZE,Azerbaijan,High,loss,2023,6.844106464
+BHS,Bahamas,Very High,hdi,2023,0.82
+BHS,Bahamas,Very High,hdi_rank,2023,66
+BHS,Bahamas,Very High,gii,2023,0.325
+BHS,Bahamas,Very High,gii_rank,2023,81
+BHS,Bahamas,Very High,gdi,2023,1.015
+BHS,Bahamas,Very High,gdi_group,2023,1
+BHS,Bahamas,Very High,mys,2023,12.81441904
+BHS,Bahamas,Very High,eys,2023,11.89137971
+BHS,Bahamas,Very High,ihdi,2023,0.67
+BHS,Bahamas,Very High,loss,2023,18.29268293
+BHR,Bahrain,Very High,hdi,2023,0.899
+BHR,Bahrain,Very High,hdi_rank,2023,38
+BHR,Bahrain,Very High,gii,2023,0.165
+BHR,Bahrain,Very High,gii_rank,2023,44
+BHR,Bahrain,Very High,gdi,2023,0.957
+BHR,Bahrain,Very High,gdi_group,2023,2
+BHR,Bahrain,Very High,mys,2023,11.13000011
+BHR,Bahrain,Very High,eys,2023,15.92718983
+BGD,Bangladesh,Medium,hdi,2023,0.685
+BGD,Bangladesh,Medium,hdi_rank,2023,130
+BGD,Bangladesh,Medium,gii,2023,0.487
+BGD,Bangladesh,Medium,gii_rank,2023,125
+BGD,Bangladesh,Medium,gdi,2023,0.918
+BGD,Bangladesh,Medium,gdi_group,2023,4
+BGD,Bangladesh,Medium,mys,2023,6.789999962
+BGD,Bangladesh,Medium,eys,2023,12.31016827
+BGD,Bangladesh,Medium,ihdi,2023,0.482
+BGD,Bangladesh,Medium,loss,2023,29.6350365
+BRB,Barbados,Very High,hdi,2023,0.811
+BRB,Barbados,Very High,hdi_rank,2023,69
+BRB,Barbados,Very High,gii,2023,0.297
+BRB,Barbados,Very High,gii_rank,2023,76
+BRB,Barbados,Very High,gdi,2023,1.035
+BRB,Barbados,Very High,gdi_group,2023,2
+BRB,Barbados,Very High,mys,2023,9.92835689
+BRB,Barbados,Very High,eys,2023,16.6280018
+BRB,Barbados,Very High,ihdi,2023,0.62
+BRB,Barbados,Very High,loss,2023,23.55117139
+BLR,Belarus,Very High,hdi,2023,0.824
+BLR,Belarus,Very High,hdi_rank,2023,65
+BLR,Belarus,Very High,gii,2023,0.08
+BLR,Belarus,Very High,gii_rank,2023,27
+BLR,Belarus,Very High,gdi,2023,1.009
+BLR,Belarus,Very High,gdi_group,2023,1
+BLR,Belarus,Very High,mys,2023,12.33537298
+BLR,Belarus,Very High,eys,2023,13.71881008
+BLR,Belarus,Very High,ihdi,2023,0.771
+BLR,Belarus,Very High,loss,2023,6.432038835
+BEL,Belgium,Very High,hdi,2023,0.951
+BEL,Belgium,Very High,hdi_rank,2023,10
+BEL,Belgium,Very High,gii,2023,0.031
+BEL,Belgium,Very High,gii_rank,2023,8
+BEL,Belgium,Very High,gdi,2023,0.979
+BEL,Belgium,Very High,gdi_group,2023,1
+BEL,Belgium,Very High,mys,2023,12.68965045
+BEL,Belgium,Very High,eys,2023,18.99603081
+BEL,Belgium,Very High,ihdi,2023,0.891
+BEL,Belgium,Very High,loss,2023,6.309148265
+BLZ,Belize,High,hdi,2023,0.721
+BLZ,Belize,High,hdi_rank,2023,115
+BLZ,Belize,High,gii,2023,0.428
+BLZ,Belize,High,gii_rank,2023,110
+BLZ,Belize,High,gdi,2023,0.981
+BLZ,Belize,High,gdi_group,2023,1
+BLZ,Belize,High,mys,2023,8.762290001
+BLZ,Belize,High,eys,2023,11.98379993
+BEN,Benin,Low,hdi,2023,0.515
+BEN,Benin,Low,hdi_rank,2023,173
+BEN,Benin,Low,gii,2023,0.573
+BEN,Benin,Low,gii_rank,2023,153
+BEN,Benin,Low,gdi,2023,0.866
+BEN,Benin,Low,gdi_group,2023,5
+BEN,Benin,Low,mys,2023,3.194200039
+BEN,Benin,Low,eys,2023,10.4464798
+BEN,Benin,Low,ihdi,2023,0.316
+BEN,Benin,Low,loss,2023,38.6407767
+BTN,Bhutan,Medium,hdi,2023,0.698
+BTN,Bhutan,Medium,hdi_rank,2023,125
+BTN,Bhutan,Medium,gii,2023,0.278
+BTN,Bhutan,Medium,gii_rank,2023,71
+BTN,Bhutan,Medium,gdi,2023,0.958
+BTN,Bhutan,Medium,gdi_group,2023,2
+BTN,Bhutan,Medium,mys,2023,5.835794662
+BTN,Bhutan,Medium,eys,2023,13.15274184
+BTN,Bhutan,Medium,ihdi,2023,0.478
+BTN,Bhutan,Medium,loss,2023,31.51862464
+BOL,Bolivia (Plurinational State of),High,hdi,2023,0.733
+BOL,Bolivia (Plurinational State of),High,hdi_rank,2023,108
+BOL,Bolivia (Plurinational State of),High,gii,2023,0.419
+BOL,Bolivia (Plurinational State of),High,gii_rank,2023,107
+BOL,Bolivia (Plurinational State of),High,gdi,2023,0.961
+BOL,Bolivia (Plurinational State of),High,gdi_group,2023,2
+BOL,Bolivia (Plurinational State of),High,mys,2023,10.02122319
+BOL,Bolivia (Plurinational State of),High,eys,2023,15.61065006
+BOL,Bolivia (Plurinational State of),High,ihdi,2023,0.578
+BOL,Bolivia (Plurinational State of),High,loss,2023,21.14597544
+BIH,Bosnia and Herzegovina,Very High,hdi,2023,0.804
+BIH,Bosnia and Herzegovina,Very High,hdi_rank,2023,74
+BIH,Bosnia and Herzegovina,Very High,gii,2023,0.157
+BIH,Bosnia and Herzegovina,Very High,gii_rank,2023,43
+BIH,Bosnia and Herzegovina,Very High,gdi,2023,0.967
+BIH,Bosnia and Herzegovina,Very High,gdi_group,2023,2
+BIH,Bosnia and Herzegovina,Very High,mys,2023,10.97000027
+BIH,Bosnia and Herzegovina,Very High,eys,2023,13.16394043
+BIH,Bosnia and Herzegovina,Very High,ihdi,2023,0.689
+BIH,Bosnia and Herzegovina,Very High,loss,2023,14.30348259
+BWA,Botswana,High,hdi,2023,0.731
+BWA,Botswana,High,hdi_rank,2023,111
+BWA,Botswana,High,gii,2023,0.49
+BWA,Botswana,High,gii_rank,2023,127
+BWA,Botswana,High,gdi,2023,0.997
+BWA,Botswana,High,gdi_group,2023,1
+BWA,Botswana,High,mys,2023,10.478
+BWA,Botswana,High,eys,2023,11.42568016
+BWA,Botswana,High,ihdi,2023,0.509
+BWA,Botswana,High,loss,2023,30.36935705
+BRA,Brazil,High,hdi,2023,0.786
+BRA,Brazil,High,hdi_rank,2023,84
+BRA,Brazil,High,gii,2023,0.39
+BRA,Brazil,High,gii_rank,2023,96
+BRA,Brazil,High,gdi,2023,1.002
+BRA,Brazil,High,gdi_group,2023,1
+BRA,Brazil,High,mys,2023,8.425371752
+BRA,Brazil,High,eys,2023,15.7927103
+BRA,Brazil,High,ihdi,2023,0.594
+BRA,Brazil,High,loss,2023,24.42748092
+BRN,Brunei Darussalam,Very High,hdi,2023,0.837
+BRN,Brunei Darussalam,Very High,hdi_rank,2023,60
+BRN,Brunei Darussalam,Very High,gii,2023,0.257
+BRN,Brunei Darussalam,Very High,gii_rank,2023,66
+BRN,Brunei Darussalam,Very High,gdi,2023,0.993
+BRN,Brunei Darussalam,Very High,gdi_group,2023,1
+BRN,Brunei Darussalam,Very High,mys,2023,9.282
+BRN,Brunei Darussalam,Very High,eys,2023,13.69861984
+BRN,Brunei Darussalam,Very High,ihdi,2023,0.756
+BRN,Brunei Darussalam,Very High,loss,2023,9.677419355
+BGR,Bulgaria,Very High,hdi,2023,0.845
+BGR,Bulgaria,Very High,hdi_rank,2023,55
+BGR,Bulgaria,Very High,gii,2023,0.208
+BGR,Bulgaria,Very High,gii_rank,2023,53
+BGR,Bulgaria,Very High,gdi,2023,1
+BGR,Bulgaria,Very High,gdi_group,2023,1
+BGR,Bulgaria,Very High,mys,2023,11.45453092
+BGR,Bulgaria,Very High,eys,2023,15.3166399
+BGR,Bulgaria,Very High,ihdi,2023,0.748
+BGR,Bulgaria,Very High,loss,2023,11.47928994
+BFA,Burkina Faso,Low,hdi,2023,0.459
+BFA,Burkina Faso,Low,hdi_rank,2023,186
+BFA,Burkina Faso,Low,gii,2023,0.555
+BFA,Burkina Faso,Low,gii_rank,2023,146
+BFA,Burkina Faso,Low,gdi,2023,0.881
+BFA,Burkina Faso,Low,gdi_group,2023,5
+BFA,Burkina Faso,Low,mys,2023,2.266550064
+BFA,Burkina Faso,Low,eys,2023,8.733340263
+BFA,Burkina Faso,Low,ihdi,2023,0.273
+BFA,Burkina Faso,Low,loss,2023,40.52287582
+BDI,Burundi,Low,hdi,2023,0.439
+BDI,Burundi,Low,hdi_rank,2023,187
+BDI,Burundi,Low,gii,2023,0.501
+BDI,Burundi,Low,gii_rank,2023,132
+BDI,Burundi,Low,gdi,2023,0.932
+BDI,Burundi,Low,gdi_group,2023,3
+BDI,Burundi,Low,mys,2023,3.473935556
+BDI,Burundi,Low,eys,2023,9.829423879
+BDI,Burundi,Low,ihdi,2023,0.286
+BDI,Burundi,Low,loss,2023,34.85193622
+CPV,Cabo Verde,Medium,hdi,2023,0.668
+CPV,Cabo Verde,Medium,hdi_rank,2023,135
+CPV,Cabo Verde,Medium,gii,2023,0.298
+CPV,Cabo Verde,Medium,gii_rank,2023,77
+CPV,Cabo Verde,Medium,gdi,2023,0.964
+CPV,Cabo Verde,Medium,gdi_group,2023,2
+CPV,Cabo Verde,Medium,mys,2023,6.09003905
+CPV,Cabo Verde,Medium,eys,2023,11.36709717
+CPV,Cabo Verde,Medium,ihdi,2023,0.478
+CPV,Cabo Verde,Medium,loss,2023,28.44311377
+KHM,Cambodia,Medium,hdi,2023,0.606
+KHM,Cambodia,Medium,hdi_rank,2023,151
+KHM,Cambodia,Medium,gii,2023,0.506
+KHM,Cambodia,Medium,gii_rank,2023,136
+KHM,Cambodia,Medium,gdi,2023,0.939
+KHM,Cambodia,Medium,gdi_group,2023,3
+KHM,Cambodia,Medium,mys,2023,5.197100163
+KHM,Cambodia,Medium,eys,2023,11.19789219
+KHM,Cambodia,Medium,ihdi,2023,0.444
+KHM,Cambodia,Medium,loss,2023,26.73267327
+CMR,Cameroon,Medium,hdi,2023,0.588
+CMR,Cameroon,Medium,hdi_rank,2023,155
+CMR,Cameroon,Medium,gii,2023,0.558
+CMR,Cameroon,Medium,gii_rank,2023,148
+CMR,Cameroon,Medium,gdi,2023,0.898
+CMR,Cameroon,Medium,gdi_group,2023,5
+CMR,Cameroon,Medium,mys,2023,6.574180412
+CMR,Cameroon,Medium,eys,2023,10.79187965
+CMR,Cameroon,Medium,ihdi,2023,0.361
+CMR,Cameroon,Medium,loss,2023,38.60544218
+CAN,Canada,Very High,hdi,2023,0.939
+CAN,Canada,Very High,hdi_rank,2023,16
+CAN,Canada,Very High,gii,2023,0.052
+CAN,Canada,Very High,gii_rank,2023,18
+CAN,Canada,Very High,gdi,2023,0.991
+CAN,Canada,Very High,gdi_group,2023,1
+CAN,Canada,Very High,mys,2023,13.86999989
+CAN,Canada,Very High,eys,2023,15.88825989
+CAN,Canada,Very High,ihdi,2023,0.867
+CAN,Canada,Very High,loss,2023,7.667731629
+CAF,Central African Republic,Low,hdi,2023,0.414
+CAF,Central African Republic,Low,hdi_rank,2023,191
+CAF,Central African Republic,Low,mys,2023,3.989431459
+CAF,Central African Republic,Low,eys,2023,7.435767778
+CAF,Central African Republic,Low,ihdi,2023,0.253
+CAF,Central African Republic,Low,loss,2023,38.88888889
+TCD,Chad,Low,hdi,2023,0.416
+TCD,Chad,Low,hdi_rank,2023,190
+TCD,Chad,Low,gii,2023,0.67
+TCD,Chad,Low,gii_rank,2023,169
+TCD,Chad,Low,gdi,2023,0.787
+TCD,Chad,Low,gdi_group,2023,5
+TCD,Chad,Low,mys,2023,2.334984892
+TCD,Chad,Low,eys,2023,8.347590231
+TCD,Chad,Low,ihdi,2023,0.252
+TCD,Chad,Low,loss,2023,39.42307692
+CHL,Chile,Very High,hdi,2023,0.878
+CHL,Chile,Very High,hdi_rank,2023,45
+CHL,Chile,Very High,gii,2023,0.102
+CHL,Chile,Very High,gii_rank,2023,33
+CHL,Chile,Very High,gdi,2023,0.967
+CHL,Chile,Very High,gdi_group,2023,2
+CHL,Chile,Very High,mys,2023,11.29105394
+CHL,Chile,Very High,eys,2023,16.91242027
+CHL,Chile,Very High,ihdi,2023,0.723
+CHL,Chile,Very High,loss,2023,17.65375854
+CHN,China,High,hdi,2023,0.797
+CHN,China,High,hdi_rank,2023,78
+CHN,China,High,gii,2023,0.132
+CHN,China,High,gii_rank,2023,41
+CHN,China,High,gdi,2023,0.976
+CHN,China,High,gdi_group,2023,1
+CHN,China,High,mys,2023,8.036181597
+CHN,China,High,eys,2023,15.4787495
+CHN,China,High,ihdi,2023,0.67
+CHN,China,High,loss,2023,15.93475533
+COL,Colombia,High,hdi,2023,0.788
+COL,Colombia,High,hdi_rank,2023,83
+COL,Colombia,High,gii,2023,0.393
+COL,Colombia,High,gii_rank,2023,98
+COL,Colombia,High,gdi,2023,0.992
+COL,Colombia,High,gdi_group,2023,1
+COL,Colombia,High,mys,2023,9.031581597
+COL,Colombia,High,eys,2023,14.28641033
+COL,Colombia,High,ihdi,2023,0.593
+COL,Colombia,High,loss,2023,24.74619289
+COM,Comoros,Medium,hdi,2023,0.603
+COM,Comoros,Medium,hdi_rank,2023,152
+COM,Comoros,Medium,gii,2023,0.501
+COM,Comoros,Medium,gii_rank,2023,132
+COM,Comoros,Medium,gdi,2023,0.929
+COM,Comoros,Medium,gdi_group,2023,3
+COM,Comoros,Medium,mys,2023,6.006840229
+COM,Comoros,Medium,eys,2023,13.29446063
+COM,Comoros,Medium,ihdi,2023,0.356
+COM,Comoros,Medium,loss,2023,40.96185738
+COG,Congo,Medium,hdi,2023,0.649
+COG,Congo,Medium,hdi_rank,2023,138
+COG,Congo,Medium,gii,2023,0.565
+COG,Congo,Medium,gii_rank,2023,151
+COG,Congo,Medium,gdi,2023,0.924
+COG,Congo,Medium,gdi_group,2023,4
+COG,Congo,Medium,mys,2023,8.322644792
+COG,Congo,Medium,eys,2023,12.68194711
+COG,Congo,Medium,ihdi,2023,0.426
+COG,Congo,Medium,loss,2023,34.3605547
+COD,Congo (Democratic Republic of the),Low,hdi,2023,0.522
+COD,Congo (Democratic Republic of the),Low,hdi_rank,2023,171
+COD,Congo (Democratic Republic of the),Low,gii,2023,0.604
+COD,Congo (Democratic Republic of the),Low,gii_rank,2023,162
+COD,Congo (Democratic Republic of the),Low,gdi,2023,0.886
+COD,Congo (Democratic Republic of the),Low,gdi_group,2023,5
+COD,Congo (Democratic Republic of the),Low,mys,2023,7.378561086
+COD,Congo (Democratic Republic of the),Low,eys,2023,10.91147386
+COD,Congo (Democratic Republic of the),Low,ihdi,2023,0.341
+COD,Congo (Democratic Republic of the),Low,loss,2023,34.6743295
+CRI,Costa Rica,Very High,hdi,2023,0.833
+CRI,Costa Rica,Very High,hdi_rank,2023,62
+CRI,Costa Rica,Very High,gii,2023,0.217
+CRI,Costa Rica,Very High,gii_rank,2023,55
+CRI,Costa Rica,Very High,gdi,2023,0.975
+CRI,Costa Rica,Very High,gdi_group,2023,1
+CRI,Costa Rica,Very High,mys,2023,8.844752499
+CRI,Costa Rica,Very High,eys,2023,16.34963687
+CRI,Costa Rica,Very High,ihdi,2023,0.678
+CRI,Costa Rica,Very High,loss,2023,18.60744298
+HRV,Croatia,Very High,hdi,2023,0.889
+HRV,Croatia,Very High,hdi_rank,2023,41
+HRV,Croatia,Very High,gii,2023,0.074
+HRV,Croatia,Very High,gii_rank,2023,25
+HRV,Croatia,Very High,gdi,2023,0.999
+HRV,Croatia,Very High,gdi_group,2023,1
+HRV,Croatia,Very High,mys,2023,12.0951217
+HRV,Croatia,Very High,eys,2023,16.34815025
+HRV,Croatia,Very High,ihdi,2023,0.828
+HRV,Croatia,Very High,loss,2023,6.861642295
+CUB,Cuba,High,hdi,2023,0.762
+CUB,Cuba,High,hdi_rank,2023,97
+CUB,Cuba,High,gii,2023,0.296
+CUB,Cuba,High,gii_rank,2023,75
+CUB,Cuba,High,gdi,2023,0.975
+CUB,Cuba,High,gdi_group,2023,1
+CUB,Cuba,High,mys,2023,10.63148903
+CUB,Cuba,High,eys,2023,13.87884045
+CYP,Cyprus,Very High,hdi,2023,0.913
+CYP,Cyprus,Very High,hdi_rank,2023,32
+CYP,Cyprus,Very High,gii,2023,0.252
+CYP,Cyprus,Very High,gii_rank,2023,64
+CYP,Cyprus,Very High,gdi,2023,0.996
+CYP,Cyprus,Very High,gdi_group,2023,1
+CYP,Cyprus,Very High,mys,2023,12.5573721
+CYP,Cyprus,Very High,eys,2023,16.21559906
+CYP,Cyprus,Very High,ihdi,2023,0.841
+CYP,Cyprus,Very High,loss,2023,7.886089814
+CZE,Czechia,Very High,hdi,2023,0.915
+CZE,Czechia,Very High,hdi_rank,2023,29
+CZE,Czechia,Very High,gii,2023,0.088
+CZE,Czechia,Very High,gii_rank,2023,32
+CZE,Czechia,Very High,gdi,2023,0.987
+CZE,Czechia,Very High,gdi_group,2023,1
+CZE,Czechia,Very High,mys,2023,12.96318214
+CZE,Czechia,Very High,eys,2023,16.7935009
+CZE,Czechia,Very High,ihdi,2023,0.867
+CZE,Czechia,Very High,loss,2023,5.245901639
+CIV,Côte d'Ivoire,Medium,hdi,2023,0.582
+CIV,Côte d'Ivoire,Medium,hdi_rank,2023,157
+CIV,Côte d'Ivoire,Medium,gii,2023,0.589
+CIV,Côte d'Ivoire,Medium,gii_rank,2023,159
+CIV,Côte d'Ivoire,Medium,gdi,2023,0.91
+CIV,Côte d'Ivoire,Medium,gdi_group,2023,4
+CIV,Côte d'Ivoire,Medium,mys,2023,4.869999886
+CIV,Côte d'Ivoire,Medium,eys,2023,11.41112995
+CIV,Côte d'Ivoire,Medium,ihdi,2023,0.35
+CIV,Côte d'Ivoire,Medium,loss,2023,39.86254296
+DNK,Denmark,Very High,hdi,2023,0.962
+DNK,Denmark,Very High,hdi_rank,2023,4
+DNK,Denmark,Very High,gii,2023,0.003
+DNK,Denmark,Very High,gii_rank,2023,1
+DNK,Denmark,Very High,gdi,2023,0.99
+DNK,Denmark,Very High,gdi_group,2023,1
+DNK,Denmark,Very High,mys,2023,13.0273206
+DNK,Denmark,Very High,eys,2023,18.70401001
+DNK,Denmark,Very High,ihdi,2023,0.909
+DNK,Denmark,Very High,loss,2023,5.509355509
+DJI,Djibouti,Low,hdi,2023,0.513
+DJI,Djibouti,Low,hdi_rank,2023,175
+DJI,Djibouti,Low,gii,2023,0.481
+DJI,Djibouti,Low,gii_rank,2023,122
+DJI,Djibouti,Low,gdi,2023,0.814
+DJI,Djibouti,Low,gdi_group,2023,5
+DJI,Djibouti,Low,mys,2023,3.95041503
+DJI,Djibouti,Low,eys,2023,6.207350016
+DJI,Djibouti,Low,ihdi,2023,0.341
+DJI,Djibouti,Low,loss,2023,33.52826511
+DMA,Dominica,High,hdi,2023,0.761
+DMA,Dominica,High,hdi_rank,2023,98
+DMA,Dominica,High,mys,2023,10.12508965
+DMA,Dominica,High,eys,2023,14.15099967
+DOM,Dominican Republic,High,hdi,2023,0.776
+DOM,Dominican Republic,High,hdi_rank,2023,89
+DOM,Dominican Republic,High,gii,2023,0.417
+DOM,Dominican Republic,High,gii_rank,2023,106
+DOM,Dominican Republic,High,gdi,2023,1.024
+DOM,Dominican Republic,High,gdi_group,2023,1
+DOM,Dominican Republic,High,mys,2023,9.444525756
+DOM,Dominican Republic,High,eys,2023,13.61692047
+DOM,Dominican Republic,High,ihdi,2023,0.634
+DOM,Dominican Republic,High,loss,2023,18.29896907
+ECU,Ecuador,High,hdi,2023,0.777
+ECU,Ecuador,High,hdi_rank,2023,88
+ECU,Ecuador,High,gii,2023,0.358
+ECU,Ecuador,High,gii_rank,2023,88
+ECU,Ecuador,High,gdi,2023,0.998
+ECU,Ecuador,High,gdi_group,2023,1
+ECU,Ecuador,High,mys,2023,8.970000267
+ECU,Ecuador,High,eys,2023,14.85167027
+ECU,Ecuador,High,ihdi,2023,0.64
+ECU,Ecuador,High,loss,2023,17.63191763
+EGY,Egypt,High,hdi,2023,0.754
+EGY,Egypt,High,hdi_rank,2023,100
+EGY,Egypt,High,gii,2023,0.398
+EGY,Egypt,High,gii_rank,2023,101
+EGY,Egypt,High,gdi,2023,0.895
+EGY,Egypt,High,gdi_group,2023,5
+EGY,Egypt,High,mys,2023,10.13611962
+EGY,Egypt,High,eys,2023,13.12716193
+EGY,Egypt,High,ihdi,2023,0.582
+EGY,Egypt,High,loss,2023,22.81167109
+SLV,El Salvador,Medium,hdi,2023,0.678
+SLV,El Salvador,Medium,hdi_rank,2023,132
+SLV,El Salvador,Medium,gii,2023,0.362
+SLV,El Salvador,Medium,gii_rank,2023,92
+SLV,El Salvador,Medium,gdi,2023,0.983
+SLV,El Salvador,Medium,gdi_group,2023,1
+SLV,El Salvador,Medium,mys,2023,7.300000191
+SLV,El Salvador,Medium,eys,2023,11.11291027
+SLV,El Salvador,Medium,ihdi,2023,0.555
+SLV,El Salvador,Medium,loss,2023,18.14159292
+GNQ,Equatorial Guinea,Medium,hdi,2023,0.674
+GNQ,Equatorial Guinea,Medium,hdi_rank,2023,133
+GNQ,Equatorial Guinea,Medium,mys,2023,8.281327014
+GNQ,Equatorial Guinea,Medium,eys,2023,12.49119511
+ERI,Eritrea,Low,hdi,2023,0.503
+ERI,Eritrea,Low,hdi_rank,2023,178
+ERI,Eritrea,Low,mys,2023,5.09136442
+ERI,Eritrea,Low,eys,2023,7.336672297
+EST,Estonia,Very High,hdi,2023,0.905
+EST,Estonia,Very High,hdi_rank,2023,36
+EST,Estonia,Very High,gii,2023,0.061
+EST,Estonia,Very High,gii_rank,2023,23
+EST,Estonia,Very High,gdi,2023,1.023
+EST,Estonia,Very High,gdi_group,2023,1
+EST,Estonia,Very High,mys,2023,13.56216597
+EST,Estonia,Very High,eys,2023,15.96786022
+EST,Estonia,Very High,ihdi,2023,0.841
+EST,Estonia,Very High,loss,2023,7.071823204
+SWZ,Eswatini (Kingdom of),Medium,hdi,2023,0.695
+SWZ,Eswatini (Kingdom of),Medium,hdi_rank,2023,126
+SWZ,Eswatini (Kingdom of),Medium,gii,2023,0.484
+SWZ,Eswatini (Kingdom of),Medium,gii_rank,2023,124
+SWZ,Eswatini (Kingdom of),Medium,gdi,2023,0.964
+SWZ,Eswatini (Kingdom of),Medium,gdi_group,2023,2
+SWZ,Eswatini (Kingdom of),Medium,mys,2023,8.685199738
+SWZ,Eswatini (Kingdom of),Medium,eys,2023,15.24604391
+SWZ,Eswatini (Kingdom of),Medium,ihdi,2023,0.431
+SWZ,Eswatini (Kingdom of),Medium,loss,2023,37.98561151
+ETH,Ethiopia,Low,hdi,2023,0.497
+ETH,Ethiopia,Low,hdi_rank,2023,180
+ETH,Ethiopia,Low,gii,2023,0.497
+ETH,Ethiopia,Low,gii_rank,2023,131
+ETH,Ethiopia,Low,gdi,2023,0.886
+ETH,Ethiopia,Low,gdi_group,2023,5
+ETH,Ethiopia,Low,mys,2023,2.402539813
+ETH,Ethiopia,Low,eys,2023,9.217651571
+ETH,Ethiopia,Low,ihdi,2023,0.326
+ETH,Ethiopia,Low,loss,2023,34.40643863
+FJI,Fiji,High,hdi,2023,0.731
+FJI,Fiji,High,hdi_rank,2023,111
+FJI,Fiji,High,gii,2023,0.35
+FJI,Fiji,High,gii_rank,2023,85
+FJI,Fiji,High,gdi,2023,0.948
+FJI,Fiji,High,gdi_group,2023,3
+FJI,Fiji,High,mys,2023,10.37096977
+FJI,Fiji,High,eys,2023,13.84869
+FJI,Fiji,High,ihdi,2023,0.626
+FJI,Fiji,High,loss,2023,14.36388509
+FIN,Finland,Very High,hdi,2023,0.948
+FIN,Finland,Very High,hdi_rank,2023,12
+FIN,Finland,Very High,gii,2023,0.021
+FIN,Finland,Very High,gii_rank,2023,6
+FIN,Finland,Very High,gdi,2023,0.992
+FIN,Finland,Very High,gdi_group,2023,1
+FIN,Finland,Very High,mys,2023,12.97962547
+FIN,Finland,Very High,eys,2023,19.49408913
+FIN,Finland,Very High,ihdi,2023,0.891
+FIN,Finland,Very High,loss,2023,6.012658228
+FRA,France,Very High,hdi,2023,0.92
+FRA,France,Very High,hdi_rank,2023,26
+FRA,France,Very High,gii,2023,0.034
+FRA,France,Very High,gii_rank,2023,11
+FRA,France,Very High,gdi,2023,0.993
+FRA,France,Very High,gdi_group,2023,1
+FRA,France,Very High,mys,2023,11.7656677
+FRA,France,Very High,eys,2023,16.09511948
+FRA,France,Very High,ihdi,2023,0.836
+FRA,France,Very High,loss,2023,9.130434783
+GAB,Gabon,High,hdi,2023,0.733
+GAB,Gabon,High,hdi_rank,2023,108
+GAB,Gabon,High,gii,2023,0.505
+GAB,Gabon,High,gii_rank,2023,135
+GAB,Gabon,High,gdi,2023,0.994
+GAB,Gabon,High,gdi_group,2023,1
+GAB,Gabon,High,mys,2023,9.686
+GAB,Gabon,High,eys,2023,12.48275889
+GAB,Gabon,High,ihdi,2023,0.558
+GAB,Gabon,High,loss,2023,23.8744884
+GMB,Gambia,Low,hdi,2023,0.524
+GMB,Gambia,Low,hdi_rank,2023,170
+GMB,Gambia,Low,gii,2023,0.578
+GMB,Gambia,Low,gii_rank,2023,154
+GMB,Gambia,Low,gdi,2023,0.959
+GMB,Gambia,Low,gdi_group,2023,2
+GMB,Gambia,Low,mys,2023,4.674727154
+GMB,Gambia,Low,eys,2023,8.977899686
+GMB,Gambia,Low,ihdi,2023,0.329
+GMB,Gambia,Low,loss,2023,37.21374046
+GEO,Georgia,Very High,hdi,2023,0.844
+GEO,Georgia,Very High,hdi_rank,2023,57
+GEO,Georgia,Very High,gii,2023,0.257
+GEO,Georgia,Very High,gii_rank,2023,66
+GEO,Georgia,Very High,gdi,2023,1.009
+GEO,Georgia,Very High,gdi_group,2023,1
+GEO,Georgia,Very High,mys,2023,12.69999981
+GEO,Georgia,Very High,eys,2023,16.75470924
+GEO,Georgia,Very High,ihdi,2023,0.754
+GEO,Georgia,Very High,loss,2023,10.66350711
+DEU,Germany,Very High,hdi,2023,0.959
+DEU,Germany,Very High,hdi_rank,2023,5
+DEU,Germany,Very High,gii,2023,0.057
+DEU,Germany,Very High,gii_rank,2023,21
+DEU,Germany,Very High,gdi,2023,0.975
+DEU,Germany,Very High,gdi_group,2023,1
+DEU,Germany,Very High,mys,2023,14.29637163
+DEU,Germany,Very High,eys,2023,17.30921936
+DEU,Germany,Very High,ihdi,2023,0.89
+DEU,Germany,Very High,loss,2023,7.194994786
+GHA,Ghana,Medium,hdi,2023,0.628
+GHA,Ghana,Medium,hdi_rank,2023,143
+GHA,Ghana,Medium,gii,2023,0.514
+GHA,Ghana,Medium,gii_rank,2023,138
+GHA,Ghana,Medium,gdi,2023,0.933
+GHA,Ghana,Medium,gdi_group,2023,3
+GHA,Ghana,Medium,mys,2023,7.107210159
+GHA,Ghana,Medium,eys,2023,11.41845989
+GHA,Ghana,Medium,ihdi,2023,0.399
+GHA,Ghana,Medium,loss,2023,36.46496815
+GRC,Greece,Very High,hdi,2023,0.908
+GRC,Greece,Very High,hdi_rank,2023,34
+GRC,Greece,Very High,gii,2023,0.103
+GRC,Greece,Very High,gii_rank,2023,34
+GRC,Greece,Very High,gdi,2023,0.963
+GRC,Greece,Very High,gdi_group,2023,2
+GRC,Greece,Very High,mys,2023,11.55385642
+GRC,Greece,Very High,eys,2023,20.84550095
+GRC,Greece,Very High,ihdi,2023,0.825
+GRC,Greece,Very High,loss,2023,9.140969163
+GRD,Grenada,High,hdi,2023,0.791
+GRD,Grenada,High,hdi_rank,2023,80
+GRD,Grenada,High,gii,2023,0.226
+GRD,Grenada,High,gii_rank,2023,58
+GRD,Grenada,High,gdi,2023,0.984
+GRD,Grenada,High,gdi_group,2023,1
+GRD,Grenada,High,mys,2023,9.446399307
+GRD,Grenada,High,eys,2023,16.57728919
+GTM,Guatemala,Medium,hdi,2023,0.662
+GTM,Guatemala,Medium,hdi_rank,2023,137
+GTM,Guatemala,Medium,gii,2023,0.48
+GTM,Guatemala,Medium,gii_rank,2023,121
+GTM,Guatemala,Medium,gdi,2023,0.934
+GTM,Guatemala,Medium,gdi_group,2023,3
+GTM,Guatemala,Medium,mys,2023,5.847300053
+GTM,Guatemala,Medium,eys,2023,10.67763042
+GTM,Guatemala,Medium,ihdi,2023,0.479
+GTM,Guatemala,Medium,loss,2023,27.64350453
+GIN,Guinea,Low,hdi,2023,0.5
+GIN,Guinea,Low,hdi_rank,2023,179
+GIN,Guinea,Low,gii,2023,0.609
+GIN,Guinea,Low,gii_rank,2023,163
+GIN,Guinea,Low,gdi,2023,0.828
+GIN,Guinea,Low,gdi_group,2023,5
+GIN,Guinea,Low,mys,2023,2.486339025
+GIN,Guinea,Low,eys,2023,10.39330626
+GIN,Guinea,Low,ihdi,2023,0.302
+GIN,Guinea,Low,loss,2023,39.6
+GNB,Guinea-Bissau,Low,hdi,2023,0.514
+GNB,Guinea-Bissau,Low,hdi_rank,2023,174
+GNB,Guinea-Bissau,Low,gii,2023,0.632
+GNB,Guinea-Bissau,Low,gii_rank,2023,166
+GNB,Guinea-Bissau,Low,gdi,2023,0.878
+GNB,Guinea-Bissau,Low,gdi_group,2023,5
+GNB,Guinea-Bissau,Low,mys,2023,3.673035
+GNB,Guinea-Bissau,Low,eys,2023,10.63534621
+GNB,Guinea-Bissau,Low,ihdi,2023,0.331
+GNB,Guinea-Bissau,Low,loss,2023,35.60311284
+GUY,Guyana,High,hdi,2023,0.776
+GUY,Guyana,High,hdi_rank,2023,89
+GUY,Guyana,High,gii,2023,0.427
+GUY,Guyana,High,gii_rank,2023,109
+GUY,Guyana,High,gdi,2023,0.992
+GUY,Guyana,High,gdi_group,2023,1
+GUY,Guyana,High,mys,2023,8.702429672
+GUY,Guyana,High,eys,2023,13.02205765
+HTI,Haiti,Medium,hdi,2023,0.554
+HTI,Haiti,Medium,hdi_rank,2023,166
+HTI,Haiti,Medium,gii,2023,0.618
+HTI,Haiti,Medium,gii_rank,2023,165
+HTI,Haiti,Medium,gdi,2023,0.932
+HTI,Haiti,Medium,gdi_group,2023,3
+HTI,Haiti,Medium,mys,2023,5.3822999
+HTI,Haiti,Medium,eys,2023,10.89635878
+HTI,Haiti,Medium,ihdi,2023,0.337
+HTI,Haiti,Medium,loss,2023,39.16967509
+HND,Honduras,Medium,hdi,2023,0.645
+HND,Honduras,Medium,hdi_rank,2023,139
+HND,Honduras,Medium,gii,2023,0.437
+HND,Honduras,Medium,gii_rank,2023,112
+HND,Honduras,Medium,gdi,2023,0.964
+HND,Honduras,Medium,gdi_group,2023,2
+HND,Honduras,Medium,mys,2023,7.510229074
+HND,Honduras,Medium,eys,2023,10.16220647
+HND,Honduras,Medium,ihdi,2023,0.496
+HND,Honduras,Medium,loss,2023,23.10077519
+HKG,"Hong Kong, China (SAR)",Very High,hdi,2023,0.955
+HKG,"Hong Kong, China (SAR)",Very High,hdi_rank,2023,8
+HKG,"Hong Kong, China (SAR)",Very High,gdi,2023,0.976
+HKG,"Hong Kong, China (SAR)",Very High,gdi_group,2023,1
+HKG,"Hong Kong, China (SAR)",Very High,mys,2023,12.35000038
+HKG,"Hong Kong, China (SAR)",Very High,eys,2023,16.89586067
+HKG,"Hong Kong, China (SAR)",Very High,ihdi,2023,0.839
+HKG,"Hong Kong, China (SAR)",Very High,loss,2023,12.14659686
+HUN,Hungary,Very High,hdi,2023,0.87
+HUN,Hungary,Very High,hdi_rank,2023,46
+HUN,Hungary,Very High,gii,2023,0.213
+HUN,Hungary,Very High,gii_rank,2023,54
+HUN,Hungary,Very High,gdi,2023,0.989
+HUN,Hungary,Very High,gdi_group,2023,1
+HUN,Hungary,Very High,mys,2023,12.33162229
+HUN,Hungary,Very High,eys,2023,15.46940041
+HUN,Hungary,Very High,ihdi,2023,0.819
+HUN,Hungary,Very High,loss,2023,5.862068966
+ISL,Iceland,Very High,hdi,2023,0.972
+ISL,Iceland,Very High,hdi_rank,2023,1
+ISL,Iceland,Very High,gii,2023,0.024
+ISL,Iceland,Very High,gii_rank,2023,7
+ISL,Iceland,Very High,gdi,2023,0.983
+ISL,Iceland,Very High,gdi_group,2023,1
+ISL,Iceland,Very High,mys,2023,13.90892628
+ISL,Iceland,Very High,eys,2023,18.85058975
+ISL,Iceland,Very High,ihdi,2023,0.923
+ISL,Iceland,Very High,loss,2023,5.041152263
+IND,India,Medium,hdi,2023,0.685
+IND,India,Medium,hdi_rank,2023,130
+IND,India,Medium,gii,2023,0.403
+IND,India,Medium,gii_rank,2023,102
+IND,India,Medium,gdi,2023,0.874
+IND,India,Medium,gdi_group,2023,5
+IND,India,Medium,mys,2023,6.880000114
+IND,India,Medium,eys,2023,12.95454025
+IND,India,Medium,ihdi,2023,0.475
+IND,India,Medium,loss,2023,30.65693431
+IDN,Indonesia,High,hdi,2023,0.728
+IDN,Indonesia,High,hdi_rank,2023,113
+IDN,Indonesia,High,gii,2023,0.423
+IDN,Indonesia,High,gii_rank,2023,108
+IDN,Indonesia,High,gdi,2023,0.945
+IDN,Indonesia,High,gdi_group,2023,3
+IDN,Indonesia,High,mys,2023,8.6972232
+IDN,Indonesia,High,eys,2023,13.33577728
+IDN,Indonesia,High,ihdi,2023,0.608
+IDN,Indonesia,High,loss,2023,16.48351648
+IRN,Iran (Islamic Republic of),High,hdi,2023,0.799
+IRN,Iran (Islamic Republic of),High,hdi_rank,2023,75
+IRN,Iran (Islamic Republic of),High,gii,2023,0.482
+IRN,Iran (Islamic Republic of),High,gii_rank,2023,123
+IRN,Iran (Islamic Republic of),High,gdi,2023,0.875
+IRN,Iran (Islamic Republic of),High,gdi_group,2023,5
+IRN,Iran (Islamic Republic of),High,mys,2023,10.84671198
+IRN,Iran (Islamic Republic of),High,eys,2023,13.96833061
+IRN,Iran (Islamic Republic of),High,ihdi,2023,0.643
+IRN,Iran (Islamic Republic of),High,loss,2023,19.52440551
+IRQ,Iraq,Medium,hdi,2023,0.695
+IRQ,Iraq,Medium,hdi_rank,2023,126
+IRQ,Iraq,Medium,gii,2023,0.558
+IRQ,Iraq,Medium,gii_rank,2023,148
+IRQ,Iraq,Medium,gdi,2023,0.793
+IRQ,Iraq,Medium,gdi_group,2023,5
+IRQ,Iraq,Medium,mys,2023,6.780046287
+IRQ,Iraq,Medium,eys,2023,12.35940135
+IRQ,Iraq,Medium,ihdi,2023,0.534
+IRQ,Iraq,Medium,loss,2023,23.16546763
+IRL,Ireland,Very High,hdi,2023,0.949
+IRL,Ireland,Very High,hdi_rank,2023,11
+IRL,Ireland,Very High,gii,2023,0.054
+IRL,Ireland,Very High,gii_rank,2023,19
+IRL,Ireland,Very High,gdi,2023,1.001
+IRL,Ireland,Very High,gdi_group,2023,1
+IRL,Ireland,Very High,mys,2023,11.72499956
+IRL,Ireland,Very High,eys,2023,19.1848793
+IRL,Ireland,Very High,ihdi,2023,0.886
+IRL,Ireland,Very High,loss,2023,6.638566913
+ISR,Israel,Very High,hdi,2023,0.919
+ISR,Israel,Very High,hdi_rank,2023,27
+ISR,Israel,Very High,gii,2023,0.08
+ISR,Israel,Very High,gii_rank,2023,27
+ISR,Israel,Very High,gdi,2023,0.994
+ISR,Israel,Very High,gdi_group,2023,1
+ISR,Israel,Very High,mys,2023,13.53459474
+ISR,Israel,Very High,eys,2023,14.93416023
+ISR,Israel,Very High,ihdi,2023,0.813
+ISR,Israel,Very High,loss,2023,11.53427639
+ITA,Italy,Very High,hdi,2023,0.915
+ITA,Italy,Very High,hdi_rank,2023,29
+ITA,Italy,Very High,gii,2023,0.043
+ITA,Italy,Very High,gii_rank,2023,15
+ITA,Italy,Very High,gdi,2023,0.975
+ITA,Italy,Very High,gdi_group,2023,1
+ITA,Italy,Very High,mys,2023,10.82812827
+ITA,Italy,Very High,eys,2023,16.71419907
+ITA,Italy,Very High,ihdi,2023,0.817
+ITA,Italy,Very High,loss,2023,10.71038251
+JAM,Jamaica,High,hdi,2023,0.72
+JAM,Jamaica,High,hdi_rank,2023,117
+JAM,Jamaica,High,gii,2023,0.358
+JAM,Jamaica,High,gii_rank,2023,88
+JAM,Jamaica,High,gdi,2023,1.013
+JAM,Jamaica,High,gdi_group,2023,1
+JAM,Jamaica,High,mys,2023,9.959910393
+JAM,Jamaica,High,eys,2023,12.3833955
+JAM,Jamaica,High,ihdi,2023,0.59
+JAM,Jamaica,High,loss,2023,18.05555556
+JPN,Japan,Very High,hdi,2023,0.925
+JPN,Japan,Very High,hdi_rank,2023,23
+JPN,Japan,Very High,gii,2023,0.059
+JPN,Japan,Very High,gii_rank,2023,22
+JPN,Japan,Very High,gdi,2023,0.97
+JPN,Japan,Very High,gdi_group,2023,2
+JPN,Japan,Very High,mys,2023,12.68404671
+JPN,Japan,Very High,eys,2023,15.51198006
+JPN,Japan,Very High,ihdi,2023,0.845
+JPN,Japan,Very High,loss,2023,8.648648649
+JOR,Jordan,High,hdi,2023,0.754
+JOR,Jordan,High,hdi_rank,2023,100
+JOR,Jordan,High,gii,2023,0.433
+JOR,Jordan,High,gii_rank,2023,111
+JOR,Jordan,High,gdi,2023,0.861
+JOR,Jordan,High,gdi_group,2023,5
+JOR,Jordan,High,mys,2023,10.23999977
+JOR,Jordan,High,eys,2023,13.1090498
+JOR,Jordan,High,ihdi,2023,0.637
+JOR,Jordan,High,loss,2023,15.51724138
+KAZ,Kazakhstan,Very High,hdi,2023,0.837
+KAZ,Kazakhstan,Very High,hdi_rank,2023,60
+KAZ,Kazakhstan,Very High,gii,2023,0.182
+KAZ,Kazakhstan,Very High,gii_rank,2023,50
+KAZ,Kazakhstan,Very High,gdi,2023,1.004
+KAZ,Kazakhstan,Very High,gdi_group,2023,1
+KAZ,Kazakhstan,Very High,mys,2023,12.54717423
+KAZ,Kazakhstan,Very High,eys,2023,14.0086174
+KAZ,Kazakhstan,Very High,ihdi,2023,0.766
+KAZ,Kazakhstan,Very High,loss,2023,8.482676225
+KEN,Kenya,Medium,hdi,2023,0.628
+KEN,Kenya,Medium,hdi_rank,2023,143
+KEN,Kenya,Medium,gii,2023,0.526
+KEN,Kenya,Medium,gii_rank,2023,143
+KEN,Kenya,Medium,gdi,2023,0.944
+KEN,Kenya,Medium,gdi_group,2023,3
+KEN,Kenya,Medium,mys,2023,8.624710083
+KEN,Kenya,Medium,eys,2023,11.47407573
+KEN,Kenya,Medium,ihdi,2023,0.456
+KEN,Kenya,Medium,loss,2023,27.38853503
+KIR,Kiribati,Medium,hdi,2023,0.644
+KIR,Kiribati,Medium,hdi_rank,2023,140
+KIR,Kiribati,Medium,gdi,2023,0.976
+KIR,Kiribati,Medium,gdi_group,2023,1
+KIR,Kiribati,Medium,mys,2023,9.128581569
+KIR,Kiribati,Medium,eys,2023,11.87390648
+KIR,Kiribati,Medium,ihdi,2023,0.535
+KIR,Kiribati,Medium,loss,2023,16.92546584
+PRK,Korea (Democratic People's Rep. of),Other Countries or Territories,eys,2023,12.20215329
+KOR,Korea (Republic of),Very High,hdi,2023,0.937
+KOR,Korea (Republic of),Very High,hdi_rank,2023,20
+KOR,Korea (Republic of),Very High,gii,2023,0.038
+KOR,Korea (Republic of),Very High,gii_rank,2023,12
+KOR,Korea (Republic of),Very High,gdi,2023,0.959
+KOR,Korea (Republic of),Very High,gdi_group,2023,2
+KOR,Korea (Republic of),Very High,mys,2023,12.72219869
+KOR,Korea (Republic of),Very High,eys,2023,16.6186409
+KOR,Korea (Republic of),Very High,ihdi,2023,0.857
+KOR,Korea (Republic of),Very High,loss,2023,8.537886873
+KWT,Kuwait,Very High,hdi,2023,0.852
+KWT,Kuwait,Very High,hdi_rank,2023,52
+KWT,Kuwait,Very High,gii,2023,0.188
+KWT,Kuwait,Very High,gii_rank,2023,51
+KWT,Kuwait,Very High,gdi,2023,1.011
+KWT,Kuwait,Very High,gdi_group,2023,1
+KWT,Kuwait,Very High,mys,2023,7.566007112
+KWT,Kuwait,Very High,eys,2023,15.90424029
+KGZ,Kyrgyzstan,High,hdi,2023,0.72
+KGZ,Kyrgyzstan,High,hdi_rank,2023,117
+KGZ,Kyrgyzstan,High,gii,2023,0.34
+KGZ,Kyrgyzstan,High,gii_rank,2023,83
+KGZ,Kyrgyzstan,High,gdi,2023,0.959
+KGZ,Kyrgyzstan,High,gdi_group,2023,2
+KGZ,Kyrgyzstan,High,mys,2023,12.06588858
+KGZ,Kyrgyzstan,High,eys,2023,12.71388245
+KGZ,Kyrgyzstan,High,ihdi,2023,0.649
+KGZ,Kyrgyzstan,High,loss,2023,9.861111111
+LAO,Lao People's Democratic Republic,Medium,hdi,2023,0.617
+LAO,Lao People's Democratic Republic,Medium,hdi_rank,2023,147
+LAO,Lao People's Democratic Republic,Medium,gii,2023,0.475
+LAO,Lao People's Democratic Republic,Medium,gii_rank,2023,117
+LAO,Lao People's Democratic Republic,Medium,gdi,2023,0.911
+LAO,Lao People's Democratic Republic,Medium,gdi_group,2023,4
+LAO,Lao People's Democratic Republic,Medium,mys,2023,6.06024616
+LAO,Lao People's Democratic Republic,Medium,eys,2023,9.605483055
+LAO,Lao People's Democratic Republic,Medium,ihdi,2023,0.462
+LAO,Lao People's Democratic Republic,Medium,loss,2023,25.12155592
+LVA,Latvia,Very High,hdi,2023,0.889
+LVA,Latvia,Very High,hdi_rank,2023,41
+LVA,Latvia,Very High,gii,2023,0.117
+LVA,Latvia,Very High,gii_rank,2023,38
+LVA,Latvia,Very High,gdi,2023,1.026
+LVA,Latvia,Very High,gdi_group,2023,2
+LVA,Latvia,Very High,mys,2023,13.40943983
+LVA,Latvia,Very High,eys,2023,16.48265076
+LVA,Latvia,Very High,ihdi,2023,0.812
+LVA,Latvia,Very High,loss,2023,8.661417323
+LBN,Lebanon,High,hdi,2023,0.752
+LBN,Lebanon,High,hdi_rank,2023,102
+LBN,Lebanon,High,gii,2023,0.36
+LBN,Lebanon,High,gii_rank,2023,91
+LBN,Lebanon,High,gdi,2023,0.992
+LBN,Lebanon,High,gdi_group,2023,1
+LBN,Lebanon,High,mys,2023,10.36999989
+LBN,Lebanon,High,eys,2023,11.68299961
+LSO,Lesotho,Medium,hdi,2023,0.55
+LSO,Lesotho,Medium,hdi_rank,2023,167
+LSO,Lesotho,Medium,gii,2023,0.534
+LSO,Lesotho,Medium,gii_rank,2023,144
+LSO,Lesotho,Medium,gdi,2023,1.006
+LSO,Lesotho,Medium,gdi_group,2023,1
+LSO,Lesotho,Medium,mys,2023,7.729883486
+LSO,Lesotho,Medium,eys,2023,10.98659352
+LSO,Lesotho,Medium,ihdi,2023,0.357
+LSO,Lesotho,Medium,loss,2023,35.09090909
+LBR,Liberia,Low,hdi,2023,0.51
+LBR,Liberia,Low,hdi_rank,2023,177
+LBR,Liberia,Low,gii,2023,0.646
+LBR,Liberia,Low,gii_rank,2023,167
+LBR,Liberia,Low,gdi,2023,0.865
+LBR,Liberia,Low,gdi_group,2023,5
+LBR,Liberia,Low,mys,2023,6.169891955
+LBR,Liberia,Low,eys,2023,10.46585369
+LBR,Liberia,Low,ihdi,2023,0.326
+LBR,Liberia,Low,loss,2023,36.07843137
+LBY,Libya,High,hdi,2023,0.721
+LBY,Libya,High,hdi_rank,2023,115
+LBY,Libya,High,gii,2023,0.253
+LBY,Libya,High,gii_rank,2023,65
+LBY,Libya,High,gdi,2023,0.955
+LBY,Libya,High,gdi_group,2023,2
+LBY,Libya,High,mys,2023,7.77860643
+LBY,Libya,High,eys,2023,12.92465677
+LIE,Liechtenstein,Very High,hdi,2023,0.938
+LIE,Liechtenstein,Very High,hdi_rank,2023,17
+LIE,Liechtenstein,Very High,gdi,2023,0.964
+LIE,Liechtenstein,Very High,gdi_group,2023,2
+LIE,Liechtenstein,Very High,mys,2023,12.40995938
+LIE,Liechtenstein,Very High,eys,2023,15.41257954
+LTU,Lithuania,Very High,hdi,2023,0.895
+LTU,Lithuania,Very High,hdi_rank,2023,39
+LTU,Lithuania,Very High,gii,2023,0.07
+LTU,Lithuania,Very High,gii_rank,2023,24
+LTU,Lithuania,Very High,gdi,2023,1.022
+LTU,Lithuania,Very High,gdi_group,2023,1
+LTU,Lithuania,Very High,mys,2023,13.61069239
+LTU,Lithuania,Very High,eys,2023,16.45467949
+LTU,Lithuania,Very High,ihdi,2023,0.812
+LTU,Lithuania,Very High,loss,2023,9.273743017
+LUX,Luxembourg,Very High,hdi,2023,0.922
+LUX,Luxembourg,Very High,hdi_rank,2023,25
+LUX,Luxembourg,Very High,gii,2023,0.044
+LUX,Luxembourg,Very High,gii_rank,2023,17
+LUX,Luxembourg,Very High,gdi,2023,0.996
+LUX,Luxembourg,Very High,gdi_group,2023,1
+LUX,Luxembourg,Very High,mys,2023,12.58937195
+LUX,Luxembourg,Very High,eys,2023,14.35795021
+LUX,Luxembourg,Very High,ihdi,2023,0.838
+LUX,Luxembourg,Very High,loss,2023,9.110629067
+MDG,Madagascar,Low,hdi,2023,0.487
+MDG,Madagascar,Low,hdi_rank,2023,183
+MDG,Madagascar,Low,gii,2023,0.584
+MDG,Madagascar,Low,gii_rank,2023,156
+MDG,Madagascar,Low,gdi,2023,0.934
+MDG,Madagascar,Low,gdi_group,2023,3
+MDG,Madagascar,Low,mys,2023,4.592520237
+MDG,Madagascar,Low,eys,2023,9.062584503
+MDG,Madagascar,Low,ihdi,2023,0.319
+MDG,Madagascar,Low,loss,2023,34.49691992
+MWI,Malawi,Low,hdi,2023,0.517
+MWI,Malawi,Low,hdi_rank,2023,172
+MWI,Malawi,Low,gii,2023,0.581
+MWI,Malawi,Low,gii_rank,2023,155
+MWI,Malawi,Low,gdi,2023,0.925
+MWI,Malawi,Low,gdi_group,2023,3
+MWI,Malawi,Low,mys,2023,5.243740082
+MWI,Malawi,Low,eys,2023,9.902591705
+MWI,Malawi,Low,ihdi,2023,0.365
+MWI,Malawi,Low,loss,2023,29.40038685
+MYS,Malaysia,Very High,hdi,2023,0.819
+MYS,Malaysia,Very High,hdi_rank,2023,67
+MYS,Malaysia,Very High,gii,2023,0.172
+MYS,Malaysia,Very High,gii_rank,2023,47
+MYS,Malaysia,Very High,gdi,2023,0.973
+MYS,Malaysia,Very High,gdi_group,2023,2
+MYS,Malaysia,Very High,mys,2023,11.09000015
+MYS,Malaysia,Very High,eys,2023,12.67639256
+MYS,Malaysia,Very High,ihdi,2023,0.707
+MYS,Malaysia,Very High,loss,2023,13.67521368
+MDV,Maldives,High,hdi,2023,0.766
+MDV,Maldives,High,hdi_rank,2023,93
+MDV,Maldives,High,gii,2023,0.309
+MDV,Maldives,High,gii_rank,2023,79
+MDV,Maldives,High,gdi,2023,0.986
+MDV,Maldives,High,gdi_group,2023,1
+MDV,Maldives,High,mys,2023,7.410372866
+MDV,Maldives,High,eys,2023,12.76840687
+MDV,Maldives,High,ihdi,2023,0.602
+MDV,Maldives,High,loss,2023,21.40992167
+MLI,Mali,Low,hdi,2023,0.419
+MLI,Mali,Low,hdi_rank,2023,188
+MLI,Mali,Low,gii,2023,0.612
+MLI,Mali,Low,gii_rank,2023,164
+MLI,Mali,Low,gdi,2023,0.812
+MLI,Mali,Low,gdi_group,2023,5
+MLI,Mali,Low,mys,2023,1.629999995
+MLI,Mali,Low,eys,2023,7.011331533
+MLI,Mali,Low,ihdi,2023,0.281
+MLI,Mali,Low,loss,2023,32.93556086
+MLT,Malta,Very High,hdi,2023,0.924
+MLT,Malta,Very High,hdi_rank,2023,24
+MLT,Malta,Very High,gii,2023,0.111
+MLT,Malta,Very High,gii_rank,2023,36
+MLT,Malta,Very High,gdi,2023,0.977
+MLT,Malta,Very High,gdi_group,2023,1
+MLT,Malta,Very High,mys,2023,12.4207021
+MLT,Malta,Very High,eys,2023,15.90985012
+MLT,Malta,Very High,ihdi,2023,0.843
+MLT,Malta,Very High,loss,2023,8.766233766
+MHL,Marshall Islands,High,hdi,2023,0.733
+MHL,Marshall Islands,High,hdi_rank,2023,108
+MHL,Marshall Islands,High,gdi,2023,0.96
+MHL,Marshall Islands,High,gdi_group,2023,2
+MHL,Marshall Islands,High,mys,2023,11.6366644
+MHL,Marshall Islands,High,eys,2023,16.38606071
+MHL,Marshall Islands,High,ihdi,2023,0.626
+MHL,Marshall Islands,High,loss,2023,14.59754434
+MRT,Mauritania,Medium,hdi,2023,0.563
+MRT,Mauritania,Medium,hdi_rank,2023,163
+MRT,Mauritania,Medium,gii,2023,0.603
+MRT,Mauritania,Medium,gii_rank,2023,161
+MRT,Mauritania,Medium,gdi,2023,0.886
+MRT,Mauritania,Medium,gdi_group,2023,5
+MRT,Mauritania,Medium,mys,2023,4.852025862
+MRT,Mauritania,Medium,eys,2023,7.949540636
+MRT,Mauritania,Medium,ihdi,2023,0.374
+MRT,Mauritania,Medium,loss,2023,33.57015986
+MUS,Mauritius,Very High,hdi,2023,0.806
+MUS,Mauritius,Very High,hdi_rank,2023,73
+MUS,Mauritius,Very High,gii,2023,0.352
+MUS,Mauritius,Very High,gii_rank,2023,87
+MUS,Mauritius,Very High,gdi,2023,0.971
+MUS,Mauritius,Very High,gdi_group,2023,2
+MUS,Mauritius,Very High,mys,2023,10.10332754
+MUS,Mauritius,Very High,eys,2023,14.16282114
+MUS,Mauritius,Very High,ihdi,2023,0.669
+MUS,Mauritius,Very High,loss,2023,16.99751861
+MEX,Mexico,High,hdi,2023,0.789
+MEX,Mexico,High,hdi_rank,2023,81
+MEX,Mexico,High,gii,2023,0.358
+MEX,Mexico,High,gii_rank,2023,88
+MEX,Mexico,High,gdi,2023,0.976
+MEX,Mexico,High,gdi_group,2023,1
+MEX,Mexico,High,mys,2023,9.349510934
+MEX,Mexico,High,eys,2023,14.46811008
+MEX,Mexico,High,ihdi,2023,0.646
+MEX,Mexico,High,loss,2023,18.12420786
+FSM,Micronesia (Federated States of),Medium,hdi,2023,0.615
+FSM,Micronesia (Federated States of),Medium,hdi_rank,2023,149
+FSM,Micronesia (Federated States of),Medium,gdi,2023,0.953
+FSM,Micronesia (Federated States of),Medium,gdi_group,2023,2
+FSM,Micronesia (Federated States of),Medium,mys,2023,7.33252398
+FSM,Micronesia (Federated States of),Medium,eys,2023,11.54008512
+MDA,Moldova (Republic of),High,hdi,2023,0.785
+MDA,Moldova (Republic of),High,hdi_rank,2023,86
+MDA,Moldova (Republic of),High,gii,2023,0.146
+MDA,Moldova (Republic of),High,gii_rank,2023,42
+MDA,Moldova (Republic of),High,gdi,2023,1.029
+MDA,Moldova (Republic of),High,gdi_group,2023,2
+MDA,Moldova (Republic of),High,mys,2023,11.82999992
+MDA,Moldova (Republic of),High,eys,2023,14.63856847
+MDA,Moldova (Republic of),High,ihdi,2023,0.719
+MDA,Moldova (Republic of),High,loss,2023,8.407643312
+MCO,Monaco,Other Countries or Territories,eys,2023,21.6872406
+MNG,Mongolia,High,hdi,2023,0.747
+MNG,Mongolia,High,hdi_rank,2023,104
+MNG,Mongolia,High,gii,2023,0.284
+MNG,Mongolia,High,gii_rank,2023,72
+MNG,Mongolia,High,gdi,2023,1.03
+MNG,Mongolia,High,gdi_group,2023,2
+MNG,Mongolia,High,mys,2023,9.420000076
+MNG,Mongolia,High,eys,2023,13.6376543
+MNG,Mongolia,High,ihdi,2023,0.647
+MNG,Mongolia,High,loss,2023,13.38688086
+MNE,Montenegro,Very High,hdi,2023,0.862
+MNE,Montenegro,Very High,hdi_rank,2023,48
+MNE,Montenegro,Very High,gii,2023,0.121
+MNE,Montenegro,Very High,gii_rank,2023,40
+MNE,Montenegro,Very High,gdi,2023,0.984
+MNE,Montenegro,Very High,gdi_group,2023,1
+MNE,Montenegro,Very High,mys,2023,12.77392572
+MNE,Montenegro,Very High,eys,2023,15.53652954
+MNE,Montenegro,Very High,ihdi,2023,0.771
+MNE,Montenegro,Very High,loss,2023,10.55684455
+MAR,Morocco,High,hdi,2023,0.71
+MAR,Morocco,High,hdi_rank,2023,120
+MAR,Morocco,High,gii,2023,0.438
+MAR,Morocco,High,gii_rank,2023,113
+MAR,Morocco,High,gdi,2023,0.859
+MAR,Morocco,High,gdi_group,2023,5
+MAR,Morocco,High,mys,2023,6.198
+MAR,Morocco,High,eys,2023,15.07499027
+MAR,Morocco,High,ihdi,2023,0.517
+MAR,Morocco,High,loss,2023,27.18309859
+MOZ,Mozambique,Low,hdi,2023,0.493
+MOZ,Mozambique,Low,hdi_rank,2023,182
+MOZ,Mozambique,Low,gii,2023,0.479
+MOZ,Mozambique,Low,gii_rank,2023,120
+MOZ,Mozambique,Low,gdi,2023,0.92
+MOZ,Mozambique,Low,gdi_group,2023,4
+MOZ,Mozambique,Low,mys,2023,4.590489864
+MOZ,Mozambique,Low,eys,2023,10.84830885
+MOZ,Mozambique,Low,ihdi,2023,0.297
+MOZ,Mozambique,Low,loss,2023,39.75659229
+MMR,Myanmar,Medium,hdi,2023,0.609
+MMR,Myanmar,Medium,hdi_rank,2023,150
+MMR,Myanmar,Medium,gii,2023,0.478
+MMR,Myanmar,Medium,gii_rank,2023,118
+MMR,Myanmar,Medium,gdi,2023,0.947
+MMR,Myanmar,Medium,gdi_group,2023,3
+MMR,Myanmar,Medium,mys,2023,6.380000114
+MMR,Myanmar,Medium,eys,2023,11.50456047
+MMR,Myanmar,Medium,ihdi,2023,0.477
+MMR,Myanmar,Medium,loss,2023,21.67487685
+NAM,Namibia,Medium,hdi,2023,0.665
+NAM,Namibia,Medium,hdi_rank,2023,136
+NAM,Namibia,Medium,gii,2023,0.448
+NAM,Namibia,Medium,gii_rank,2023,116
+NAM,Namibia,Medium,gdi,2023,1.011
+NAM,Namibia,Medium,gdi_group,2023,1
+NAM,Namibia,Medium,mys,2023,7.273146745
+NAM,Namibia,Medium,eys,2023,11.78505588
+NAM,Namibia,Medium,ihdi,2023,0.438
+NAM,Namibia,Medium,loss,2023,34.13533835
+NRU,Nauru,High,hdi,2023,0.703
+NRU,Nauru,High,hdi_rank,2023,124
+NRU,Nauru,High,gdi,2023,0.955
+NRU,Nauru,High,gdi_group,2023,2
+NRU,Nauru,High,mys,2023,9.448637676
+NRU,Nauru,High,eys,2023,12.84263763
+NRU,Nauru,High,ihdi,2023,0.599
+NRU,Nauru,High,loss,2023,14.79374111
+NPL,Nepal,Medium,hdi,2023,0.622
+NPL,Nepal,Medium,hdi_rank,2023,145
+NPL,Nepal,Medium,gii,2023,0.487
+NPL,Nepal,Medium,gii_rank,2023,125
+NPL,Nepal,Medium,gdi,2023,0.858
+NPL,Nepal,Medium,gdi_group,2023,5
+NPL,Nepal,Medium,mys,2023,4.50372982
+NPL,Nepal,Medium,eys,2023,13.75430393
+NPL,Nepal,Medium,ihdi,2023,0.437
+NPL,Nepal,Medium,loss,2023,29.74276527
+NLD,Netherlands,Very High,hdi,2023,0.955
+NLD,Netherlands,Very High,hdi_rank,2023,8
+NLD,Netherlands,Very High,gii,2023,0.013
+NLD,Netherlands,Very High,gii_rank,2023,5
+NLD,Netherlands,Very High,gdi,2023,0.971
+NLD,Netherlands,Very High,gdi_group,2023,2
+NLD,Netherlands,Very High,mys,2023,12.66994689
+NLD,Netherlands,Very High,eys,2023,18.58485031
+NLD,Netherlands,Very High,ihdi,2023,0.892
+NLD,Netherlands,Very High,loss,2023,6.596858639
+NZL,New Zealand,Very High,hdi,2023,0.938
+NZL,New Zealand,Very High,hdi_rank,2023,17
+NZL,New Zealand,Very High,gii,2023,0.082
+NZL,New Zealand,Very High,gii_rank,2023,30
+NZL,New Zealand,Very High,gdi,2023,0.973
+NZL,New Zealand,Very High,gdi_group,2023,2
+NZL,New Zealand,Very High,mys,2023,12.88299807
+NZL,New Zealand,Very High,eys,2023,19.30005074
+NZL,New Zealand,Very High,ihdi,2023,0.853
+NZL,New Zealand,Very High,loss,2023,9.061833689
+NIC,Nicaragua,High,hdi,2023,0.706
+NIC,Nicaragua,High,hdi_rank,2023,123
+NIC,Nicaragua,High,gii,2023,0.408
+NIC,Nicaragua,High,gii_rank,2023,103
+NIC,Nicaragua,High,gdi,2023,0.952
+NIC,Nicaragua,High,gdi_group,2023,2
+NIC,Nicaragua,High,mys,2023,9.933019638
+NIC,Nicaragua,High,eys,2023,11.51021957
+NIC,Nicaragua,High,ihdi,2023,0.535
+NIC,Nicaragua,High,loss,2023,24.22096317
+NER,Niger,Low,hdi,2023,0.419
+NER,Niger,Low,hdi_rank,2023,188
+NER,Niger,Low,gii,2023,0.591
+NER,Niger,Low,gii_rank,2023,160
+NER,Niger,Low,gdi,2023,0.855
+NER,Niger,Low,gdi_group,2023,5
+NER,Niger,Low,mys,2023,1.412289341
+NER,Niger,Low,eys,2023,8.308919801
+NER,Niger,Low,ihdi,2023,0.265
+NER,Niger,Low,loss,2023,36.75417661
+NGA,Nigeria,Medium,hdi,2023,0.56
+NGA,Nigeria,Medium,hdi_rank,2023,164
+NGA,Nigeria,Medium,gii,2023,0.677
+NGA,Nigeria,Medium,gii_rank,2023,171
+NGA,Nigeria,Medium,gdi,2023,0.892
+NGA,Nigeria,Medium,gdi_group,2023,5
+NGA,Nigeria,Medium,mys,2023,7.585969925
+NGA,Nigeria,Medium,eys,2023,10.51407
+NGA,Nigeria,Medium,ihdi,2023,0.379
+NGA,Nigeria,Medium,loss,2023,32.32142857
+MKD,North Macedonia,Very High,hdi,2023,0.815
+MKD,North Macedonia,Very High,hdi_rank,2023,68
+MKD,North Macedonia,Very High,gii,2023,0.112
+MKD,North Macedonia,Very High,gii_rank,2023,37
+MKD,North Macedonia,Very High,gdi,2023,0.955
+MKD,North Macedonia,Very High,gdi_group,2023,2
+MKD,North Macedonia,Very High,mys,2023,10.22999954
+MKD,North Macedonia,Very High,eys,2023,14.78143978
+MKD,North Macedonia,Very High,ihdi,2023,0.723
+MKD,North Macedonia,Very High,loss,2023,11.28834356
+NOR,Norway,Very High,hdi,2023,0.97
+NOR,Norway,Very High,hdi_rank,2023,2
+NOR,Norway,Very High,gii,2023,0.004
+NOR,Norway,Very High,gii_rank,2023,2
+NOR,Norway,Very High,gdi,2023,0.995
+NOR,Norway,Very High,gdi_group,2023,1
+NOR,Norway,Very High,mys,2023,13.11796218
+NOR,Norway,Very High,eys,2023,18.79285049
+NOR,Norway,Very High,ihdi,2023,0.909
+NOR,Norway,Very High,loss,2023,6.288659794
+OMN,Oman,Very High,hdi,2023,0.858
+OMN,Oman,Very High,hdi_rank,2023,50
+OMN,Oman,Very High,gii,2023,0.222
+OMN,Oman,Very High,gii_rank,2023,57
+OMN,Oman,Very High,gdi,2023,0.945
+OMN,Oman,Very High,gdi_group,2023,3
+OMN,Oman,Very High,mys,2023,11.89000034
+OMN,Oman,Very High,eys,2023,13.43931961
+OMN,Oman,Very High,ihdi,2023,0.75
+OMN,Oman,Very High,loss,2023,12.58741259
+PAK,Pakistan,Low,hdi,2023,0.544
+PAK,Pakistan,Low,hdi_rank,2023,168
+PAK,Pakistan,Low,gii,2023,0.536
+PAK,Pakistan,Low,gii_rank,2023,145
+PAK,Pakistan,Low,gdi,2023,0.838
+PAK,Pakistan,Low,gdi_group,2023,5
+PAK,Pakistan,Low,mys,2023,4.316987038
+PAK,Pakistan,Low,eys,2023,7.89510849
+PAK,Pakistan,Low,ihdi,2023,0.364
+PAK,Pakistan,Low,loss,2023,33.08823529
+PLW,Palau,High,hdi,2023,0.786
+PLW,Palau,High,hdi_rank,2023,84
+PLW,Palau,High,gdi,2023,0.992
+PLW,Palau,High,gdi_group,2023,1
+PLW,Palau,High,mys,2023,13.29903477
+PLW,Palau,High,eys,2023,14.06742382
+PLW,Palau,High,ihdi,2023,0.616
+PLW,Palau,High,loss,2023,21.62849873
+PSE,"Palestine, State of",Medium,hdi,2023,0.674
+PSE,"Palestine, State of",Medium,hdi_rank,2023,133
+PSE,"Palestine, State of",Medium,gdi,2023,0.945
+PSE,"Palestine, State of",Medium,gdi_group,2023,3
+PSE,"Palestine, State of",Medium,mys,2023,10.13000011
+PSE,"Palestine, State of",Medium,eys,2023,12.99800968
+PSE,"Palestine, State of",Medium,ihdi,2023,0.538
+PSE,"Palestine, State of",Medium,loss,2023,20.17804154
+PAN,Panama,Very High,hdi,2023,0.839
+PAN,Panama,Very High,hdi_rank,2023,59
+PAN,Panama,Very High,gii,2023,0.374
+PAN,Panama,Very High,gii_rank,2023,94
+PAN,Panama,Very High,gdi,2023,1.014
+PAN,Panama,Very High,gdi_group,2023,1
+PAN,Panama,Very High,mys,2023,10.83375095
+PAN,Panama,Very High,eys,2023,13.3116098
+PAN,Panama,Very High,ihdi,2023,0.664
+PAN,Panama,Very High,loss,2023,20.85816448
+PNG,Papua New Guinea,Medium,hdi,2023,0.576
+PNG,Papua New Guinea,Medium,hdi_rank,2023,160
+PNG,Papua New Guinea,Medium,gii,2023,0.584
+PNG,Papua New Guinea,Medium,gii_rank,2023,156
+PNG,Papua New Guinea,Medium,gdi,2023,0.926
+PNG,Papua New Guinea,Medium,gdi_group,2023,3
+PNG,Papua New Guinea,Medium,mys,2023,4.962531078
+PNG,Papua New Guinea,Medium,eys,2023,11.51107187
+PNG,Papua New Guinea,Medium,ihdi,2023,0.423
+PNG,Papua New Guinea,Medium,loss,2023,26.5625
+PRY,Paraguay,High,hdi,2023,0.756
+PRY,Paraguay,High,hdi_rank,2023,99
+PRY,Paraguay,High,gii,2023,0.412
+PRY,Paraguay,High,gii_rank,2023,104
+PRY,Paraguay,High,gdi,2023,0.988
+PRY,Paraguay,High,gdi_group,2023,1
+PRY,Paraguay,High,mys,2023,8.930653385
+PRY,Paraguay,High,eys,2023,13.98706964
+PRY,Paraguay,High,ihdi,2023,0.599
+PRY,Paraguay,High,loss,2023,20.76719577
+PER,Peru,High,hdi,2023,0.794
+PER,Peru,High,hdi_rank,2023,79
+PER,Peru,High,gii,2023,0.34
+PER,Peru,High,gii_rank,2023,83
+PER,Peru,High,gdi,2023,0.959
+PER,Peru,High,gdi_group,2023,2
+PER,Peru,High,mys,2023,10.15465159
+PER,Peru,High,eys,2023,14.90939376
+PER,Peru,High,ihdi,2023,0.633
+PER,Peru,High,loss,2023,20.27707809
+PHL,Philippines,High,hdi,2023,0.72
+PHL,Philippines,High,hdi_rank,2023,117
+PHL,Philippines,High,gii,2023,0.351
+PHL,Philippines,High,gii_rank,2023,86
+PHL,Philippines,High,gdi,2023,0.984
+PHL,Philippines,High,gdi_group,2023,1
+PHL,Philippines,High,mys,2023,9.977239609
+PHL,Philippines,High,eys,2023,12.81904666
+PHL,Philippines,High,ihdi,2023,0.597
+PHL,Philippines,High,loss,2023,17.08333333
+POL,Poland,Very High,hdi,2023,0.906
+POL,Poland,Very High,hdi_rank,2023,35
+POL,Poland,Very High,gii,2023,0.081
+POL,Poland,Very High,gii_rank,2023,29
+POL,Poland,Very High,gdi,2023,1.012
+POL,Poland,Very High,gdi_group,2023,1
+POL,Poland,Very High,mys,2023,13.20854242
+POL,Poland,Very High,eys,2023,16.67827988
+POL,Poland,Very High,ihdi,2023,0.817
+POL,Poland,Very High,loss,2023,9.823399558
+PRT,Portugal,Very High,hdi,2023,0.89
+PRT,Portugal,Very High,hdi_rank,2023,40
+PRT,Portugal,Very High,gii,2023,0.076
+PRT,Portugal,Very High,gii_rank,2023,26
+PRT,Portugal,Very High,gdi,2023,1
+PRT,Portugal,Very High,gdi_group,2023,1
+PRT,Portugal,Very High,mys,2023,9.703254412
+PRT,Portugal,Very High,eys,2023,17.48682022
+PRT,Portugal,Very High,ihdi,2023,0.795
+PRT,Portugal,Very High,loss,2023,10.6741573
+QAT,Qatar,Very High,hdi,2023,0.886
+QAT,Qatar,Very High,hdi_rank,2023,43
+QAT,Qatar,Very High,gii,2023,0.195
+QAT,Qatar,Very High,gii_rank,2023,52
+QAT,Qatar,Very High,gdi,2023,1.036
+QAT,Qatar,Very High,gdi_group,2023,2
+QAT,Qatar,Very High,mys,2023,10.77000046
+QAT,Qatar,Very High,eys,2023,13.14116001
+ROU,Romania,Very High,hdi,2023,0.845
+ROU,Romania,Very High,hdi_rank,2023,55
+ROU,Romania,Very High,gii,2023,0.227
+ROU,Romania,Very High,gii_rank,2023,59
+ROU,Romania,Very High,gdi,2023,0.986
+ROU,Romania,Very High,gdi_group,2023,1
+ROU,Romania,Very High,mys,2023,11.55000019
+ROU,Romania,Very High,eys,2023,14.05288029
+ROU,Romania,Very High,ihdi,2023,0.758
+ROU,Romania,Very High,loss,2023,10.29585799
+RUS,Russian Federation,Very High,hdi,2023,0.832
+RUS,Russian Federation,Very High,hdi_rank,2023,64
+RUS,Russian Federation,Very High,gii,2023,0.169
+RUS,Russian Federation,Very High,gii_rank,2023,45
+RUS,Russian Federation,Very High,gdi,2023,1.023
+RUS,Russian Federation,Very High,gdi_group,2023,1
+RUS,Russian Federation,Very High,mys,2023,12.40999985
+RUS,Russian Federation,Very High,eys,2023,13.18515015
+RUS,Russian Federation,Very High,ihdi,2023,0.758
+RUS,Russian Federation,Very High,loss,2023,8.894230769
+RWA,Rwanda,Medium,hdi,2023,0.578
+RWA,Rwanda,Medium,hdi_rank,2023,159
+RWA,Rwanda,Medium,gii,2023,0.394
+RWA,Rwanda,Medium,gii_rank,2023,99
+RWA,Rwanda,Medium,gdi,2023,0.922
+RWA,Rwanda,Medium,gdi_group,2023,4
+RWA,Rwanda,Medium,mys,2023,4.880000114
+RWA,Rwanda,Medium,eys,2023,12.59045029
+RWA,Rwanda,Medium,ihdi,2023,0.399
+RWA,Rwanda,Medium,loss,2023,30.96885813
+KNA,Saint Kitts and Nevis,Very High,hdi,2023,0.84
+KNA,Saint Kitts and Nevis,Very High,hdi_rank,2023,58
+KNA,Saint Kitts and Nevis,Very High,mys,2023,10.8494008
+KNA,Saint Kitts and Nevis,Very High,eys,2023,18.40703011
+LCA,Saint Lucia,High,hdi,2023,0.748
+LCA,Saint Lucia,High,hdi_rank,2023,103
+LCA,Saint Lucia,High,gii,2023,0.327
+LCA,Saint Lucia,High,gii_rank,2023,82
+LCA,Saint Lucia,High,gdi,2023,1.016
+LCA,Saint Lucia,High,gdi_group,2023,1
+LCA,Saint Lucia,High,mys,2023,8.614167055
+LCA,Saint Lucia,High,eys,2023,12.73040962
+LCA,Saint Lucia,High,ihdi,2023,0.523
+LCA,Saint Lucia,High,loss,2023,30.0802139
+VCT,Saint Vincent and the Grenadines,High,hdi,2023,0.798
+VCT,Saint Vincent and the Grenadines,High,hdi_rank,2023,76
+VCT,Saint Vincent and the Grenadines,High,mys,2023,11.29534968
+VCT,Saint Vincent and the Grenadines,High,eys,2023,16.2530213
+WSM,Samoa,High,hdi,2023,0.708
+WSM,Samoa,High,hdi_rank,2023,122
+WSM,Samoa,High,gii,2023,0.416
+WSM,Samoa,High,gii_rank,2023,105
+WSM,Samoa,High,gdi,2023,0.955
+WSM,Samoa,High,gdi_group,2023,2
+WSM,Samoa,High,mys,2023,11.33298361
+WSM,Samoa,High,eys,2023,12.4364
+WSM,Samoa,High,ihdi,2023,0.609
+WSM,Samoa,High,loss,2023,13.98305085
+SMR,San Marino,Very High,hdi,2023,0.915
+SMR,San Marino,Very High,hdi_rank,2023,29
+SMR,San Marino,Very High,gdi,2023,0.991
+SMR,San Marino,Very High,gdi_group,2023,1
+SMR,San Marino,Very High,mys,2023,11.35999966
+SMR,San Marino,Very High,eys,2023,14.59976717
+STP,Sao Tome and Principe,Medium,hdi,2023,0.637
+STP,Sao Tome and Principe,Medium,hdi_rank,2023,141
+STP,Sao Tome and Principe,Medium,gii,2023,0.492
+STP,Sao Tome and Principe,Medium,gii_rank,2023,130
+STP,Sao Tome and Principe,Medium,gdi,2023,0.98
+STP,Sao Tome and Principe,Medium,gdi_group,2023,1
+STP,Sao Tome and Principe,Medium,mys,2023,5.987559175
+STP,Sao Tome and Principe,Medium,eys,2023,12.8567099
+STP,Sao Tome and Principe,Medium,ihdi,2023,0.478
+STP,Sao Tome and Principe,Medium,loss,2023,24.96075353
+SAU,Saudi Arabia,Very High,hdi,2023,0.9
+SAU,Saudi Arabia,Very High,hdi_rank,2023,37
+SAU,Saudi Arabia,Very High,gii,2023,0.228
+SAU,Saudi Arabia,Very High,gii_rank,2023,61
+SAU,Saudi Arabia,Very High,gdi,2023,0.931
+SAU,Saudi Arabia,Very High,gdi_group,2023,3
+SAU,Saudi Arabia,Very High,mys,2023,11.60642778
+SAU,Saudi Arabia,Very High,eys,2023,16.94943047
+SEN,Senegal,Low,hdi,2023,0.53
+SEN,Senegal,Low,hdi_rank,2023,169
+SEN,Senegal,Low,gii,2023,0.49
+SEN,Senegal,Low,gii_rank,2023,127
+SEN,Senegal,Low,gdi,2023,0.924
+SEN,Senegal,Low,gdi_group,2023,4
+SEN,Senegal,Low,mys,2023,2.934554012
+SEN,Senegal,Low,eys,2023,9.142709732
+SEN,Senegal,Low,ihdi,2023,0.34
+SEN,Senegal,Low,loss,2023,35.8490566
+SRB,Serbia,Very High,hdi,2023,0.833
+SRB,Serbia,Very High,hdi_rank,2023,62
+SRB,Serbia,Very High,gii,2023,0.117
+SRB,Serbia,Very High,gii_rank,2023,38
+SRB,Serbia,Very High,gdi,2023,0.987
+SRB,Serbia,Very High,gdi_group,2023,1
+SRB,Serbia,Very High,mys,2023,11.64171812
+SRB,Serbia,Very High,eys,2023,15.04216003
+SRB,Serbia,Very High,ihdi,2023,0.772
+SRB,Serbia,Very High,loss,2023,7.322929172
+SYC,Seychelles,Very High,hdi,2023,0.848
+SYC,Seychelles,Very High,hdi_rank,2023,54
+SYC,Seychelles,Very High,gdi,2023,1.004
+SYC,Seychelles,Very High,gdi_group,2023,1
+SYC,Seychelles,Very High,mys,2023,11.19995
+SYC,Seychelles,Very High,eys,2023,18.22489929
+SYC,Seychelles,Very High,ihdi,2023,0.755
+SYC,Seychelles,Very High,loss,2023,10.96698113
+SLE,Sierra Leone,Low,hdi,2023,0.467
+SLE,Sierra Leone,Low,hdi_rank,2023,185
+SLE,Sierra Leone,Low,gii,2023,0.566
+SLE,Sierra Leone,Low,gii_rank,2023,152
+SLE,Sierra Leone,Low,gdi,2023,0.83
+SLE,Sierra Leone,Low,gdi_group,2023,5
+SLE,Sierra Leone,Low,mys,2023,3.535297609
+SLE,Sierra Leone,Low,eys,2023,9.064124575
+SLE,Sierra Leone,Low,ihdi,2023,0.281
+SLE,Sierra Leone,Low,loss,2023,39.82869379
+SGP,Singapore,Very High,hdi,2023,0.946
+SGP,Singapore,Very High,hdi_rank,2023,13
+SGP,Singapore,Very High,gii,2023,0.031
+SGP,Singapore,Very High,gii_rank,2023,8
+SGP,Singapore,Very High,gdi,2023,0.994
+SGP,Singapore,Very High,gdi_group,2023,1
+SGP,Singapore,Very High,mys,2023,11.98999977
+SGP,Singapore,Very High,eys,2023,16.74227905
+SGP,Singapore,Very High,ihdi,2023,0.823
+SGP,Singapore,Very High,loss,2023,13.00211416
+SVK,Slovakia,Very High,hdi,2023,0.88
+SVK,Slovakia,Very High,hdi_rank,2023,44
+SVK,Slovakia,Very High,gii,2023,0.176
+SVK,Slovakia,Very High,gii_rank,2023,48
+SVK,Slovakia,Very High,gdi,2023,0.999
+SVK,Slovakia,Very High,gdi_group,2023,1
+SVK,Slovakia,Very High,mys,2023,13.10320397
+SVK,Slovakia,Very High,eys,2023,14.94684982
+SVK,Slovakia,Very High,ihdi,2023,0.833
+SVK,Slovakia,Very High,loss,2023,5.340909091
+SVN,Slovenia,Very High,hdi,2023,0.931
+SVN,Slovenia,Very High,hdi_rank,2023,21
+SVN,Slovenia,Very High,gii,2023,0.042
+SVN,Slovenia,Very High,gii_rank,2023,14
+SVN,Slovenia,Very High,gdi,2023,0.997
+SVN,Slovenia,Very High,gdi_group,2023,1
+SVN,Slovenia,Very High,mys,2023,12.95120192
+SVN,Slovenia,Very High,eys,2023,17.47717094
+SVN,Slovenia,Very High,ihdi,2023,0.885
+SVN,Slovenia,Very High,loss,2023,4.940923738
+SLB,Solomon Islands,Medium,hdi,2023,0.584
+SLB,Solomon Islands,Medium,hdi_rank,2023,156
+SLB,Solomon Islands,Medium,gii,2023,0.478
+SLB,Solomon Islands,Medium,gii_rank,2023,118
+SLB,Solomon Islands,Medium,gdi,2023,0.927
+SLB,Solomon Islands,Medium,gdi_group,2023,3
+SLB,Solomon Islands,Medium,mys,2023,5.8796802
+SLB,Solomon Islands,Medium,eys,2023,11.31304207
+SLB,Solomon Islands,Medium,ihdi,2023,0.483
+SLB,Solomon Islands,Medium,loss,2023,17.29452055
+SOM,Somalia,Low,hdi,2023,0.404
+SOM,Somalia,Low,hdi_rank,2023,192
+SOM,Somalia,Low,gii,2023,0.675
+SOM,Somalia,Low,gii_rank,2023,170
+SOM,Somalia,Low,gdi,2023,0.793
+SOM,Somalia,Low,gdi_group,2023,5
+SOM,Somalia,Low,mys,2023,1.899999976
+SOM,Somalia,Low,eys,2023,7.486165162
+SOM,Somalia,Low,ihdi,2023,0.229
+SOM,Somalia,Low,loss,2023,43.31683168
+ZAF,South Africa,High,hdi,2023,0.741
+ZAF,South Africa,High,hdi_rank,2023,106
+ZAF,South Africa,High,gii,2023,0.388
+ZAF,South Africa,High,gii_rank,2023,95
+ZAF,South Africa,High,gdi,2023,0.996
+ZAF,South Africa,High,gdi_group,2023,1
+ZAF,South Africa,High,mys,2023,11.60999966
+ZAF,South Africa,High,eys,2023,13.79325008
+ZAF,South Africa,High,ihdi,2023,0.476
+ZAF,South Africa,High,loss,2023,35.76248313
+SSD,South Sudan,Low,hdi,2023,0.388
+SSD,South Sudan,Low,hdi_rank,2023,193
+SSD,South Sudan,Low,mys,2023,5.730000019
+SSD,South Sudan,Low,eys,2023,5.634770141
+SSD,South Sudan,Low,ihdi,2023,0.226
+SSD,South Sudan,Low,loss,2023,41.75257732
+ESP,Spain,Very High,hdi,2023,0.918
+ESP,Spain,Very High,hdi_rank,2023,28
+ESP,Spain,Very High,gii,2023,0.043
+ESP,Spain,Very High,gii_rank,2023,15
+ESP,Spain,Very High,gdi,2023,0.989
+ESP,Spain,Very High,gdi_group,2023,1
+ESP,Spain,Very High,mys,2023,10.75612495
+ESP,Spain,Very High,eys,2023,17.83031082
+ESP,Spain,Very High,ihdi,2023,0.819
+ESP,Spain,Very High,loss,2023,10.78431373
+LKA,Sri Lanka,High,hdi,2023,0.776
+LKA,Sri Lanka,High,hdi_rank,2023,89
+LKA,Sri Lanka,High,gii,2023,0.367
+LKA,Sri Lanka,High,gii_rank,2023,93
+LKA,Sri Lanka,High,gdi,2023,0.951
+LKA,Sri Lanka,High,gdi_group,2023,2
+LKA,Sri Lanka,High,mys,2023,10.77000046
+LKA,Sri Lanka,High,eys,2023,13.12815666
+LKA,Sri Lanka,High,ihdi,2023,0.63
+LKA,Sri Lanka,High,loss,2023,18.81443299
+SDN,Sudan,Low,hdi,2023,0.511
+SDN,Sudan,Low,hdi_rank,2023,176
+SDN,Sudan,Low,gii,2023,0.588
+SDN,Sudan,Low,gii_rank,2023,158
+SDN,Sudan,Low,gdi,2023,0.813
+SDN,Sudan,Low,gdi_group,2023,5
+SDN,Sudan,Low,mys,2023,3.962
+SDN,Sudan,Low,eys,2023,8.620371878
+SDN,Sudan,Low,ihdi,2023,0.328
+SDN,Sudan,Low,loss,2023,35.81213307
+SUR,Suriname,High,hdi,2023,0.722
+SUR,Suriname,High,hdi_rank,2023,114
+SUR,Suriname,High,gii,2023,0.391
+SUR,Suriname,High,gii_rank,2023,97
+SUR,Suriname,High,gdi,2023,0.993
+SUR,Suriname,High,gdi_group,2023,1
+SUR,Suriname,High,mys,2023,8.429759582
+SUR,Suriname,High,eys,2023,10.95909977
+SWE,Sweden,Very High,hdi,2023,0.959
+SWE,Sweden,Very High,hdi_rank,2023,5
+SWE,Sweden,Very High,gii,2023,0.007
+SWE,Sweden,Very High,gii_rank,2023,3
+SWE,Sweden,Very High,gdi,2023,0.988
+SWE,Sweden,Very High,gdi_group,2023,1
+SWE,Sweden,Very High,mys,2023,12.74032574
+SWE,Sweden,Very High,eys,2023,18.99147034
+SWE,Sweden,Very High,ihdi,2023,0.886
+SWE,Sweden,Very High,loss,2023,7.612095933
+CHE,Switzerland,Very High,hdi,2023,0.97
+CHE,Switzerland,Very High,hdi_rank,2023,2
+CHE,Switzerland,Very High,gii,2023,0.01
+CHE,Switzerland,Very High,gii_rank,2023,4
+CHE,Switzerland,Very High,gdi,2023,0.977
+CHE,Switzerland,Very High,gdi_group,2023,1
+CHE,Switzerland,Very High,mys,2023,13.94912109
+CHE,Switzerland,Very High,eys,2023,16.66753006
+CHE,Switzerland,Very High,ihdi,2023,0.894
+CHE,Switzerland,Very High,loss,2023,7.835051546
+SYR,Syrian Arab Republic,Medium,hdi,2023,0.564
+SYR,Syrian Arab Republic,Medium,hdi_rank,2023,162
+SYR,Syrian Arab Republic,Medium,gii,2023,0.49
+SYR,Syrian Arab Republic,Medium,gii_rank,2023,127
+SYR,Syrian Arab Republic,Medium,gdi,2023,0.787
+SYR,Syrian Arab Republic,Medium,gdi_group,2023,5
+SYR,Syrian Arab Republic,Medium,mys,2023,5.935520062
+SYR,Syrian Arab Republic,Medium,eys,2023,7.418754527
+SYR,Syrian Arab Republic,Medium,ihdi,2015,0.419
+SYR,Syrian Arab Republic,Medium,loss,2015,23.67941712
+TJK,Tajikistan,Medium,hdi,2023,0.691
+TJK,Tajikistan,Medium,hdi_rank,2023,128
+TJK,Tajikistan,Medium,gii,2023,0.258
+TJK,Tajikistan,Medium,gii_rank,2023,68
+TJK,Tajikistan,Medium,gdi,2023,0.926
+TJK,Tajikistan,Medium,gdi_group,2023,3
+TJK,Tajikistan,Medium,mys,2023,11.27094825
+TJK,Tajikistan,Medium,eys,2023,10.84980801
+TJK,Tajikistan,Medium,ihdi,2023,0.594
+TJK,Tajikistan,Medium,loss,2023,14.03762663
+TZA,Tanzania (United Republic of),Medium,hdi,2023,0.555
+TZA,Tanzania (United Republic of),Medium,hdi_rank,2023,165
+TZA,Tanzania (United Republic of),Medium,gii,2023,0.504
+TZA,Tanzania (United Republic of),Medium,gii_rank,2023,134
+TZA,Tanzania (United Republic of),Medium,gdi,2023,0.951
+TZA,Tanzania (United Republic of),Medium,gdi_group,2023,2
+TZA,Tanzania (United Republic of),Medium,mys,2023,6.065350056
+TZA,Tanzania (United Republic of),Medium,eys,2023,8.585740089
+TZA,Tanzania (United Republic of),Medium,ihdi,2023,0.391
+TZA,Tanzania (United Republic of),Medium,loss,2023,29.54954955
+THA,Thailand,High,hdi,2023,0.798
+THA,Thailand,High,hdi_rank,2023,76
+THA,Thailand,High,gii,2023,0.288
+THA,Thailand,High,gii_rank,2023,73
+THA,Thailand,High,gdi,2023,1.008
+THA,Thailand,High,gdi_group,2023,1
+THA,Thailand,High,mys,2023,9.039999962
+THA,Thailand,High,eys,2023,15.35883492
+THA,Thailand,High,ihdi,2023,0.677
+THA,Thailand,High,loss,2023,15.16290727
+TLS,Timor-Leste,Medium,hdi,2023,0.634
+TLS,Timor-Leste,Medium,hdi_rank,2023,142
+TLS,Timor-Leste,Medium,gii,2023,0.394
+TLS,Timor-Leste,Medium,gii_rank,2023,99
+TLS,Timor-Leste,Medium,gdi,2023,0.939
+TLS,Timor-Leste,Medium,gdi_group,2023,3
+TLS,Timor-Leste,Medium,mys,2023,6.226580551
+TLS,Timor-Leste,Medium,eys,2023,13.25306303
+TLS,Timor-Leste,Medium,ihdi,2023,0.451
+TLS,Timor-Leste,Medium,loss,2023,28.86435331
+TGO,Togo,Medium,hdi,2023,0.571
+TGO,Togo,Medium,hdi_rank,2023,161
+TGO,Togo,Medium,gii,2023,0.564
+TGO,Togo,Medium,gii_rank,2023,150
+TGO,Togo,Medium,gdi,2023,0.865
+TGO,Togo,Medium,gdi_group,2023,5
+TGO,Togo,Medium,mys,2023,5.861114619
+TGO,Togo,Medium,eys,2023,13.09642387
+TGO,Togo,Medium,ihdi,2023,0.363
+TGO,Togo,Medium,loss,2023,36.42732049
+TON,Tonga,High,hdi,2023,0.769
+TON,Tonga,High,hdi_rank,2023,92
+TON,Tonga,High,gii,2023,0.444
+TON,Tonga,High,gii_rank,2023,115
+TON,Tonga,High,gdi,2023,0.998
+TON,Tonga,High,gdi_group,2023,1
+TON,Tonga,High,mys,2023,10.91494895
+TON,Tonga,High,eys,2023,17.78693018
+TON,Tonga,High,ihdi,2023,0.682
+TON,Tonga,High,loss,2023,11.31339402
+TTO,Trinidad and Tobago,Very High,hdi,2023,0.807
+TTO,Trinidad and Tobago,Very High,hdi_rank,2023,72
+TTO,Trinidad and Tobago,Very High,gii,2023,0.262
+TTO,Trinidad and Tobago,Very High,gii_rank,2023,69
+TTO,Trinidad and Tobago,Very High,gdi,2023,0.99
+TTO,Trinidad and Tobago,Very High,gdi_group,2023,1
+TTO,Trinidad and Tobago,Very High,mys,2023,10.79275036
+TTO,Trinidad and Tobago,Very High,eys,2023,14.23764336
+TUN,Tunisia,High,hdi,2023,0.746
+TUN,Tunisia,High,hdi_rank,2023,105
+TUN,Tunisia,High,gii,2023,0.238
+TUN,Tunisia,High,gii_rank,2023,62
+TUN,Tunisia,High,gdi,2023,0.931
+TUN,Tunisia,High,gdi_group,2023,3
+TUN,Tunisia,High,mys,2023,7.594920158
+TUN,Tunisia,High,eys,2023,14.67349856
+TUN,Tunisia,High,ihdi,2023,0.595
+TUN,Tunisia,High,loss,2023,20.24128686
+TKM,Turkmenistan,High,hdi,2023,0.764
+TKM,Turkmenistan,High,hdi_rank,2023,95
+TKM,Turkmenistan,High,mys,2023,11.20780193
+TKM,Turkmenistan,High,eys,2023,13.24057961
+TUV,Tuvalu,Medium,hdi,2023,0.689
+TUV,Tuvalu,Medium,hdi_rank,2023,129
+TUV,Tuvalu,Medium,gdi,2023,0.969
+TUV,Tuvalu,Medium,gdi_group,2023,2
+TUV,Tuvalu,Medium,mys,2023,10.76746107
+TUV,Tuvalu,Medium,eys,2023,12.37506862
+TUV,Tuvalu,Medium,ihdi,2023,0.578
+TUV,Tuvalu,Medium,loss,2023,16.11030479
+TUR,Türkiye,Very High,hdi,2023,0.853
+TUR,Türkiye,Very High,hdi_rank,2023,51
+TUR,Türkiye,Very High,gii,2023,0.227
+TUR,Türkiye,Very High,gii_rank,2023,59
+TUR,Türkiye,Very High,gdi,2023,0.938
+TUR,Türkiye,Very High,gdi_group,2023,3
+TUR,Türkiye,Very High,mys,2023,8.98624366
+TUR,Türkiye,Very High,eys,2023,19.8307991
+TUR,Türkiye,Very High,ihdi,2023,0.708
+TUR,Türkiye,Very High,loss,2023,16.99882767
+UGA,Uganda,Medium,hdi,2023,0.582
+UGA,Uganda,Medium,hdi_rank,2023,157
+UGA,Uganda,Medium,gii,2023,0.524
+UGA,Uganda,Medium,gii_rank,2023,141
+UGA,Uganda,Medium,gdi,2023,0.908
+UGA,Uganda,Medium,gdi_group,2023,4
+UGA,Uganda,Medium,mys,2023,6.323663082
+UGA,Uganda,Medium,eys,2023,11.56404819
+UGA,Uganda,Medium,ihdi,2023,0.4
+UGA,Uganda,Medium,loss,2023,31.27147766
+UKR,Ukraine,High,hdi,2023,0.779
+UKR,Ukraine,High,hdi_rank,2023,87
+UKR,Ukraine,High,gdi,2023,1.038
+UKR,Ukraine,High,gdi_group,2023,2
+UKR,Ukraine,High,mys,2023,11.12273899
+UKR,Ukraine,High,eys,2023,13.32800961
+UKR,Ukraine,High,ihdi,2023,0.715
+UKR,Ukraine,High,loss,2023,8.215661104
+ARE,United Arab Emirates,Very High,hdi,2023,0.94
+ARE,United Arab Emirates,Very High,hdi_rank,2023,15
+ARE,United Arab Emirates,Very High,gii,2023,0.04
+ARE,United Arab Emirates,Very High,gii_rank,2023,13
+ARE,United Arab Emirates,Very High,gdi,2023,0.957
+ARE,United Arab Emirates,Very High,gdi_group,2023,2
+ARE,United Arab Emirates,Very High,mys,2023,12.98999977
+ARE,United Arab Emirates,Very High,eys,2023,15.60159016
+ARE,United Arab Emirates,Very High,ihdi,2023,0.866
+ARE,United Arab Emirates,Very High,loss,2023,7.872340426
+GBR,United Kingdom,Very High,hdi,2023,0.946
+GBR,United Kingdom,Very High,hdi_rank,2023,13
+GBR,United Kingdom,Very High,gii,2023,0.083
+GBR,United Kingdom,Very High,gii_rank,2023,31
+GBR,United Kingdom,Very High,gdi,2023,0.979
+GBR,United Kingdom,Very High,gdi_group,2023,1
+GBR,United Kingdom,Very High,mys,2023,13.48999977
+GBR,United Kingdom,Very High,eys,2023,17.81106949
+GBR,United Kingdom,Very High,ihdi,2023,0.869
+GBR,United Kingdom,Very High,loss,2023,8.139534884
+USA,United States,Very High,hdi,2023,0.938
+USA,United States,Very High,hdi_rank,2023,17
+USA,United States,Very High,gii,2023,0.169
+USA,United States,Very High,gii_rank,2023,45
+USA,United States,Very High,gdi,2023,1.009
+USA,United States,Very High,gdi_group,2023,1
+USA,United States,Very High,mys,2023,13.90999985
+USA,United States,Very High,eys,2023,15.92300034
+USA,United States,Very High,ihdi,2023,0.832
+USA,United States,Very High,loss,2023,11.30063966
+URY,Uruguay,Very High,hdi,2023,0.862
+URY,Uruguay,Very High,hdi_rank,2023,48
+URY,Uruguay,Very High,gii,2023,0.218
+URY,Uruguay,Very High,gii_rank,2023,56
+URY,Uruguay,Very High,gdi,2023,1.017
+URY,Uruguay,Very High,gdi_group,2023,1
+URY,Uruguay,Very High,mys,2023,10.53999996
+URY,Uruguay,Very High,eys,2023,17.4839592
+URY,Uruguay,Very High,ihdi,2023,0.747
+URY,Uruguay,Very High,loss,2023,13.34106729
+UZB,Uzbekistan,High,hdi,2023,0.74
+UZB,Uzbekistan,High,hdi_rank,2023,107
+UZB,Uzbekistan,High,gii,2023,0.291
+UZB,Uzbekistan,High,gii_rank,2023,74
+UZB,Uzbekistan,High,gdi,2023,0.951
+UZB,Uzbekistan,High,gdi_group,2023,2
+UZB,Uzbekistan,High,mys,2023,11.90999985
+UZB,Uzbekistan,High,eys,2023,12.46086979
+VUT,Vanuatu,Medium,hdi,2023,0.621
+VUT,Vanuatu,Medium,hdi_rank,2023,146
+VUT,Vanuatu,Medium,gii,2023,0.556
+VUT,Vanuatu,Medium,gii_rank,2023,147
+VUT,Vanuatu,Medium,gdi,2023,0.952
+VUT,Vanuatu,Medium,gdi_group,2023,2
+VUT,Vanuatu,Medium,mys,2023,7.183209727
+VUT,Vanuatu,Medium,eys,2023,11.81160992
+VUT,Vanuatu,Medium,ihdi,2023,0.521
+VUT,Vanuatu,Medium,loss,2023,16.10305958
+VEN,Venezuela (Bolivarian Republic of),High,hdi,2023,0.709
+VEN,Venezuela (Bolivarian Republic of),High,hdi_rank,2023,121
+VEN,Venezuela (Bolivarian Republic of),High,gii,2023,0.512
+VEN,Venezuela (Bolivarian Republic of),High,gii_rank,2023,137
+VEN,Venezuela (Bolivarian Republic of),High,gdi,2023,0.993
+VEN,Venezuela (Bolivarian Republic of),High,gdi_group,2023,1
+VEN,Venezuela (Bolivarian Republic of),High,mys,2023,9.678385373
+VEN,Venezuela (Bolivarian Republic of),High,eys,2023,12.96537654
+VEN,Venezuela (Bolivarian Republic of),High,ihdi,2023,0.605
+VEN,Venezuela (Bolivarian Republic of),High,loss,2023,14.66854725
+VNM,Viet Nam,High,hdi,2023,0.766
+VNM,Viet Nam,High,hdi_rank,2023,93
+VNM,Viet Nam,High,gii,2023,0.299
+VNM,Viet Nam,High,gii_rank,2023,78
+VNM,Viet Nam,High,gdi,2023,0.997
+VNM,Viet Nam,High,gdi_group,2023,1
+VNM,Viet Nam,High,mys,2023,8.979999542
+VNM,Viet Nam,High,eys,2023,15.45771503
+VNM,Viet Nam,High,ihdi,2023,0.641
+VNM,Viet Nam,High,loss,2023,16.31853786
+YEM,Yemen,Low,hdi,2023,0.47
+YEM,Yemen,Low,hdi_rank,2023,184
+YEM,Yemen,Low,gii,2023,0.838
+YEM,Yemen,Low,gii_rank,2023,172
+YEM,Yemen,Low,gdi,2023,0.407
+YEM,Yemen,Low,gdi_group,2023,5
+YEM,Yemen,Low,mys,2023,5.484149933
+YEM,Yemen,Low,eys,2023,7.494902735
+YEM,Yemen,Low,ihdi,2023,0.325
+YEM,Yemen,Low,loss,2023,30.85106383
+ZMB,Zambia,Medium,hdi,2023,0.595
+ZMB,Zambia,Medium,hdi_rank,2023,154
+ZMB,Zambia,Medium,gii,2023,0.524
+ZMB,Zambia,Medium,gii_rank,2023,141
+ZMB,Zambia,Medium,gdi,2023,0.949
+ZMB,Zambia,Medium,gdi_group,2023,3
+ZMB,Zambia,Medium,mys,2023,7.397408543
+ZMB,Zambia,Medium,eys,2023,11.02052892
+ZMB,Zambia,Medium,ihdi,2023,0.361
+ZMB,Zambia,Medium,loss,2023,39.32773109
+ZWE,Zimbabwe,Medium,hdi,2023,0.598
+ZWE,Zimbabwe,Medium,hdi_rank,2023,153
+ZWE,Zimbabwe,Medium,gii,2023,0.519
+ZWE,Zimbabwe,Medium,gii_rank,2023,140
+ZWE,Zimbabwe,Medium,gdi,2023,0.944
+ZWE,Zimbabwe,Medium,gdi_group,2023,3
+ZWE,Zimbabwe,Medium,mys,2023,8.930847216
+ZWE,Zimbabwe,Medium,eys,2023,11.05745312
+ZWE,Zimbabwe,Medium,ihdi,2023,0.406
+ZWE,Zimbabwe,Medium,loss,2023,32.10702341
