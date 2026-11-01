@@ -1,0 +1,26 @@
+# Once a year (1 September), list the measures whose data is more than two years old, as a GitHub issue.
+# You can also run it any time from the Actions tab ("Run workflow").
+name: Yearly data check
+on:
+  schedule:
+    - cron: "17 6 1 9 *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check how old the data is
+        run: python3 check_data_age.py > report.md
+      - name: Open an issue with the report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if grep -q "Nothing to do" report.md; then cat report.md; exit 0; fi
+          gh issue create --title "Yearly data check: $(date +'%B %Y')" --body-file report.md
