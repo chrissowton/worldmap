@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "43";
+  const DATA_VERSION = "45";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -613,7 +613,7 @@
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
     drawCities();
-    window.WX?.layout();
+    window.WX?.layout(); window.WCL?.draw();
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
@@ -621,7 +621,7 @@
     gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
-    window.WX?.zoomed(e.transform.k);
+    window.WX?.zoomed(e.transform.k); window.WCL?.draw();
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
     window.WP?.zoomed(e.transform);
@@ -909,7 +909,7 @@
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
     if (state.view !== "map") window.WV?.render();
-    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh();
+    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw();
     const chartList = state.view !== "map" && window.WV_H?.V?.list;
     if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
     document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
@@ -1054,9 +1054,24 @@
 
   // ---------- Refugee flow view ----------
   let flowScale = null;
+  // migrants by country of birth (UN DESA): loaded after the page has started
+  let MIG = window.__MIGRATION__ || null;
+  if (!MIG) setTimeout(() => loadJSON("migration.json").then((j) => { MIG = j; if (state.selected) render(); }).catch(() => {}), 1500);
+  function migPairs(iso, col) { if (!MIG) return []; const yi = MIG.years.length - 1; return MIG.pairs.filter((p) => p[col] === iso && p[2 + yi] > 0).map((p) => [p[col === 0 ? 1 : 0], p[2 + yi]]).sort((a, b) => b[1] - a[1]); }
   function flowValues() {
     const { iso, dir } = state.flow;
     const vals = new Map();
+    if (state.flow.kind === "mig") {
+      if (!MIG) return vals;
+      const yi = state.flow.y ?? MIG.years.length - 1;
+      for (const p of MIG.pairs) {
+        const v = p[2 + yi];
+        if (!v) continue;
+        if (dir === "from" && p[1] === iso) vals.set(p[0], v);
+        if (dir === "to" && p[0] === iso) vals.set(p[1], v);
+      }
+      return vals;
+    }
     for (const [o, h, n] of flows) {
       if (dir === "from" && o === iso) vals.set(h, n);
       if (dir === "to" && h === iso) vals.set(o, n);
@@ -1078,11 +1093,20 @@
     const total = d3.sum([...vals.values()]);
     const bar = $("#flowbar");
     bar.hidden = false;
-    bar.innerHTML = `<p>${dir === "from"
+    const mig = state.flow.kind === "mig";
+    const who = mig ? (dir === "from" ? `people born in <b>${esc(src.name)}</b>` : `migrants in <b>${esc(src.name)}</b>`) : null;
+    const yi = mig && MIG ? state.flow.y ?? MIG.years.length - 1 : 0;
+    bar.innerHTML = `<p>${mig
+      ? (dir === "from" ? `Where ${who} live abroad: <b>${d3.format(",")(total)}</b> people in ${vals.size} countries` : `Where ${who} were born: <b>${d3.format(",")(total)}</b> people from ${vals.size} countries`)
+      : dir === "from"
       ? `Where refugees from <b>${esc(src.name)}</b> live: <b>${d3.format(",")(total)}</b> people in ${vals.size} ${vals.size === 1 ? "country" : "countries"}`
       : `Where refugees in <b>${esc(src.name)}</b> come from: <b>${d3.format(",")(total)}</b> people from ${vals.size} ${vals.size === 1 ? "country" : "countries"}`}</p>
+      ${mig && MIG ? `<label class="flowyr">Year <select id="flowYear">${MIG.years.map((y, i) => `<option value="${i}" ${i === yi ? "selected" : ""}>${y}</option>`).join("")}</select></label>
+        <button type="button" class="ghost" id="flowFlip">${dir === "from" ? "Who lives here?" : "Where do its people live?"}</button>` : ""}
       <button type="button" class="ghost" id="flowClose">Close</button>`;
     $("#flowClose").onclick = () => { state.flow = null; render(); };
+    if ($("#flowYear")) $("#flowYear").onchange = (e) => { state.flow.y = +e.target.value; render(); };
+    if ($("#flowFlip")) $("#flowFlip").onclick = () => { state.flow.dir = dir === "from" ? "to" : "from"; render(); };
   }
 
   // ---------- Map styles: change over time, two measures at once, countries sized by population ----------
@@ -1318,7 +1342,7 @@
     const el = $("#legend");
     if (state.flow && flowScale) {
       el.hidden = false;
-      el.innerHTML = `<div class="lrow"><span>Refugees (groups of 100 or more)</span></div><div class="lrow"><span class="num">${compact(flowScale.ext[0] || 0)}</span><span class="ramp" style="background:linear-gradient(90deg, ${flowScale.lo}, ${flowScale.hi})"></span><span class="num">${compact(flowScale.ext[1] || 0)}</span></div>`;
+      el.innerHTML = `<div class="lrow"><span>${state.flow.kind === "mig" ? `Migrants, ${MIG ? MIG.years[state.flow.y ?? MIG.years.length - 1] : ""} (groups of 500 or more; UN DESA)` : "Refugees (groups of 100 or more)"}</span></div><div class="lrow"><span class="num">${compact(flowScale.ext[0] || 0)}</span><span class="ramp" style="background:linear-gradient(90deg, ${flowScale.lo}, ${flowScale.hi})"></span><span class="num">${compact(flowScale.ext[1] || 0)}</span></div>`;
       return;
     }
     if (styleInfo) {
@@ -2072,6 +2096,17 @@
           ${out.length ? `<p class="psub">Refugees from ${esc(r.name)} live mostly in:</p>${list(out, 1)}` : ""}
           <div class="flowbtns">${inn.length ? `<button type="button" data-dir="to">Map where its refugees come from</button>` : ""}${out.length ? `<button type="button" data-dir="from">Map where its refugees have gone</button>` : ""}</div>`;
       },
+      "Global links": () => {
+        if (!MIG) return "";
+        const inn = migPairs(r.iso3, 0), out = migPairs(r.iso3, 1);
+        if (!inn.length && !out.length) return "";
+        const nm = (i) => esc(byIso.get(i)?.name || i);
+        const y = MIG.years[MIG.years.length - 1];
+        const list = (fs) => `<dl class="pmini">${fs.slice(0, 5).map(([i, n]) => `<dt>${nm(i)}</dt><dd>${d3.format(",")(n)}</dd>`).join("")}</dl>`;
+        return `${inn.length ? `<p class="psub">Most migrants living here were born in (${y}):</p>${list(inn)}` : ""}
+          ${out.length ? `<p class="psub">People born in ${esc(r.name)} living abroad are mostly in:</p>${list(out)}` : ""}
+          <div class="flowbtns">${inn.length ? `<button type="button" data-dir="to" data-kind="mig">Map where its migrants were born</button>` : ""}${out.length ? `<button type="button" data-dir="from" data-kind="mig">Map where its emigrants live</button>` : ""}</div>`;
+      },
       Geography: () => {
         const nb = r.borders_list || [];
         return nb.length ? `<p class="psub">Neighbours (${nb.length}), with the length of each land border:</p><dl class="pmini nbrs">${nb.map(([iso, km]) => `<dt><button type="button" class="linkbtn goto" data-iso="${iso}">${byIso.get(iso)?.flag || ""} ${esc(byIso.get(iso)?.name || iso)}</button></dt><dd>${d3.format(",")(km)} km</dd>`).join("")}</dl>` : `<p class="psub">No land borders.</p>`;
@@ -2137,7 +2172,7 @@
     $("#wsCountry") && ($("#wsCountry").onclick = () => window.WK.addCountry(r.iso3));
     el.querySelectorAll(".goto").forEach((b) => (b.onclick = () => { state.selected = b.dataset.iso; render(); zoomToCountry(b.dataset.iso); }));
     bindSdg(el);
-    el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir }; render(); }));
+    el.querySelectorAll(".flowbtns button").forEach((b) => (b.onclick = () => { state.flow = { iso: r.iso3, dir: b.dataset.dir, kind: b.dataset.kind || "ref" }; render(); }));
   }
 
   // ---------- Tooltip ----------
@@ -2150,7 +2185,8 @@
       const src = byIso.get(state.flow.iso);
       const v = flowScale.vals.get(r.iso3);
       const txt = r.iso3 === src.iso3 ? (state.flow.dir === "from" ? "Country of origin" : "Host country")
-        : v ? (state.flow.dir === "from" ? `${d3.format(",")(v)} refugees from ${src.name}` : `${d3.format(",")(v)} of the refugees in ${src.name}`)
+        : v ? (state.flow.kind === "mig" ? (state.flow.dir === "from" ? `${d3.format(",")(v)} people born in ${src.name}` : `${d3.format(",")(v)} of the migrants in ${src.name}`)
+          : state.flow.dir === "from" ? `${d3.format(",")(v)} refugees from ${src.name}` : `${d3.format(",")(v)} of the refugees in ${src.name}`)
         : "Fewer than 100, or none";
       tip.innerHTML = `<strong>${r.flag || ""} ${esc(r.name)}</strong><span class="st">${esc(txt)}</span>`;
       return placeTip(evt);
@@ -2807,6 +2843,10 @@
     get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; }, get cs() { return lastCS; }, colourKey: () => colourKey(), CLASS_NAMES,
     render: (o) => render(o), refreshList: () => { if (!state.selected && state.view !== "map" && window.WV_H?.V?.list) renderChartList(); }, setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
     mapSVG: () => svg.node(), get matches() { return lastMatches; }, applyQS, getQS: () => encodeState(), setYear: (y) => setYear(y), stopPlay: () => stopPlay(),
+    zoomBy: (f) => svg.transition().duration(250).call(zoom.scaleBy, f),
+    panBy: (dx, dy) => { const t = d3.zoomTransform(svg.node()); svg.transition().duration(200).call(zoom.translateBy, dx / t.k, dy / t.k); },
+    resetZoom: () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity),
+    zoomToCountry: (iso) => zoomToCountry(iso),
     project: (lon, lat) => projection([lon, lat]), get k() { return d3.zoomTransform(svg.node()).k; },
     layer: (name) => { let g = gRoot.select(`g.layer-${name}`); if (g.empty()) g = gRoot.append("g").attr("class", `layer-${name}`); return g; },
     zoomToPoint: (lon, lat, k = 4) => { const [x, y] = projection([lon, lat]); const vb = svg.attr("viewBox").split(" ").map(Number); svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(vb[2] / 2 - x * k, vb[3] / 2 - y * k).scale(k)); },
@@ -2850,6 +2890,8 @@
   window.WST?.init();
   window.WTR?.init();
   window.WX?.init();
+  window.WCL?.init();
+  window.WA?.init();
 
   // ---------- Go ----------
   new ResizeObserver(() => { layout(); floatChanged?.(); }).observe($("#mapstage"));

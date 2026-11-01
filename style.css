@@ -2052,3 +2052,44 @@ body.qz-blank .mapstage #map .city, body.qz-blank .mapstage .gltip { display: no
 .tswipe { margin-left: 8px; }
 body.no-anim #map, body.no-anim #map * { transition: none !important; }
 .mapstage > .zoom { z-index: 8; }
+
+/* ---------- v44: Learn & share groups, colour-blind colours, keyboard, table view ---------- */
+.cp-learn { display: block; }
+.cp-grph { margin: 8px 2px 3px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cp-grph:first-child { margin-top: 2px; }
+.cp-introlink { display: block; margin: 8px 2px 0; font-size: 12.5px; }
+@media (max-width: 760px) { .cp-grp { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+#map:focus { outline: none; }
+#map:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.tbl-scroll { max-height: calc(100vh - 260px); }
+.tbl-sort { font: inherit; font-weight: 600; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.tbl tbody th { font-weight: 500; color: var(--ink); text-align: left; }
+/* colour-blind-friendly colours: a blue-green-yellow ramp (viridis), blue for matches, blue/orange instead of green/red */
+:root[data-cvd] { --ramp-lo: #fde725; --ramp-m1: #5ec962; --ramp-m2: #21918c; --ramp-hi: #3b0f70; --match: #2c7bb6; --match-deep: #08306b; }
+:root[data-cvd][data-theme="dark"] { --ramp-lo: #3b0f70; --ramp-m1: #21918c; --ramp-m2: #5ec962; --ramp-hi: #fde725; --match: #6baed6; }
+@media (prefers-color-scheme: dark) { :root[data-cvd]:not([data-theme="light"]) { --ramp-lo: #3b0f70; --ramp-m1: #21918c; --ramp-m2: #5ec962; --ramp-hi: #fde725; --match: #6baed6; } }
+:root[data-cvd] #map path.qz-ok { fill: #2c7bb6 !important; }
+:root[data-cvd] #map path.qz-no { fill: #f28e2b !important; }
+:root[data-cvd] .avgchip.up { border-color: #2c7bb6; } :root[data-cvd] .avgchip.up .ar { color: #2c7bb6; }
+:root[data-cvd] .avgchip.down { border-color: #f28e2b; } :root[data-cvd] .avgchip.down .ar { color: #d35400; }
+:root[data-cvd] .stx-res.ok { border-color: #2c7bb6; background: color-mix(in srgb, #2c7bb6 9%, var(--surface)); }
+
+/* ---------- v45: climate graphs, migration flows ---------- */
+.mapbtns { position: absolute; top: 12px; left: 12px; z-index: 17; display: flex; gap: 8px; flex-wrap: wrap; max-width: calc(100% - 180px); }
+.mapbtns .mmbtn { position: static; }
+.mmbtn#climBtn[aria-pressed="true"] { border-color: #d6453d; background: color-mix(in srgb, #4a90d9 10%, var(--surface)); }
+.dsc.clim { width: min(500px, calc(100vw - 32px)); left: auto; right: 24px; transform: none; top: 110px; }
+.dsc.clim:has(.cl-grid.two) { width: min(960px, calc(100vw - 32px)); }
+.cl-grid.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 800px) { .cl-grid.two { grid-template-columns: 1fr; } }
+.cl-svg { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.cl-facts th { width: 45%; font-size: 12px; }
+.cl-facts td { font-size: 13px; }
+.cl-find input { display: block; width: 100%; box-sizing: border-box; margin-top: 3px; padding: 7px 9px; font: inherit; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.layer-clim circle:hover { stroke: #14212b; }
+.flowyr { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+.flowyr select { font: inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flowbar { flex-wrap: wrap; align-items: center; gap: 8px 10px; max-width: min(760px, calc(100% - 24px)); }
+.flowbar p { flex: 1 1 300px; min-width: 240px; margin: 0; }
+.flowbar:not([hidden]) ~ .mapbtns { display: none; }

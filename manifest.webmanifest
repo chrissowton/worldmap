@@ -1,0 +1,14 @@
+{
+  "name": "Which Countries?",
+  "short_name": "Which Countries?",
+  "description": "An open-source world map for geography: stack filters and watch the world narrow down.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#0d5f70",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
