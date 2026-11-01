@@ -674,6 +674,15 @@
         });
       }
     }
+    // ===== Where is it? Click the country on the map =====
+    for (const r of big.filter((x) => (x.area_km2 || 0) >= 10000)) {
+      addQ(B, `loc:${r.iso3}`, "geo", () => ({
+        text: `Click on ${cn(r)} on the map.`, kind: "locate", ans: { isos: [r.iso3] },
+        options: () => countryOptions(r.iso3, near(r, big).slice(0, 2), far(r).slice(0, 1)),
+        explain: () => `${esc(cap(cn(r)))} is in <b>${esc(r.subregion || r.region)}</b>${(r.borders_list || []).length ? `, next to ${esc(listText(r.borders_list.slice(0, 4).map(([x]) => name(x)), 4))}` : ""}.`,
+        action: showCountry(r.iso3),
+      }));
+    }
     buildPhysical(B, nameQ, countQ);
     return B;
   }
@@ -1037,7 +1046,7 @@
       const d = Math.abs(g - a.v);
       return { status: d <= t ? "right" : d <= 2.5 * t ? "close" : "wrong" };
     }
-    if (q.kind === "country") {
+    if (q.kind === "country" || q.kind === "locate") {
       const iso = resolveCountry(text);
       if (!iso) return { status: "unknown" };
       return { status: a.isos.includes(iso) ? "right" : "wrong", iso };
@@ -1049,8 +1058,31 @@
   }
 
   // ---------- Picking the next question ----------
+  // questions you got wrong come back a few questions later, then again later if you miss them again
+  const review = store.get("wcq-review", []);
+  const saveReview = () => store.set("wcq-review", review.slice(-300));
+  function noteResult(q, ok) {
+    const i = review.findIndex((x) => x.id === q.id);
+    if (ok) { if (i >= 0) review.splice(i, 1); }
+    else if (i >= 0) { review[i].n++; review[i].due = score.asked + 3 + review[i].n * 4; }
+    else review.push({ id: q.id, due: score.asked + 3, n: 0 });
+    saveReview();
+  }
+  function dueReview() {
+    bank ||= buildBank();
+    for (const x of review) {
+      if (x.due > score.asked) continue;
+      const spec = bank.find((b) => b.id === x.id);
+      if (!spec || !inTopic(spec, curTopic())) continue;
+      const q = spec.make();
+      if (q) { x.due = score.asked + 6; saveReview(); return { ...q, id: spec.id, topic: spec.topic, review: true }; }
+    }
+    return null;
+  }
   function nextQuestion() {
     bank ||= buildBank();
+    const rv = dueReview();
+    if (rv) return rv;
     const pool = bank.filter((q) => inTopic(q, curTopic()) && !seen.has(q.id));
     if (!pool.length) return null;
     // choose a kind of question first, so one kind doesn't crowd out the rest
@@ -1087,6 +1119,33 @@
   }
   function bankSize(topic) { bank ||= buildBank(); return bank.filter((q) => inTopic(q, topic)).length; }
 
+  // ---------- Answering by clicking the map; the blank map ----------
+  let blank = !!store.get("wcq-blank", false), namesOff = false, labelsWere = null;
+  const wantsClick = () => Q.mode === "open" && Q.cur && !Q.done && (Q.cur.kind === "locate" || (Q.cur.kind === "country" && !Q.mc));
+  // called by the map when a country is clicked; true means the quiz used the click
+  function mapClick(iso) {
+    if (!W || !wantsClick() || W.state.view !== "map") return false;
+    const r = W.byIso.get(iso);
+    if (!r) return false;
+    const inp = $("#qzIn"); if (!inp) return false;
+    inp.value = r.name;
+    submit();
+    return true;
+  }
+  // hide names on the map (labels and the hover box) for "click on…" questions and in blank-map mode
+  const hideNames = () => !!W && Q.mode === "open" && W.state.view === "map" && (blank || (Q.cur && !Q.done && Q.cur.kind === "locate"));
+  function hideNamesNow() {
+    const want = hideNames();
+    if (want && !namesOff) { labelsWere = W.state.labels; namesOff = true; if (W.state.labels) { W.state.labels = false; W.render(); } }
+    else if (!want && namesOff) restoreNames(true);
+  }
+  function restoreNames(force) {
+    if (!namesOff || (!force && hideNames())) return;
+    namesOff = false;
+    if (labelsWere && !W.state.labels) { W.state.labels = true; W.render(); }
+  }
+  function setBlank(on) { blank = on; store.set("wcq-blank", on); if (on) hideNamesNow(); else restoreNames(true); document.body.classList.toggle("qz-blank", on && Q.mode === "open"); }
+
   // ---------- Card ----------
   function minimise() { Q.mode = "min"; renderCard(); }
   function renderCard(el = $("#starter")) {
@@ -1109,7 +1168,8 @@
     pill.innerHTML = Q.cur && !Q.done ? "🎯 Back to your question" : "🎯 Quiz";
     const qb = $("#quizBtn");
     if (qb) qb.setAttribute("aria-pressed", String(Q.mode === "open"));
-    if (el.hidden) return;
+    document.body.classList.toggle("qz-blank", blank && !el.hidden);
+    if (el.hidden) { restoreNames(true); return; }
     if (!built || builtMode !== st.mode) build(el);
   }
   let builtMode = null;
@@ -1118,7 +1178,7 @@
     el.classList.add("quiz");
     el.innerHTML = `
       <button class="iconbtn hide" type="button" aria-label="Close the quiz">×</button>
-      <div class="qz-head" title="Drag to move · drag the bottom-right corner to resize · double-click to put it back"><h2>Ask the map a question</h2><span class="qz-score" id="qzScore"></span></div>
+      <div class="qz-head" title="Drag to move · drag the bottom-right corner to resize · double-click to put it back"><h2>Ask the map a question</h2><span class="qz-score" id="qzScore"></span><label class="qz-blankt" title="Hide country names: test yourself on a blank map"><input type="checkbox" id="qzBlank" ${blank ? "checked" : ""}> Blank map</label></div>
       <p class="qz-intro">Pick a topic, then type your guess or ask for options.</p>
       <div class="qz-topics" role="radiogroup" aria-label="Topic">${topicsNow().map((t) => `<button type="button" role="radio" class="qz-topic" data-t="${t.id}" ${t.g ? `data-g="${t.g}"` : ""} aria-checked="${curTopic() === t.id}">${esc(t.label)}</button>`).join("")}</div>
       <div class="qz-q" id="qzQ"></div>
@@ -1141,14 +1201,25 @@
       inp.value = b.textContent; inp.focus(); inp.dispatchEvent(new Event("input"));
     }));
     showScore();
+    $("#qzBlank").onchange = (e) => setBlank(e.target.checked);
     ask();
   }
   function showScore() {
     const s = $("#qzScore");
-    if (s) s.innerHTML = score.asked ? `<b>${score.right}</b> / ${score.asked} right${score.streak >= 2 ? ` · 🔥 ${score.streak} in a row` : ""}` : "";
+    if (s) s.innerHTML = score.asked ? `<b>${score.right}</b> / ${score.asked} right${score.streak >= 2 ? ` · 🔥 ${score.streak} in a row` : ""}${score.best >= 3 ? ` <span class="qz-best">(best ${score.best})</span>` : ""}${(score.days || 0) >= 2 ? ` · 📅 ${score.days} days` : ""}${review.length ? ` · <span title="Questions you missed come back later">↻ ${review.length} to retry</span>` : ""}` : "";
+  }
+  // days in a row with at least one answer
+  function noteDay() {
+    const today = new Date().toISOString().slice(0, 10);
+    if (score.day === today) return;
+    const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    score.days = score.day === y ? (score.days || 1) + 1 : 1;
+    score.day = today;
   }
   let always = !!store.get("wcq-mc", false);
+  function clearMarks() { document.querySelectorAll("#map .qz-ok, #map .qz-no").forEach((p) => p.classList.remove("qz-ok", "qz-no")); }
   function ask() {
+    clearMarks();
     const q = nextQuestion();
     Q.cur = q; Q.mc = false; Q.picked = null; Q.done = false;
     drawQuestion();
@@ -1168,10 +1239,11 @@
     const nOpts = q._opts.length;
     box.innerHTML = `
       <div class="qz-tag" ${t.g ? `data-g="${t.g}"` : ""}>${esc(/any$/.test(q.topic) ? "Puzzle" : t.label)}</div>
-      <p class="qz-text">${esc(q.text)}</p>
+      ${q.review ? `<p class="qz-retry">↻ Try this one again</p>` : ""}
+      <p class="qz-text">${esc(q.text)}${q.kind === "locate" || q.kind === "country" ? ` <span class="qz-clickhint">${q.kind === "locate" ? "👆 Click it on the map" : "👆 or click it on the map"}</span>` : ""}</p>
       <form id="qzForm" autocomplete="off">
-        <div class="qz-free" id="qzFree"><input id="qzIn" ${q.kind === "number" ? 'inputmode="decimal"' : ""} ${q.kind === "country" ? 'list="qzCountries"' : ""} placeholder="${q.kind === "number" ? "Type a number" : q.kind === "country" ? "Type a country" : "Type your answer"}" aria-label="Your answer">
-          ${q.kind === "country" ? `<datalist id="qzCountries">${W.rows.filter((r) => r.sovereign).map((r) => `<option value="${esc(r.name)}"></option>`).join("")}</datalist>` : ""}</div>
+        <div class="qz-free" id="qzFree"><input id="qzIn" ${q.kind === "number" ? 'inputmode="decimal"' : ""} ${q.kind === "country" || q.kind === "locate" ? 'list="qzCountries"' : ""} placeholder="${q.kind === "number" ? "Type a number" : q.kind === "locate" ? "Click it on the map" : q.kind === "country" ? "Type a country" : "Type your answer"}" aria-label="Your answer">
+          ${q.kind === "country" || q.kind === "locate" ? `<datalist id="qzCountries">${W.rows.filter((r) => r.sovereign).map((r) => `<option value="${esc(r.name)}"></option>`).join("")}</datalist>` : ""}</div>
         <div class="qz-opts" id="qzOpts" hidden></div>
         <div class="qz-row"><button type="submit" class="primary" id="qzSubmit">Submit guess</button>
           <button type="button" class="linkbtn" id="qzMC">${nOpts === 2 ? "Show the two options" : `Show ${nOpts} options`}</button>
@@ -1182,6 +1254,8 @@
       </form>
       <div class="qz-res" id="qzRes" hidden></div>`;
     $("#qzForm").onsubmit = (e) => { e.preventDefault(); submit(); };
+    if (q.kind === "locate") { $("#qzFree").hidden = true; $("#qzMC").hidden = true; $("#qzSubmit").hidden = true; document.querySelector(".qz-always").hidden = true; }
+    hideNamesNow();
     $("#qzMC").onclick = showOptions;
     $("#qzWs") && ($("#qzWs").onclick = () => { q._opts ||= q.options ? q.options() : numberOptions(q); window.WK.addQuestion(q, /any$/.test(q.topic) ? "Puzzle" : topicOf(THEME_OF[q.topic] || q.topic).label); });
     $("#qzSkip").onclick = () => { seen.add(q.id); store.set("wcq-seen", [...seen].slice(-6000)); ask(); };
@@ -1190,6 +1264,7 @@
       if (Q.done) return;
       if (always) showOptions(); else { Q.mc = false; Q.picked = null; drawQuestion(); }
     };
+    if (q.kind === "locate") return;
     if (always) showOptions();
     else if (window.matchMedia("(hover: hover)").matches) setTimeout(() => $("#qzIn")?.focus({ preventScroll: true }), 30);
   }
@@ -1231,18 +1306,27 @@
     store.set("wcq-seen", [...seen].slice(-6000));
     score.asked++;
     if (status === "right") { score.right++; score.streak++; score.best = Math.max(score.best, score.streak); } else score.streak = 0;
+    noteDay(); noteResult(q, status === "right");
     store.set("wcq-score", score);
+    restoreNames();
+    // show where the country is
+    if (q.kind === "locate" || (q.kind === "country" && q.ans.isos.length <= 3)) {
+      clearMarks();
+      q.ans.isos.forEach((iso) => document.querySelectorAll(`#map path[data-iso="${iso}"]`).forEach((p) => p.classList.add("qz-ok")));
+      const g = status !== "right" && resolveCountry(guessText);
+      if (g) document.querySelectorAll(`#map path[data-iso="${g}"]`).forEach((p) => p.classList.add("qz-no"));
+    }
     showScore();
     // lock the answer area
     $("#qzIn") && ($("#qzIn").disabled = true);
     $("#qzSubmit").hidden = true; $("#qzMC").hidden = true; $("#qzSkip").hidden = true; $("#qzMsg").textContent = "";
     if (Q.mc) $("#qzOpts").querySelectorAll(".qz-opt").forEach((b, i) => { b.disabled = true; b.classList.toggle("ok", q._opts[i].ok); b.classList.toggle("no", i === Q.picked && !q._opts[i].ok); });
-    const head = { right: ["✓", pick(["Correct!", "Spot on!", "Yes!", "Well done!", "Right!"])], close: ["≈", "Close!"], wrong: ["✗", pick(["Not quite.", "Not this time.", "Good guess, but no."])] }[status];
-    const yours = !Q.mc && status !== "right" ? `<p class="qz-yours">You said: ${esc(guessText)}${status === "close" ? " (close, but not counted)" : ""}</p>` : "";
+    const head = { right: ["✓", score.streak >= 5 && score.streak % 5 === 0 ? `${score.streak} in a row! 🔥` : pick(["Correct!", "Spot on!", "Yes!", "Well done!", "Right!"])], close: ["≈", "Close!"], wrong: ["✗", pick(["Not quite.", "Not this time.", "Good guess, but no."])] }[status];
+    const yours = !Q.mc && status !== "right" ? `<p class="qz-yours">You ${q.kind === "locate" ? "clicked" : "said"}: ${esc(guessText)}${status === "close" ? " (close, but not counted)" : ""}</p>` : "";
     const res = $("#qzRes");
     res.hidden = false;
     res.className = `qz-res ${status}`;
-    res.innerHTML = `<p class="qz-verdict"><span aria-hidden="true">${head[0]}</span> ${head[1]}</p>${yours}
+    res.innerHTML = `<p class="qz-verdict"><span aria-hidden="true">${head[0]}</span> ${head[1]}</p>${yours}${status !== "right" ? `<p class="qz-again">↻ This one will come back in a few questions.</p>` : ""}
       <p class="qz-explain">${q.explain()}</p>
       <div class="qz-row">${q.action ? `<button type="button" class="ghost" id="qzAct">${esc(q.action.label)}</button>` : ""}<button type="button" class="primary" id="qzNext">Next question →</button></div>`;
     $("#qzNext").onclick = ask;
@@ -1269,5 +1353,5 @@
       if (Q.mode === "open" && !Q.cur) ask();
     };
   }
-  window.WQ = { init, renderCard, askAbout, setTopic, get size() { return bankSize("any"); }, _test: { check, buildBank: () => (bank ||= buildBank()), resolveCountry, parseNumber, numberOptions, nextQuestion, Q, seen } };
+  window.WQ = { init, renderCard, askAbout, setTopic, mapClick, hideNames, _draw: () => drawQuestion(), get size() { return bankSize("any"); }, _test: { check, buildBank: () => (bank ||= buildBank()), resolveCountry, parseNumber, numberOptions, nextQuestion, Q, seen } };
 })();

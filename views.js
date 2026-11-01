@@ -1002,11 +1002,12 @@
     if (m) { m.remove(); return; }
     m = document.createElement("div");
     m.id = "dlMenu"; m.className = "dlmenu card";
-    m.innerHTML = `<button type="button" data-a="png">Image of this ${W.state.view === "map" ? "map" : "chart"} (PNG)</button><button type="button" data-a="csv">Data behind it (CSV, opens in Excel)</button>`;
+    m.innerHTML = `<button type="button" data-a="png">Image of this ${W.state.view === "map" ? "map" : "chart"} (PNG)</button><button type="button" data-a="csv">Data behind it (CSV, opens in Excel)</button>${W.state.view === "map" ? `<button type="button" data-a="cw">Coursework map (A4, with key and north arrow)</button>` : ""}`;
     btn.after(m);
     m.querySelectorAll("button").forEach((b) => (b.onclick = () => {
       m.remove();
-      if (b.dataset.a === "png") downloadImage().catch(() => alertMsg("Sorry, the image could not be made in this browser."));
+      if (b.dataset.a === "cw") window.WMS?.courseworkDialog();
+      else if (b.dataset.a === "png") downloadImage().catch(() => alertMsg("Sorry, the image could not be made in this browser."));
       else { const rows = dataRows(); if (rows) { const s = currentSource(); downloadCSV(s ? rows.concat([[], [s]]) : rows, `which-countries-${W.state.view}.csv`); } }
     }));
     setTimeout(() => document.addEventListener("click", function off(e) { if (!m.contains(e.target) && e.target !== btn) { m.remove(); document.removeEventListener("click", off); } }), 0);

@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "38";
+  const DATA_VERSION = "43";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -212,6 +212,8 @@
     mapStyle: "std",      // map colours: "std" (filters), "change" (change over time), "bi" (two measures)
     popSized: false,      // draw countries as circles sized by population
     mm: { ck: "", from: null, to: null, pct: false, bx: "", by: "" },
+    classes: "",          // how the colour key is split: "" smooth, or "equal" / "quantile" / "jenks" classes
+    nClasses: 5,
   };
 
   // Swap each country's time-enabled values for the chosen year (or back to the latest).
@@ -611,6 +613,7 @@
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
     drawCities();
+    window.WX?.layout();
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
@@ -618,6 +621,7 @@
     gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
+    window.WX?.zoomed(e.transform.k);
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
     window.WP?.zoomed(e.transform);
@@ -803,15 +807,62 @@
     const interp = d3.interpolateRgbBasis(stops);
     const s = (v) => (typeof v === "number" ? interp(Math.min(1, Math.max(0, (f.toT(v) - ext[0]) / (ext[1] - ext[0])))) : null);
     s.f = f; s.ext = ext.map(f.fromT); s.lo = lo; s.hi = hi; s.grad = stops.join(", ");
-    return s;
+    if (!state.classes) return s;
+    // split into classes, the way students are taught to: equal interval, quantiles or natural breaks (Jenks)
+    const n = Math.max(3, Math.min(7, state.nClasses || 5));
+    const breaks = classBreaks(state.classes, vals, n, s.ext);
+    if (!breaks) return s;
+    const cols = d3.range(breaks.length - 1).map((i) => interp(breaks.length > 2 ? i / (breaks.length - 2) : 0.5));
+    const classOf = (v) => { if (typeof v !== "number") return -1; let i = 0; while (i < breaks.length - 2 && v > breaks[i + 1]) i++; return i; };
+    const c = (v) => (typeof v === "number" ? cols[classOf(v)] : null);
+    Object.assign(c, s, { breaks, cols, classOf, method: state.classes,
+      counts: cols.map((_, i) => vals.filter((v) => classOf(v) === i).length) });
+    return c;
+  }
+  function classBreaks(method, vals, n, ext) {
+    const v = vals.slice().sort((a, b) => a - b);
+    if (v.length < n) n = Math.max(2, v.length);
+    let b;
+    if (method === "equal") {
+      const lo = v[0], hi = v[v.length - 1];
+      b = d3.range(n + 1).map((i) => lo + ((hi - lo) * i) / n);
+    } else if (method === "quantile") {
+      b = d3.range(n + 1).map((i) => d3.quantileSorted(v, i / n));
+    } else {
+      b = jenks(v, n);
+    }
+    b = b.filter((x, i) => i === 0 || x > b[i - 1]);
+    return b.length >= 3 ? b : null;
+  }
+  // Fisher-Jenks natural breaks: groups that are as alike as possible inside, and as different as possible from each other
+  function jenks(v, n) {
+    const N = v.length, mat1 = [], mat2 = [];
+    for (let i = 0; i <= N; i++) { mat1.push(new Array(n + 1).fill(0)); mat2.push(new Array(n + 1).fill(0)); }
+    for (let j = 1; j <= n; j++) { mat1[1][j] = 1; mat2[1][j] = 0; for (let i = 2; i <= N; i++) mat2[i][j] = Infinity; }
+    for (let l = 2; l <= N; l++) {
+      let s1 = 0, s2 = 0, w = 0, vv = 0;
+      for (let m = 1; m <= l; m++) {
+        const i3 = l - m + 1, val = v[i3 - 1];
+        s2 += val * val; s1 += val; w++;
+        vv = s2 - (s1 * s1) / w;
+        const i4 = i3 - 1;
+        if (i4 !== 0) for (let j = 2; j <= n; j++) if (mat2[l][j] >= vv + mat2[i4][j - 1]) { mat1[l][j] = i3; mat2[l][j] = vv + mat2[i4][j - 1]; }
+      }
+      mat1[l][1] = 1; mat2[l][1] = vv;
+    }
+    const out = new Array(n + 1); out[n] = v[N - 1]; out[0] = v[0];
+    let k = N;
+    for (let j = n; j >= 2; j--) { const id = mat1[k][j] - 2; out[j - 1] = v[id]; k = mat1[k][j] - 1; }
+    return out;
   }
 
   // ---------- Render ----------
+  let lastCS = null, lastMatches = [];
   function render(opts = {}) {
     lastEval = evaluate();
     const { act, res } = lastEval;
     const matches = pool().filter((r) => res.get(r.iso3).match).sort((a, b) => a.name.localeCompare(b.name));
-    const cs = colourScale(matches);
+    const cs = colourScale(matches); lastCS = cs; lastMatches = matches;
     styleInfo = state.mapStyle === "change" ? changeInfo() : state.mapStyle === "bi" ? biInfo() : null;
     const inScope = (rec) => { const e = rec && res.get(rec.iso3); return e && (!act.length || e.match); };
     const clsFor = (rec) => {
@@ -858,6 +909,7 @@
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
     if (state.view !== "map") window.WV?.render();
+    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh();
     const chartList = state.view !== "map" && window.WV_H?.V?.list;
     if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
     document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
@@ -898,13 +950,14 @@
       el.dataset.built = "1";
       el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("tSpeed") : ""}
         <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span><span class="tavg" id="tAvg" aria-live="polite"></span><span class="tnote" id="tNote"></span>
-        <button type="button" class="linkbtn" id="tLatest">Back to latest</button></div>
+        <button type="button" class="linkbtn" id="tLatest">Back to latest</button><button type="button" class="linkbtn tswipe" id="tSwipe" title="Compare two years side by side: drag the divider">⇆ Compare two years</button></div>
         <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div>
         <p class="tsigtext pop" id="tSigText" hidden></p></div>`;
       const range = $("#tRange");
       range.oninput = () => { stopPlay(); setYear(+range.value); };
       $("#tLatest").onclick = () => { stopPlay(); setYear(null); };
       $("#tPlay").onclick = () => (playing ? stopPlay() : startPlay());
+      $("#tSwipe").onclick = () => window.WX?.swipe();
       window.WPL?.bindSpeed($("#tSpeed"));
     }
     const range = $("#tRange");
@@ -917,6 +970,7 @@
       ? (state.filters.some((fl) => F[fl.key].time) ? "These filters have no years in common." : "Add a filter marked “yearly” (like population, HDI or democracy) to go back in time.")
       : state.year ? "" : `Data from ${sp[0]} to ${sp[1]}. Drag or press play.`;
     $("#tLatest").hidden = !state.year;
+    $("#tSwipe").hidden = !sp || state.view !== "map";
     // years with unusually big changes in the measures being played
     if (window.WPL && sp) {
       const sig = timeSig();
@@ -1248,6 +1302,18 @@
     return `<div class="bilegend"><div class="bigrid" role="img" aria-label="Key: three by three grid of colours">${grid}</div>
       <div class="bitext"><span>↑ ${esc(si.fy.short || si.fy.label)}</span><span>→ ${esc(si.fx.short || si.fx.label)}</span><small>Split into thirds. Dark = high on both.</small></div></div>`;
   }
+  const CLASS_NAMES = { equal: "Equal interval", quantile: "Quantiles (same number in each)", jenks: "Natural breaks (Jenks)" };
+  function rampHTML(cs) {
+    const pick = `<select class="lclass" aria-label="How the key is split">${[["", "Smooth"], ["equal", "Equal interval"], ["quantile", "Quantiles"], ["jenks", "Natural breaks"]]
+      .map(([v, l]) => `<option value="${v}" ${state.classes === v ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+    if (!cs.breaks) return `<div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.grad})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span>${pick}</div>`;
+    const nsel = `<select class="lncl" aria-label="Number of classes">${[3, 4, 5, 6, 7].map((n) => `<option ${n === state.nClasses ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+    return `<div class="lrow lclasses">${cs.cols.map((c, i) => `<span class="lcl" title="${cs.counts[i]} countries"><i style="background:${c}"></i>${fmtShort(cs.f, cs.breaks[i])}–${fmtShort(cs.f, cs.breaks[i + 1])}<b>${cs.counts[i]}</b></span>`).join("")}${pick}${nsel}</div>`;
+  }
+  $("#legend").addEventListener("change", (e) => {
+    if (e.target.matches(".lclass")) { state.classes = e.target.value; render(); }
+    if (e.target.matches(".lncl")) { state.nClasses = +e.target.value; render(); }
+  });
   function renderLegend(cs, act) {
     const el = $("#legend");
     if (state.flow && flowScale) {
@@ -1263,7 +1329,7 @@
     const physLeg = window.WP ? window.WP.legendHTML(state, lastEval) : "";
     if (state.mode === "physical") {
       let h = physLeg;
-      if (cs) h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.grad})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+      if (cs) h += `<div class="lrow"><span>${esc(cs.f.label)}</span></div>` + rampHTML(cs);
       else if (act.length) h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every country filter</div>`;
       el.hidden = !h; el.innerHTML = h; return;
     }
@@ -1271,7 +1337,7 @@
     el.hidden = false;
     let h = state.popSized ? `<div class="lrow"><span class="sw city"></span>Circles sized by population</div>` : "";
     if (cs) {
-      h += `<div class="lrow"><span>${esc(cs.f.label)}${state.year && cs.f.time ? `, ${state.year}` : ""}</span></div><div class="lrow"><span class="num">${fmtShort(cs.f, cs.ext[0])}</span><span class="ramp" style="background:linear-gradient(90deg, ${cs.grad})"></span><span class="num">${fmtShort(cs.f, cs.ext[1])}</span></div>`;
+      h += `<div class="lrow"><span>${esc(cs.f.label)}${state.year && cs.f.time ? `, ${state.year}` : ""}</span></div>` + rampHTML(cs);
     } else if (act.length) {
       h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every filter</div>`;
     }
@@ -2078,6 +2144,8 @@
   const tip = $("#tooltip");
   function showTip(evt, r) {
     if (!r) { tip.hidden = true; return; }
+    // the quiz is asking where a country is, or the blank map is on: no names
+    if (window.WQ?.hideNames?.()) { tip.hidden = true; return; }
     if (state.flow && flowScale) {
       const src = byIso.get(state.flow.iso);
       const v = flowScale.vals.get(r.iso3);
@@ -2138,6 +2206,7 @@
     if (fref) { const [ft, fi] = fref.split(":"); state.feat = { t: ft, i: +fi }; state.selected = null; state.tab = "feat:" + ft; return render(); }
     const cid = t.getAttribute && t.getAttribute("data-city");
     const iso = cid ? cities[+cid].iso3 : t.getAttribute && t.getAttribute("data-iso");
+    if (iso && byIso.get(iso) && window.WQ?.mapClick?.(iso)) return;
     if (iso && byIso.get(iso)) { state.selected = iso; state.open = null; render(); }
   });
 
@@ -2492,7 +2561,7 @@
 
   // ---------- Back, Home and Clear all (the floating dock) ----------
   // Every settled change to what's on screen is remembered, so Back can step through them.
-  const SNAP_KEYS = ["filters", "territories", "colourBy", "sort", "sortDir", "selected", "tab", "flow", "year", "view", "mode", "feat", "mapStyle", "popSized", "mm"];
+  const SNAP_KEYS = ["filters", "territories", "colourBy", "sort", "sortDir", "selected", "tab", "flow", "year", "view", "mode", "feat", "mapStyle", "popSized", "mm", "classes", "nClasses"];
   const past = [];
   let committed = null, trackT = 0, restoring = false;
   function snapshot() {
@@ -2662,6 +2731,7 @@
       if (state.mm.pct) p.set("mp", "1");
     } else if (state.mapStyle === "bi") { p.set("ms", "bi"); p.set("bx", state.mm.bx || "gdp_per_capita"); p.set("by", state.mm.by || "co2_per_capita"); }
     if (state.popSized) p.set("pz", "1");
+    if (state.classes) p.set("cl", state.classes + (state.nClasses !== 5 ? state.nClasses : ""));
     if (state.selected) p.set("s", state.selected);
     window.WV?.encode(p);
     return p.toString();
@@ -2694,6 +2764,7 @@
     if (out.some(isCity) && !out.some((fl) => !isCity(fl))) state.tab = "cities";
     state.territories = p.get("t") === "1";
     state.colourBy = F[p.get("c")] ? p.get("c") : "";
+    { const cl = /^(equal|quantile|jenks)([3-7])?$/.exec(p.get("cl") || ""); state.classes = cl ? cl[1] : ""; state.nClasses = cl && cl[2] ? +cl[2] : 5; }
     if (["compare", "rank", "trends", "insights"].includes(p.get("v"))) state.view = p.get("v");
     if (p.get("m") === "p") { state.mode = "physical"; if (window.WP && ["biomes", "climate", "plates", "none"].includes(p.get("pb"))) window.WP.style.base = p.get("pb"); }
     if (p.get("ms") === "change" && F[p.get("mc")]) {
@@ -2707,9 +2778,22 @@
     const y = +p.get("y");
     if (y && TS_YEARS.includes(y)) { state.year = y; applyYear(y); }  // clamped to the filters' years on first render
   }
+  // go to a view saved as a link (guided tours, curriculum links)
+  function applyQS(qs) {
+    stopPlay();
+    Object.assign(state, { filters: [], colourBy: "", view: "map", mapStyle: "std", popSized: false, selected: null, classes: "", nClasses: 5, flow: null, solo: null,
+      territories: false, open: null, feat: null, tab: "countries", sort: "", sortDir: null });
+    if (state.year) { state.year = null; applyYear(null); }
+    window.WV?.clearYears?.();
+    const want = new URLSearchParams(qs).get("m") === "p" ? "physical" : "human";
+    if (want !== state.mode) setMode(want);
+    decodeState(qs);
+    svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+    render();
+  }
   function saveURL() {
     try {
-      const q = encodeState();
+      const q = [encodeState(), window.WTR?.urlExtra?.() || ""].filter(Boolean).join("&");
       history.replaceState(null, "", location.pathname + (q ? "?" + q : ""));
     } catch (e) { /* sandboxed frames may refuse */ }
   }
@@ -2720,9 +2804,28 @@
     F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
     applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, SURVEY_KEYS, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
     pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
-    get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; },
+    get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; }, get cs() { return lastCS; }, colourKey: () => colourKey(), CLASS_NAMES,
     render: (o) => render(o), refreshList: () => { if (!state.selected && state.view !== "map" && window.WV_H?.V?.list) renderChartList(); }, setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
-    mapSVG: () => svg.node(), clearAll: () => clearAll(),
+    mapSVG: () => svg.node(), get matches() { return lastMatches; }, applyQS, getQS: () => encodeState(), setYear: (y) => setYear(y), stopPlay: () => stopPlay(),
+    project: (lon, lat) => projection([lon, lat]), get k() { return d3.zoomTransform(svg.node()).k; },
+    layer: (name) => { let g = gRoot.select(`g.layer-${name}`); if (g.empty()) g = gRoot.append("g").attr("class", `layer-${name}`); return g; },
+    zoomToPoint: (lon, lat, k = 4) => { const [x, y] = projection([lon, lat]); const vb = svg.attr("viewBox").split(" ").map(Number); svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(vb[2] / 2 - x * k, vb[3] / 2 - y * k).scale(k)); },
+    // a measure made on the page (e.g. your own index)
+    addField: (f) => {
+      const nums = rows.map((r) => r[f.key]).filter((v) => typeof v === "number").sort((a, b) => a - b);
+      Object.assign(f, { type: "range", scale: "linear", step: f.step || 1, dmin: f.dmin ?? nums[0] ?? 0, dmax: f.dmax ?? nums[nums.length - 1] ?? 100 });
+      f.toT = (v) => v; f.fromT = (t) => t; f.round = (v) => Math.round(v / f.step) * f.step;
+      F[f.key] = f;
+      return f;
+    },
+    // the part of the map picture that has land on it (for exports), in viewBox units
+    mapBounds: () => {
+      const vb = svg.attr("viewBox").split(" ").map(Number), t = d3.zoomTransform(svg.node());
+      const b = path.bounds({ type: "FeatureCollection", features: geo });
+      const x0 = Math.max(0, b[0][0] * t.k + t.x - 12), y0 = Math.max(0, b[0][1] * t.k + t.y - 12);
+      const x1 = Math.min(vb[2], b[1][0] * t.k + t.x + 12), y1 = Math.min(vb[3], b[1][1] * t.k + t.y + 40);
+      return [x0, y0, x1 - x0, y1 - y0];
+    }, clearAll: () => clearAll(),
     resultsCSV: () => {
       const { act, res } = lastEval;
       const list = pool().filter((r) => res.get(r.iso3).match).sort((a, b) => a.name.localeCompare(b.name));
@@ -2743,6 +2846,10 @@
   window.WQ?.init();
   window.WN?.init();
   window.WK?.init();
+  window.WMS?.init();
+  window.WST?.init();
+  window.WTR?.init();
+  window.WX?.init();
 
   // ---------- Go ----------
   new ResizeObserver(() => { layout(); floatChanged?.(); }).observe($("#mapstage"));
