@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "56";
+  const DATA_VERSION = "57";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -2750,14 +2750,14 @@
   // ---------- About ----------
   function openAbout() {
     const el = $("#about");
-    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl");
+    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl", "gapmincm", "unppp");
     el.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="aboutH">
       <button type="button" class="iconbtn close" id="aboutClose" aria-label="Close">×</button>
       <h2 id="aboutH">About Which Countries?</h2>
       <p>An open-source map for asking questions about the world. Every filter shows where its data comes from and what year it describes. Measures like “democracy” depend on who defines them, so each filter names its definition.</p>
       <p>Countries match when they pass <b>every</b> filter. City filters show cities on the map, inside the countries that match. Each end of a slider means “no limit”. Within a list filter, such as languages, ticking several options matches countries that have <b>any</b> of them. Countries with no data for a filter don’t match it.</p>
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Used for</th><th>Licence</th></tr></thead><tbody>
-      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || (k === "gdl" ? "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions" : "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
+      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || ({ gdl: "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions", gapmincm: "Income mountains (Charts)", unppp: "The shaded ranges on population projections" }[k] || "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
       </tbody></table></div>
       <p>Borders follow Natural Earth’s default view. Disputed areas such as Somaliland and Northern Cyprus take the data of the internationally recognised state; Kosovo, Taiwan and Palestine have their own entries.</p>
     </div>`;

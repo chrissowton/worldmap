@@ -30,7 +30,7 @@
   function yearsText(f) {
     const sp = W.TS[f.key] && !W.CAT_TS?.[f.key] ? W.span(f.key) : null;
     const latest = W.yearLabel(f);
-    if (sp) return `Every year from ${sp[0]} to ${sp[1]}${W.SURVEY_KEYS?.has(f.key) ? " (survey waves: not every country in every year)" : ""}. The map and lists use each country's latest figure${latest ? ` (mostly ${latest})` : ""}.`;
+    if (sp) return `Every year from ${sp[0]} to ${sp[1]}${W.SURVEY_KEYS?.has(f.key) && !/_un$/.test(f.key) ? " (survey waves: not every country in every year)" : /_un$/.test(f.key) ? " (every five years; after 2023 these are UN projections)" : ""}. The map and lists use each country's latest figure${latest ? ` (mostly ${latest})` : ""}.`;
     return latest ? `${latest} (the latest figures).` : "The latest figures.";
   }
   // the measure's own page (made by make_pages.cjs), worked out the same way

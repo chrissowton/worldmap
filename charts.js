@@ -16,7 +16,7 @@
 
   // ---------- What each measure allows ----------
   // Things you can add up: a total for the world or a continent means something
-  const SUM_KEYS = new Set(["population", "co2_mt", "refugees_hosted", "refugees_from", "idps", "asylum_seekers_hosted", "tourists",
+  const SUM_KEYS = new Set(["population", "pop_un", "co2_mt", "refugees_hosted", "refugees_from", "idps", "asylum_seekers_hosted", "tourists",
     "tourist_departures", "tourism_receipts_usd", "military_spend_usd", "armed_forces", "exports_usd", "goods_exports_usd",
     "services_exports_usd", "gdp_usd", "elec_twh", "oil_twh", "gas_twh", "coal_twh", "area_km2", "patents", "science_articles"]);
   const isSum = (key) => SUM_KEYS.has(key) || !!(F || window.WC?.F)?.[key]?.sum;
@@ -70,6 +70,7 @@
     { id: "slope", label: "Slope", icon: '<path d="M3 11l10-6M3 5l10 3" stroke="currentColor" stroke-width="1.5"/><path d="M3 2v12M13 2v12" stroke="currentColor" stroke-width="1" opacity=".5"/>', more: true },
     { id: "mekko", label: "Marimekko", icon: '<path d="M1.5 14V9h2.5v5zM4.5 14V5h5v9zM10 14V7h4.5v7z" fill="currentColor"/>', more: true },
     { id: "mix", label: "Parts of a whole", icon: '<path d="M2 3h12v3H2z" fill="currentColor" opacity=".35"/><path d="M2 3h5v3H2zM2 9h8v3H2z" fill="currentColor"/><path d="M2 9h12v3H2z" fill="none" stroke="currentColor" stroke-width="1"/>', more: true },
+    { id: "mountains", label: "Income mountains", icon: '<path d="M1 14C3 14 4 9 6 9s3 4 4.5 1S12 3 13.5 4 15 14 15 14z" fill="currentColor" opacity=".5"/><path d="M1 14h14" stroke="currentColor" stroke-width="1.2"/>', more: true },
     { id: "multi", label: "Small multiples", icon: '<path d="M1.5 1.5h5.5v5.5H1.5zM9 1.5h5.5v5.5H9zM1.5 9h5.5v5.5H1.5zM9 9h5.5v5.5H9z" fill="none" stroke="currentColor" stroke-width="1"/><path d="M2.5 5.5l1.5-1.5 1.5 1 1-2M10 5l1.5-.5 1.5-2M2.5 13l2-2.5 2 .5M10 12.5l1.5-1 2 .5" fill="none" stroke="currentColor" stroke-width="1"/>', more: true },
     { id: "race", label: "Bar chart race", icon: '<path d="M2 3h11M2 6.5h8M2 10h5.5M2 13.5h3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M14 9.5l1.5 1.5-1.5 1.5" fill="none" stroke="currentColor" stroke-width="1.2"/>', more: true },
     { id: "sankey", label: "Sankey", icon: '<path d="M2 3c6 0 6 7 12 7M2 9c6 0 6-5 12-5M2 13c6 0 6-1 12-1" fill="none" stroke="currentColor" stroke-width="1.8"/>', more: true },
@@ -134,9 +135,20 @@
   const aggName = (mode) => (mode === "total" ? "total" : mode === "avg" ? "average" : "median");
   const seriesName = (g, mode) => (g.world ? `World ${aggName(mode)}` : `${g.name} ${aggName(mode)}`);
 
+  // UN projections (pop_un…) come every five years: use just the years that have figures, so lines are smooth
+  const unProj = (key) => /_un$/.test(key) && W.SURVEY_KEYS?.has(key);
+  const isSurvey = (key) => W.SURVEY_KEYS?.has(key) && !unProj(key);
+  const yrMemo = new Map();
   function yearsFor(key) {
     const sp = yearly(key) ? W.span(key) : null;
-    return sp ? d3.range(sp[0], sp[1] + 1) : [];
+    if (!sp) return [];
+    if (!unProj(key)) return d3.range(sp[0], sp[1] + 1);
+    if (!yrMemo.has(key)) {
+      const have = new Set();
+      for (const arr of Object.values(TS[key])) arr.forEach((v, i) => { if (v != null) have.add(TS_YEARS[0] + i); });
+      yrMemo.set(key, [...have].sort((a, b) => a - b));
+    }
+    return yrMemo.get(key);
   }
   // the latest year with a value for the world (or else the latest year with data)
   function bestYear(key, mode) {
@@ -154,6 +166,7 @@
     switch (type) {
       case "line": case "slope":
         return yearly(key) ? "" : `“${f.label}” has data for one year only, so there is nothing to draw over time. Try Bar, Table or Map.`;
+      case "mountains": return "";
       case "multi":
         return yearly(key) ? "" : `“${f.label}” has data for one year only, so there is nothing to draw over time. Try Bar or Map.`;
       case "race":
@@ -266,7 +279,7 @@
     $(".tchecks").hidden = !["line", "bar", "table", "slope", "mix"].includes(t.type);
     const log = lineLog(key);
     $("#tLogL").hidden = t.type !== "line" || !!t.rel; $("#tLog").checked = log;
-    $("#tRelL").hidden = t.type !== "line" || W.SURVEY_KEYS?.has(key); $("#tRel").value = t.rel || "";
+    $("#tRelL").hidden = t.type !== "line" || isSurvey(key); $("#tRel").value = t.rel || "";
     { const ys = yearsFor(key), b = t.base && ys.includes(t.base) ? t.base : ys[0];
       $("#tBase").innerHTML = ys.map((y) => `<option ${y === b ? "selected" : ""}>${y}</option>`).join(""); $("#tBase").hidden = !t.rel; }
     // chart type tabs
@@ -287,13 +300,13 @@
     V.csv = null;
     const w = why(t.type, key);
     if (w) { explain(t.type, w); pinsUI(); V.list = null; return; }
-    ({ line: drawLine, bar: drawBar, table: drawTable, area: drawArea, slope: drawSlope, mekko: drawMekko, mix: drawMix, sankey: drawSankey, race: drawRace, multi: drawMulti })[t.type]();
+    ({ line: drawLine, bar: drawBar, table: drawTable, area: drawArea, slope: drawSlope, mekko: drawMekko, mix: drawMix, sankey: drawSankey, race: drawRace, multi: drawMulti, mountains: drawMountains })[t.type]();
     pinsUI();
     // the list in the results pane: every country's value in the year the chart shows
     const ly = yearly(key) ? (t.year && yearsFor(key).includes(t.year) ? t.year : bestYear(key, "median")) : null;
     V.list = { title: ly ? `Figures for ${ly}` : `Latest figures`, cols: [f], asc: f.format === "rank",
       rows: W.pool().filter((r) => !ms || ms.has(r.iso3)).map((r) => ({ iso: r.iso3, vals: [value(key, r.iso3, ly)] })).filter((x) => x.vals[0] != null),
-      pinned: t.pins, note: ["area", "mekko", "sankey", "race"].includes(t.type) ? "Countries added here show in Line, Bar, Table, Slope and Parts of a whole." : t.type === "multi" ? "Click a country to add a small chart for it (up to 6)." : "Click a country to add it to the chart (up to 6).", max: 6,
+      pinned: t.pins, note: ["area", "mekko", "sankey", "race", "mountains"].includes(t.type) ? "Countries added here show in Line, Bar, Table, Slope and Parts of a whole." : t.type === "multi" ? "Click a country to add a small chart for it (up to 6)." : "Click a country to add it to the chart (up to 6).", max: 6,
       toggle: (iso) => { t.pins = t.pins.includes(iso) ? t.pins.filter((x) => x !== iso) : t.pins.concat(iso).slice(-6); } };
   }
 
@@ -345,7 +358,7 @@
       W.render();
       const tick = () => {
         if (t.year >= ys[ys.length - 1]) { stop(); W.render(); return; }
-        t.year++; W.render();
+        t.year = ys[ys.indexOf(t.year) + 1] ?? t.year + 1; W.render();
         const s = sig.get(t.year);
         playTimer = setTimeout(tick, (window.WPL ? window.WPL.ms(420) : 420) * (s ? (s.level === 2 ? 3 : 2) : 1));
       };
@@ -357,7 +370,7 @@
 
   function pinsUI() {
     const t = V.trend, pins = pinsList();
-    const usesPins = !["area", "mekko", "sankey", "race"].includes(t.type) || !!why(t.type, t.key);
+    const usesPins = !["area", "mekko", "sankey", "race", "mountains"].includes(t.type) || !!why(t.type, t.key);
     $(".vopts", $("#viewwrap")).hidden = !usesPins;
     $("#tPins").innerHTML = pins.map((iso, i) => `<span class="pin"><span class="sw" style="background:${pinColour(i)}"></span>${esc(W.byIso.get(iso).name)}<button type="button" data-iso="${iso}" aria-label="Remove ${esc(W.byIso.get(iso).name)}">×</button></span>`).join("") +
       (!pins.length ? `<span class="hint">Add countries to compare them with the groups.</span>` : "");
@@ -386,7 +399,7 @@
     const series = [];
     // survey measures: different countries were surveyed in each wave, so group medians would jump about as countries
     // come and go. Show countries instead.
-    const survey = W.SURVEY_KEYS?.has(key);
+    const survey = isSurvey(key);
     if (!survey) for (const g of groups()) series.push({ id: g.id, name: seriesName(g, mode), vals: ys.map((y) => agg(key, g.isos, y, mode, g.minN)),
       colour: pins.length && !g.world && !g.mine ? H.css("--muted") : g.colour, dash: g.world ? "6 4" : pins.length && !g.mine ? "2 3" : null,
       width: g.world || g.mine ? 2.4 : pins.length ? 1.4 : 2.2, label: true, bold: g.world || g.mine });
@@ -409,6 +422,7 @@
       fy = rel === "abs" ? f : { ...f, format: rel === "pct" ? "pct" : "dec1", scale: "linear" };
     }
     const logL = log && !rel;
+    let bandNote = "";
     const { w, h } = H.size();
     const mob = w < 560;
     const M = { t: 26, r: mob ? 96 : 160, b: 30, l: mob ? 48 : 62 };
@@ -423,6 +437,27 @@
     // the start line: 0 or 100
     if (rel) { const y0 = sy(rel === "idx" ? 100 : 0); svg.append("line").attr("x1", sx(base)).attr("x2", w - M.r).attr("y1", y0).attr("y2", y0).attr("stroke", H.css("--ink")).attr("stroke-width", 1.2).attr("opacity", 0.55); }
     const ln = d3.line().defined((v) => v != null && (!logL || v > 0)).x((v, i) => sx(ys[i])).y((v) => sy(v));
+    // the UN's uncertainty ranges for population projections: 80% and 95% of their simulations fall inside the shaded bands
+    const rk = RANGE_KIND[key];
+    if (rk && !rel) {
+      const PR = RANGES[rk[0]];
+      if (!PR) loadRanges(rk[0]);
+      else {
+        const k1 = rk[1];
+        // totals for the world and continents (population only: medians of countries have no range), and every added country
+        const bandFor = (s) => (rk[0] === "pop" && s.id === "world" && mode === "total" ? PR.loc.World : rk[0] === "pop" && ["Africa", "Asia", "Europe", "Oceania"].includes(s.id) && mode === "total" ? PR.loc[s.id] : pins.includes(s.id) ? PR.loc[s.id] : null);
+        const bands = series.map((s) => ({ s, b: bandFor(s) })).filter((x) => x.b);
+        const gb = svg.append("g").attr("class", "bands");
+        bands.forEach(({ s, b }) => {
+          const pts = PR.years.map((y, i) => ({ y, l95: b[0][i], l80: b[1][i], h80: b[3][i], h95: b[4][i] })).filter((p) => p.y >= ys[0] && p.y <= ys[ys.length - 1] && p.l95 != null);
+          const ar = (lo, hi) => d3.area().x((p) => sx(p.y)).y0((p) => sy(p[lo] * k1)).y1((p) => sy(p[hi] * k1))(pts);
+          gb.append("path").attr("d", ar("l95", "h95")).attr("fill", s.colour).attr("opacity", 0.12);
+          gb.append("path").attr("d", ar("l80", "h80")).attr("fill", s.colour).attr("opacity", 0.2);
+        });
+        if (!bands.length && rk[0] !== "pop") bandNote = " Add a country to see the UN's range of possible futures for it.";
+        if (bands.length) bandNote = ` Shaded: the UN's ranges. The darker band is 80% likely to hold the real figure, the lighter one 95%: the further ahead, the less certain.`;
+      }
+    }
     const order = series.slice().sort((a, b) => (a.thin ? 0 : 1) - (b.thin ? 0 : 1));
     // survey measures (asked every few years): join each country's survey points and mark them
     const pts = (s) => s.vals.map((v, i) => (v == null || (logL && v <= 0) ? null : [sx(ys[i]), sy(v)])).filter(Boolean);
@@ -436,7 +471,7 @@
     if (t.labs) countryLabels(svg, series.filter((s) => s.thin), ys, sx, sy, logL, t.labs === "code");
     hoverRule(svg, sx, ys, w, h, M, (i) => series.filter((s) => s.label && s.vals[i] != null).sort((a, b) => b.vals[i] - a.vals[i])
       .map((s) => `<dt><span class="sw" style="background:${s.colour}"></span> ${esc(s.name)}</dt><dd>${esc((rel && rel !== "idx" && s.vals[i] > 0 ? "+" : "") + fmtShort(fy, s.vals[i]))}</dd>`).join(""));
-    $("#tNote").innerHTML = survey ? `Each dot is one survey. Different countries were surveyed in each wave, so world and continent medians are not shown: add countries below to compare them. ${f.info ? esc(f.info) : ""}` : `${rel ? `${{ abs: "Each line shows how much it has gone up or down", pct: "Each line shows the % change", idx: "Each line starts at 100, so you can compare growth" }[rel]} since ${base} (or the first year with data after it). ` : ""}${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
+    $("#tNote").innerHTML = survey ? `Each dot is one survey. Different countries were surveyed in each wave, so world and continent medians are not shown: add countries below to compare them. ${f.info ? esc(f.info) : ""}` : `${bandNote ? bandNote.trim() + " " : ""}${rel ? `${{ abs: "Each line shows how much it has gone up or down", pct: "Each line shows the % change", idx: "Each line starts at 100, so you can compare growth" }[rel]} since ${base} (or the first year with data after it). ` : ""}${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
     V.csv = () => [["Year", ...series.map((s) => s.name)], ...ys.map((y, i) => [y, ...series.map((s) => s.vals[i] ?? "")])];
     V.title = rel ? `${{ abs: "Change in", pct: "% change in", idx: "Index of" }[rel]} ${lower(f.label)} since ${base}` : `${f.label}, ${ys[0]}–${ys[ys.length - 1]}`;
   }
@@ -526,6 +561,82 @@
     V.title = `${f.label}${year ? `, ${year}` : ""}`;
   }
 
+  // ---------- data loaded only when needed ----------
+  // the UN's projection ranges: which file, and what to multiply by (population is in thousands)
+  const RANGE_KIND = { pop_un: ["pop", 1000], life_exp_un: ["e0", 1], fertility_un: ["tfr", 1] };
+  const RANGES = {}, rLoading = {};
+  let MT = null, mtLoading = null;
+  function loadRanges(k) {
+    const pre = window["__RANGES" + k.toUpperCase() + "__"];
+    rLoading[k] ||= (pre ? Promise.resolve(pre) : fetch(`ranges_${k}.json?v=57`).then((r) => r.json()))
+      .then((j) => { RANGES[k] = j; if (W.state.view === "trends") W.render(); }).catch(() => {});
+  }
+  function loadMountains() {
+    mtLoading ||= (window.__MOUNTAINS__ ? Promise.resolve(window.__MOUNTAINS__) : fetch("mountains.json?v=57").then((r) => r.json()))
+      .then((j) => { MT = j; if (W.state.view === "trends") W.render(); }).catch(() => { MT = { years: [] }; });
+  }
+
+  // ======================= INCOME MOUNTAINS =======================
+  // how many people live on each income level, stacked by region (Gapminder): the world's income distribution, 1800–2040
+  const MT_ORDER = ["afr", "asi", "ame", "eur"];
+  const MT_COL = { afr: "Africa", asi: "Asia", ame: "Americas", eur: "Europe" };
+  function drawMountains() {
+    const t = V.trend;
+    if (!MT) { loadMountains(); svgSel(400, 60, "Loading"); $("#tNote").textContent = "Loading the income mountains…"; return; }
+    if (!MT.years.length) { $("#tNote").textContent = "The income mountains data could not be loaded."; return; }
+    const { year } = yearPicker("__mountains", { years: MT.years, def: MT.years.includes(2020) ? 2020 : MT.years[MT.years.length - 1], sigKey: "__none" });
+    const { w } = H.size(), h = H.size().h - 36;
+    const mob = w < 560;
+    const M = { t: 34, r: 16, b: 44, l: mob ? 46 : 60 };
+    const svg = svgSel(w, h, `Income mountains, ${year}`);
+    const X = MT.x;
+    const keep = X.map((x, i) => i).filter((i) => X[i] >= 0.125 && X[i] <= 512);
+    const stack = t.mside !== true;
+    const regs = MT_ORDER.filter((k) => MT.r[k]?.[year]);
+    const vals = (k) => keep.map((i) => (MT.r[k][year][i] || 0) * 1000);
+    let layers;
+    if (stack) {
+      let base = keep.map(() => 0);
+      layers = regs.map((k) => { const v = vals(k), lo = base.slice(); base = base.map((b, j) => b + v[j]); return { k, lo, hi: base.slice() }; });
+    } else layers = regs.map((k) => ({ k, lo: keep.map(() => 0), hi: vals(k) }));
+    // the same height in every year, so the mountains can be compared
+    const ymax = t.mside ? d3.max(MT.years, (y) => d3.max(MT_ORDER, (k) => d3.max(MT.r[k]?.[y] || [0]))) * 1000
+      : d3.max(MT.years, (y) => d3.max(keep, (i) => d3.sum(MT_ORDER, (k) => MT.r[k]?.[y]?.[i] || 0))) * 1000;
+    const sx = d3.scaleLog().domain([0.125, 512]).range([M.l, w - M.r]);
+    const sy = d3.scaleLinear().domain([0, ymax * 1.05]).range([h - M.b, M.t]).nice();
+    const ink = H.css("--ink"), muted = H.css("--muted"), line = H.css("--line");
+    const xs = keep.map((i) => X[i]);
+    // income levels (Gapminder's four levels) and the extreme poverty line
+    const LV = [[0.125, 2, "Level 1"], [2, 8, "Level 2"], [8, 32, "Level 3"], [32, 512, "Level 4"]];
+    svg.append("g").selectAll("rect").data(LV).join("rect").attr("x", (d) => sx(d[0])).attr("width", (d) => sx(d[1]) - sx(d[0])).attr("y", M.t).attr("height", h - M.b - M.t)
+      .attr("fill", (d, i) => (i % 2 ? line : "transparent")).attr("opacity", 0.35);
+    svg.append("g").selectAll("text").data(LV).join("text").attr("x", (d) => sx(Math.sqrt(d[0] * d[1]))).attr("y", M.t - 8).attr("text-anchor", "middle").attr("font-size", 11).attr("font-weight", 600).attr("fill", muted).text((d) => d[2]);
+    const ty = sy.ticks(4);
+    svg.append("g").selectAll("line").data(ty).join("line").attr("x1", M.l).attr("x2", w - M.r).attr("y1", sy).attr("y2", sy).attr("stroke", line);
+    svg.append("g").selectAll("text").data(ty).join("text").attr("x", M.l - 6).attr("y", sy).attr("dy", "0.35em").attr("text-anchor", "end").attr("font-size", 11).attr("fill", muted).text((v) => (!v ? "0" : v >= 1e9 ? `${+(v / 1e9).toPrecision(3)}bn` : `${+(v / 1e6).toPrecision(3)}M`));
+    const area = (L) => d3.area().curve(d3.curveBasis).x((d, j) => sx(xs[j])).y0((d, j) => sy(L.lo[j])).y1((d, j) => sy(L.hi[j]))(xs);
+    svg.append("g").selectAll("path").data(layers).join("path").attr("d", area).attr("fill", (L) => H.contColour(MT_COL[L.k])).attr("opacity", stack ? 0.88 : 0.5)
+      .attr("stroke", (L) => H.contColour(MT_COL[L.k])).attr("stroke-width", stack ? 0 : 1.5);
+    const xt = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512];
+    svg.append("g").selectAll("text").data(xt.filter((v) => !mob || [0.5, 2, 8, 32, 128, 512].includes(v))).join("text").attr("x", sx).attr("y", h - M.b + 16).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", muted).text((v) => `$${v}`);
+    svg.append("text").attr("x", w - M.r).attr("y", h - 6).attr("text-anchor", "end").attr("font-size", 12.5).attr("font-weight", 600).attr("fill", ink).text("Income per person per day ($, adjusted for prices; log scale) →");
+    svg.append("text").attr("x", 4).attr("y", 14).attr("font-size", 12.5).attr("font-weight", 600).attr("fill", ink).text("↑ Number of people");
+    const pl = sx(1.9);
+    svg.append("line").attr("x1", pl).attr("x2", pl).attr("y1", M.t).attr("y2", h - M.b).attr("stroke", "#d6453d").attr("stroke-width", 1.6).attr("stroke-dasharray", "5 3");
+    svg.append("text").attr("x", pl - 4).attr("y", M.t + 14).attr("text-anchor", "end").attr("font-size", 11).attr("font-weight", 600).attr("fill", "#d6453d").text("Extreme poverty line ($1.90)");
+    // how many people are below the line
+    const below = (k) => d3.sum(keep.filter((i) => X[i] < 1.9), (i) => (MT.r[k][year][i] || 0) * 1000);
+    const total = (k) => d3.sum(MT.r[k][year]) * 1000;
+    const wb = d3.sum(regs, below), wt = d3.sum(regs, total);
+    svg.append("text").attr("x", w - M.r - 6).attr("y", M.t + 40).attr("text-anchor", "end").attr("font-size", Math.min(64, w * 0.08)).attr("font-weight", 700).attr("fill", line).text(year);
+    $("#tLeg").innerHTML = regs.map((k) => `<span class="lg"><span class="sw" style="background:${H.contColour(MT_COL[k])}"></span>${esc(MT.names[k])} <small>${Math.round((100 * below(k)) / total(k))}% in extreme poverty</small></span>`).join("") +
+      `<label class="tog"><input type="checkbox" id="mtSide" ${t.mside ? "checked" : ""}> One mountain per region (not stacked)</label>`;
+    $("#mtSide").onchange = (e) => { t.mside = e.target.checked; W.render(); };
+    $("#tNote").innerHTML = `${year}: about ${(wt / 1e9).toFixed(1)} billion people, of whom ${(wb / 1e9).toFixed(2)} billion (${Math.round((100 * wb) / wt)}%) lived below the extreme poverty line. Each mountain shows how many people live on each income, so you can see the world move from left to right. Press ▶ to watch from 1800.${year > 2018 ? " <b>After 2018 these are projections.</b>" : ""} Rough estimates, for the big picture: Oceania is counted in Asia. This chart doesn't use the measure above. Source: Gapminder, Income Mountains v2 (CC BY 4.0).`;
+    V.csv = () => [["Income per person per day ($)", ...regs.map((k) => MT.names[k])], ...keep.map((i) => [X[i], ...regs.map((k) => (MT.r[k][year][i] || 0) * 1000)])];
+    V.title = `Income mountains: how many people live on each income, ${year}`;
+  }
+
   // ======================= SMALL MULTIPLES =======================
   // one small chart for each continent (or each country), side by side, on the same scale, with the world for reference
   function drawMulti() {
@@ -608,7 +719,7 @@
     all.sort((a, b) => (asc ? a.v - b.v : b.v - a.v));
     const top = all.slice(0, N);
     const M = { t: 8, r: mob ? 60 : 84, b: 26, l: mob ? 108 : 168 };
-    const rowH = Math.max(14, Math.min(34, (h - M.t - M.b - 12) / N));
+    const rowH = Math.max(14, Math.min(34, (h - M.t - M.b - 40) / N));
     const H2 = M.t + M.b + rowH * N;
     const svg = d3.select("#vsvg").attr("viewBox", `0 0 ${w} ${H2}`).attr("width", w).attr("height", H2).attr("aria-label", `${f.label}: the top ${N}, ${year}`);
     const sig = `${key}|${N}|${w}|${!!ms}`;
@@ -1051,6 +1162,7 @@
     if (t.raceN && t.raceN !== 15) p.set("trn", t.raceN);
     if (t.mby && t.mby !== "auto") p.set("tmb", t.mby);
     if (t.mfree) p.set("tmf", "1");
+    if (t.mside) p.set("tms", "1");
     if (t.share) p.set("tsh", "1");
     if (t.sk) p.set("tsk", t.sk);
     if (!t.group) p.set("tg", "0");
@@ -1066,6 +1178,7 @@
     t.raceN = [10, 15, 20, 30].includes(+p.get("trn")) ? +p.get("trn") : 15;
     t.mby = ["cont", "countries"].includes(p.get("tmb")) ? p.get("tmb") : "auto";
     t.mfree = p.get("tmf") === "1";
+    t.mside = p.get("tms") === "1";
     t.share = p.get("tsh") === "1";
     t.sk = p.get("tsk") === "c" ? "c" : "";
     t.group = p.get("tg") !== "0";

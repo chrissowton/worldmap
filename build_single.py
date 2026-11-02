@@ -42,13 +42,15 @@ def main():
     citiesgrowth = read("cities_growth.json")
     regionsgeo = read("regions_geo.json")
     regionsdata = read("regions_data.json")
+    mountains = read("mountains.json")
+    rpop, re0, rtfr = read("ranges_pop.json"), read("ranges_e0.json"), read("ranges_tfr.json")
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
     # the data goes in gzip-compressed (as base64 text) and the page unpacks it with the browser's DecompressionStream:
     # about a quarter of the size of plain JSON
     import gzip
     blobs = {"COUNTRIES": data, "WORLD": world, "CITIES": cities, "FLOWS": flows, "TIMESERIES": timeseries, "FEATURES": features,
              "PYRAMIDS": pyramids, "PHYSICAL": physical, "RFLOWS": rflows,
-             "CLIMATE": climate, "MIGRATION": migration, "CITIESGROWTH": citiesgrowth, "REGIONSGEO": regionsgeo, "REGIONSDATA": regionsdata}
+             "CLIMATE": climate, "MIGRATION": migration, "CITIESGROWTH": citiesgrowth, "REGIONSGEO": regionsgeo, "REGIONSDATA": regionsdata, "MOUNTAINS": mountains, "RANGESPOP": rpop, "RANGESE0": re0, "RANGESTFR": rtfr}
     packed = ",".join(f'{k}:"{base64.b64encode(gzip.compress(v.encode("utf-8"), 9)).decode()}"' for k, v in blobs.items())
     unpack = (
         "<script>window.__READY__=(async()=>{const P={" + packed + "};"

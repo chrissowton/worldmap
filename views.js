@@ -233,12 +233,14 @@
     const view = W.state.view;
     if (view === "compare") return { keys: [V.cmp.y, V.cmp.x, V.cmp.size].filter(Boolean) };
     if (view === "rank") return { keys: [V.rank.key] };
+    if (view === "trends" && V.trend.type === "mountains") return { keys: [], extra: ["gapmincm"] };
     if (view === "trends") {
       const t = V.trend, extra = [];
       const k = [t.key];
       if (t.type === "sankey" && /^refugee|asylum|idps/.test(t.key)) extra.push("unhcr");
       if (t.type === "sankey" && !/^refugee|asylum|idps/.test(t.key)) k.push("goods_exports_usd", "services_exports_usd", "exp_fuel_pct");
       if (t.agg === "avg" || t.type === "mekko") k.push("population");
+      if (["pop_un", "life_exp_un", "fertility_un"].includes(t.key) && t.type === "line") extra.push("unppp");
       return { keys: k, extra };
     }
     if (view === "insights") return { keys: V.ins?.srcKeys || [] };

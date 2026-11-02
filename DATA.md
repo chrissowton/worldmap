@@ -664,3 +664,8 @@ From https://globaldatalab.org/shdi/ (free to use with credit). Cite: Data retri
 - The Subnational HDI table for all years (one CSV), and the latest year of every indicator (exported in batches: Human Development, Gender Development, Indicators).
 - The GDL shapefile, made into `regions_geo.json` with mapshaper (the command is at the top of `make_regions.py`).
 - Then run `python3 make_regions.py <folder with the CSVs>` to write `regions_data.json`.
+
+## Income mountains (Gapminder) and population projection ranges (UN)
+
+- Gapminder, "Data: Income Mountains (v2)" (CC BY 4.0), the Excel file from gapm.io/dincm. Run `python3 make_mountains.py <file.xlsx>` to write `mountains.json`.
+- UN World Population Prospects 2024, Probabilistic Projections: `UN_PPP2024_Output_PopTot.xlsx`, `UN_PPP2024_Output_e0.xlsx` and the TFR file (CC BY 3.0 IGO). Run `python3 make_projections.py <the files>` to write `ranges_pop.json`, `ranges_e0.json` and `ranges_tfr.json`.
