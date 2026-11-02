@@ -39,13 +39,14 @@ def main():
     rflows = read("refugee_flows_years.json")
     climate = read("climate.json")
     migration = read("migration.json")
+    citiesgrowth = read("cities_growth.json")
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
     # the data goes in gzip-compressed (as base64 text) and the page unpacks it with the browser's DecompressionStream:
     # about a quarter of the size of plain JSON
     import gzip
     blobs = {"COUNTRIES": data, "WORLD": world, "CITIES": cities, "FLOWS": flows, "TIMESERIES": timeseries, "FEATURES": features,
              "PYRAMIDS": pyramids, "PHYSICAL": physical, "RFLOWS": rflows,
-             "CLIMATE": climate, "MIGRATION": migration}
+             "CLIMATE": climate, "MIGRATION": migration, "CITIESGROWTH": citiesgrowth}
     packed = ",".join(f'{k}:"{base64.b64encode(gzip.compress(v.encode("utf-8"), 9)).decode()}"' for k, v in blobs.items())
     unpack = (
         "<script>window.__READY__=(async()=>{const P={" + packed + "};"
@@ -54,7 +55,7 @@ def main():
     )
     inline = (
         unpack +
-        f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>\n<script>{read('numbers.js')}</script>\n<script>{read('worksheet.js')}</script>\n<script>{read('mapskills.js')}</script>\n<script>{read('stats.js')}</script>\n<script>{read('tours.js')}</script>\n<script>{read('explore.js')}</script>\n<script>{read('access.js')}</script>\n<script>{read('climate.js')}</script>"
+        f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>\n<script>{read('numbers.js')}</script>\n<script>{read('worksheet.js')}</script>\n<script>{read('mapskills.js')}</script>\n<script>{read('stats.js')}</script>\n<script>{read('tours.js')}</script>\n<script>{read('explore.js')}</script>\n<script>{read('access.js')}</script>\n<script>{read('climate.js')}</script>\n<script>{read('citygrowth.js')}</script>"
     )
     head = (
         f"<title>Which Countries?</title>\n"

@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "45";
+  const DATA_VERSION = "48";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -54,7 +54,11 @@
     const has = SURVEY_KEYS.has(key) ? (arr, i) => arr.slice(Math.max(0, i - 8), i + 1).some((v) => v != null) : (arr, i) => arr[i] != null;
     const counts = TS_YEARS.map((_, i) => Object.values(s).filter((arr) => has(arr, i)).length);
     const first = counts.findIndex((n) => n >= 20), last = counts.length - 1 - [...counts].reverse().findIndex((n) => n >= 20);
-    if (first >= 0) TS_SPAN[key] = [TS_YEARS[first], TS_YEARS[last]];
+    // don't run past the last real figure, except to carry a recent survey on to the present (2025)
+    let lastReal = -1;
+    for (const arr of Object.values(s)) for (let i = arr.length - 1; i > lastReal; i--) if (arr[i] != null) { lastReal = i; break; }
+    const cap = Math.max(lastReal, Math.min(lastReal + 8, 2025 - TS_YEARS[0]));
+    if (first >= 0) TS_SPAN[key] = [TS_YEARS[first], TS_YEARS[Math.min(last, cap)]];
   }
   const TS_EXT = {};
   for (const [key, s] of Object.entries(TS)) {
@@ -144,6 +148,12 @@
       case "kwh": return compact(v) + " kWh";
       case "permillion": case "per100": return String(a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v)));
       case "count": return d3.format(",")(Math.round(v));
+      case "anom": return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "°C";
+      case "gha": return (+v.toFixed(a < 10 ? 2 : 1)) + " gha";
+      case "earths": return (+v.toFixed(1)) + (Math.abs(v - 1) < 0.05 ? " Earth" : " Earths");
+      case "kcal": return d3.format(",")(Math.round(v)) + " kcal";
+      case "m3": return d3.format(",")(Math.round(v)) + " m³";
+      case "ha": return compact(v) + " ha";
       default: return String(Math.round(v));
     }
   }
@@ -613,7 +623,7 @@
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
     drawCities();
-    window.WX?.layout(); window.WCL?.draw();
+    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw();
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
@@ -621,7 +631,7 @@
     gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
-    window.WX?.zoomed(e.transform.k); window.WCL?.draw();
+    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw();
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
     window.WP?.zoomed(e.transform);
@@ -909,7 +919,7 @@
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
     if (state.view !== "map") window.WV?.render();
-    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw();
+    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh();
     const chartList = state.view !== "map" && window.WV_H?.V?.list;
     if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
     document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
@@ -2891,6 +2901,7 @@
   window.WTR?.init();
   window.WX?.init();
   window.WCL?.init();
+  window.WCG?.init();
   window.WA?.init();
 
   // ---------- Go ----------

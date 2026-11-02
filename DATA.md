@@ -626,3 +626,32 @@ World Meteorological Organization 1991–2020 climatological standard normals, c
 ## International migrant stock (migration maps)
 
 United Nations Department of Economic and Social Affairs, Population Division (2024). *International Migrant Stock 2024*, by destination and origin (`undesa_pd_2024_ims_stock_by_sex_destination_and_origin.xlsx`, Table 1, both sexes): https://www.un.org/development/desa/pd/content/international-migrant-stock. Built with `python3 make_migration.py file.xlsx` into `migration.json`; pairs of countries with at least 500 people in some year are kept.
+
+
+## More measures (v47): built by `make_extra.py` into `extra.csv`, then `build_data.py`
+
+Put the downloads in one folder and run `python3 make_extra.py folder`, then `python3 build_data.py`.
+
+| Measures | Source | Licence |
+|---|---|---|
+| Disaster risk, exposure, vulnerability and its parts, 2000–2026 | WorldRiskReport 2025, WorldRiskIndex trend file (Bündnis Entwicklung Hilft / IFHV), via HDX: https://data.humdata.org/dataset/worldriskindex | CC BY 4.0 |
+| Deaths from disasters by type (10-year totals, and per million) | EM-DAT (CRED / UCLouvain) via Our World in Data, "annual deaths from all natural disasters" | Free for non-commercial use |
+| People displaced by disasters and by conflict, 2008–2025 | IDMC Global Internal Displacement Database: https://www.internal-displacement.org/database | CC BY-NC 4.0 |
+| Temperature compared with 1991–2020, 1940–2025 | Copernicus ERA5 via Our World in Data, "annual temperature anomalies" | CC BY 4.0 |
+| Global Hunger Index (2000, 2006, 2012, 2018, 2026) | Global Hunger Index 2026 data file: https://www.globalhungerindex.org/ ("<5" stored as 4.9) | Attribution |
+| Calories per person, water use per person, water used by farming | FAO (and AQUASTAT) via Our World in Data | CC BY 4.0 |
+| Tree cover lost (hectares; % of land area) | Global Forest Watch via Our World in Data | CC BY 4.0 |
+| Ecological footprint, biocapacity, reserve/deficit, Earths needed (2023) | National Footprint and Biocapacity Accounts 2026, Global Footprint Network / FoDaFo: https://www.footprintnetwork.org/public | CC BY-SA 4.0 |
+| Urban % (national definitions), cities / towns / rural, million-plus cities, megacities, 1950–2050 | UN World Urbanization Prospects 2025: https://population.un.org/wup/ | CC BY 3.0 IGO |
+| City growth map (`cities_growth.json`, cities of 300,000+, every 5 years 1975–2050, in thousands) | UN WUP 2025, degree-of-urbanisation cities file | CC BY 3.0 IGO |
+| Population, fertility, life expectancy, median age, natural increase, net migration, growth, 1950–2100 | UN World Population Prospects 2024 (compact file; medium variant after 2023): https://population.un.org/wpp/ | CC BY 3.0 IGO |
+| Aid received per person; external debt (% of GNI) | World Bank (DT.ODA.ODAT.PC.ZS, DT.DOD.DECT.GN.ZS) | CC BY 4.0 |
+
+Projections: measures from WPP and WUP carry on past today on the year slider (to 2100 and 2050). Their current value on the map is the figure for 2025 (2024 for some), or the latest year up to 2026.
+
+| Corruption Perceptions Index 2012–2025 | Transparency International, CPI 2025 results file ("CPI Timeseries" sheet): https://www.transparency.org/en/cpi/2025 | CC BY-ND 4.0 |
+| Press freedom score 2025–2026 | Reporters Without Borders, World Press Freedom Index 2026 (CSV): https://rsf.org/en/index | Attribution |
+| Deaths in armed conflicts, 1989–2025 (and per 100,000) | UCDP via Our World in Data, "deaths in armed conflicts by country" | CC BY 4.0 |
+| Births outside marriage; mismanaged plastic waste per person (2019); girls married before 15 | Our World in Data (OECD; Meijer et al. 2021; UNICEF) | CC BY 4.0 |
+| Tourist arrivals 2023–2024 | UN Tourism, inbound tourism (overnight visitors, or all visitors where that's all that is reported) | Attribution |
+| Energy (rewrites `energy_latest.csv`) | Our World in Data energy dataset, owid-energy-data.csv (Energy Institute and others) | CC BY 4.0 |

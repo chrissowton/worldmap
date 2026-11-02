@@ -31,6 +31,10 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Yearly data check**: a GitHub Action (`.github/workflows/data-check.yml`) runs `check_data_age.py` every September and opens an issue listing measures whose data is more than two years old.
 - **Climate graphs**: about 4,800 weather stations (WMO 1991–2020 climate normals) on the map, coloured by temperature. Click one for its climate graph (rainfall bars, temperature line with daily highs and lows), key figures and Köppen climate type; compare two places on the same scales; add to the worksheet or download.
 - **Migration maps**: in a country's profile (Global links), map where its migrants were born or where its emigrants live, for any year from 1990 to 2024 (UN DESA International Migrant Stock 2024).
+- **City growth**: about 2,600 cities sized by population every five years from 1975, with UN projections to 2050; play it, see the largest and fastest-growing cities, or a growth line for any city.
+- **Population futures**: UN projections to 2100 for population, fertility, life expectancy, median age, natural increase and migration, playable on the year slider.
+- **Hazards, food, water and footprint**: WorldRiskIndex, disaster deaths and displacement, warming since 1940, Global Hunger Index, calories, water use, tree cover loss, ecological footprint, urbanisation to 2050, aid and debt.
+- **Politics and society**: Corruption Perceptions Index (2012–2025), press freedom (RSF 2026), deaths in armed conflicts, girls married before 15, births outside marriage, and mismanaged plastic waste; tourism updated to 2024 and energy production updated.
 - **My worksheet**: "＋" buttons collect the map or chart on screen, quiz questions (answers go in an answer key), a country's key facts and Number hunt posters. Arrange them, add your own questions and answer lines, and print. It's kept in your browser until you clear it, with no account needed.
 - **Number hunt** (Learn & share, or type a number in the search box and press Enter): finds facts from across the site that come to that number (life expectancy of 42 years, 42% of land covered by forest, a peak 4,200 m high…) and lays them out as a one-page poster to save or print.
 - **Physical and human filters work together**: a physical filter with a limit (deserts over 100,000 km², rivers through 3+ countries) also picks out the countries that contain such a feature, so "countries with a big desert and a river through 3+ countries and over 20 million people" works.
@@ -137,6 +141,8 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `check_data_age.py` | Lists measures whose data is getting old (run yearly by a GitHub Action) |
 | `climate.js` | Climate graphs and Köppen climate types from the WMO station normals |
 | `make_climate.py`, `make_migration.py` | Build `climate.json` and `migration.json` from the WMO and UN DESA downloads |
+| `citygrowth.js` | The city growth map (1975–2050) |
+| `make_extra.py` | Builds `extra.csv` and `cities_growth.json` from the downloads listed in DATA.md |
 | `quiz.js` | The quiz: builds the question bank from the data, checks typed answers and makes the multiple-choice options |
 | `physical.js` | The physical side: feature layers, base maps, feature lists and profiles |
 | `physical.json` | Physical map layers: peaks, landforms, rivers, lakes, ice, plates and boundaries, volcanoes, earthquakes, trenches, deltas, waterfalls, biomes, climate zones (built by `make_physical.py`) |

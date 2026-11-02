@@ -413,13 +413,24 @@
   function tabs(lastEval) {
     return [...(lastEval.feat || new Map())].map(([t, list]) => ({ t, label: T[t].many.charAt(0).toUpperCase() + T[t].many.slice(1), n: list.length }));
   }
+  const listMore = { key: "", n: 400 };
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest?.(".fmore")) return;
+    const box = e.target.closest(".rlist"), top = box?.scrollTop || 0;
+    listMore.n += 400; W.render();
+    const nb = document.querySelector("#results .rlist"); if (nb) nb.scrollTop = top;
+  });
   function listHTML(t, list, state) {
     const info = T[t];
     const sorted = info.sort ? [...list].sort((a, b) => (b[info.sort] ?? -1e9) - (a[info.sort] ?? -1e9)) : [...list].sort((a, b) => a.name.localeCompare(b.name));
-    const shown = sorted.slice(0, 400);
+    // the list grows 400 at a time ("Show more"); the map always shows them all
+    if (listMore.key !== t + ":" + list.length) { listMore.key = t + ":" + list.length; listMore.n = 400; }
+    const shown = sorted.slice(0, listMore.n);
+    const left = list.length - shown.length;
     return `<div class="count"><span class="n num">${n0(list.length)}</span><span class="of">${list.length === 1 ? info.one : info.many} match</span></div>
-      ${list.length > 400 ? `<p class="sub" style="margin:0 14px 6px">Showing the first 400.</p>` : ""}
-      <div class="rlist">${shown.map((it) => `<button type="button" class="row frow" data-ref="${t}:${it._i}"><span class="nm">${esc(title(it))}<small>${esc(it._t === "quake" ? it.name : clist(it.iso, 2))}</small></span><span class="val num">${esc(info.value(it))}</span></button>`).join("") || `<p class="empty">Nothing matches. Try loosening the filters.</p>`}</div>`;
+      ${left > 0 ? `<p class="sub" style="margin:0 14px 6px">Listing the first ${n0(shown.length)}${info.sort ? " (largest first)" : ""}. All ${n0(list.length)} are on the map.</p>` : ""}
+      <div class="rlist">${shown.map((it) => `<button type="button" class="row frow" data-ref="${t}:${it._i}"><span class="nm">${esc(title(it))}<small>${esc(it._t === "quake" ? it.name : clist(it.iso, 2))}</small></span><span class="val num">${esc(info.value(it))}</span></button>`).join("") || `<p class="empty">Nothing matches. Try loosening the filters.</p>`}
+        ${left > 0 ? `<button type="button" class="ghost fmore" style="margin:8px 14px">Show ${n0(Math.min(400, left))} more (${n0(left)} not listed yet)</button>` : ""}</div>`;
   }
   function detailHTML(ref) {
     const it = byRef(ref);

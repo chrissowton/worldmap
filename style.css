@@ -2093,3 +2093,20 @@ body.no-anim #map, body.no-anim #map * { transition: none !important; }
 .flowbar { flex-wrap: wrap; align-items: center; gap: 8px 10px; max-width: min(760px, calc(100% - 24px)); }
 .flowbar p { flex: 1 1 300px; min-width: 240px; margin: 0; }
 .flowbar:not([hidden]) ~ .mapbtns { display: none; }
+
+/* ---------- v47: city growth ---------- */
+.mmbtn#cgBtn[aria-pressed="true"] { border-color: #d6453d; background: color-mix(in srgb, #f2a541 12%, var(--surface)); }
+.cgcard { width: min(340px, calc(100% - 24px)); }
+.cg-year { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.cg-year input { flex: 1; }
+.cg-year .cg-y { font-size: 18px; font-variant-numeric: tabular-nums; min-width: 44px; }
+.cg-year .play { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; flex: none; }
+.cg-tabs { margin: 6px 0; flex-wrap: wrap; }
+.cg-list { margin: 4px 0; padding-left: 22px; font-size: 12.5px; }
+.cg-list li { padding: 1px 0; }
+.cg-list small { color: var(--muted); }
+.cg-list b { float: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cg-svg { width: 100%; height: auto; display: block; }
+.cg-name { margin: 4px 0; }
+.cg-find input { display: block; width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.layer-cgrow circle:hover { stroke: #14212b; }

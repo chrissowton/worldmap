@@ -83,7 +83,9 @@
     return typeof v === "number" ? v : null;
   }
   function weightOf(wk, iso, year) {
-    const v = value(wk, iso, TS[wk] ? year : null);
+    let v = value(wk, iso, TS[wk] ? year : null);
+    // past the World Bank's population figures (e.g. UN projections), weight by the UN's projected population
+    if ((v == null || !(v > 0)) && wk === "population" && TS.pop_un && year) v = value("pop_un", iso, year);
     return v != null && v > 0 ? v : null;
   }
   const memo = new Map();

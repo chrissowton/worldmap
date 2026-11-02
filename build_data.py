@@ -659,6 +659,27 @@ for row in csv.DictReader(l for l in open(raw("surveys_cat.csv"), encoding="utf-
     if rec is not None and int(row["year"]) >= rec.get(row["field"] + "_year", 0):
         rec[row["field"]] = row["value"]; rec[row["field"] + "_year"] = int(row["year"])
         rec[row["field"] + "_share"] = float(row["share_pct"])
+# More measures from make_extra.py: hazards, food, water, forests, footprint, urbanisation, UN population projections, aid, debt.
+# wave 0 = yearly 1960-2025 (stored in full); wave 1 = stored sparsely, including projections up to 2100.
+# The current value is the latest figure up to 2026 (projections after that only show on the year slider and in Charts).
+if os.path.exists(raw("extra.csv")):
+    for row in csv.DictReader(l for l in open(raw("extra.csv"), encoding="utf-8") if not l.startswith("#")):
+        f, iso, y, wave = row["field"], row["iso3"], int(row["year"]), int(row["wave"])
+        if iso not in countries:
+            continue
+        v = float(row["value"])
+        if v.is_integer() and abs(v) >= 100:
+            v = int(v)
+        if wave == 0:
+            series.setdefault(f, {})
+            put(f, iso, y, v)
+        elif wave == 1:
+            sparse.setdefault(f, {}).setdefault(iso, []).extend([y, v])
+        rec = countries[iso]
+        if 2000 <= y <= 2026 and y >= rec.get(f + "_year", 0):
+            rec[f] = v; rec[f + "_year"] = y
+            if f == "tourists" and rec.get("population"):
+                rec["tourists_per100"] = round(100 * v / rec["population"], 1); rec["tourists_per100_year"] = y
 # Demographic transition model stage and natural increase, from the birth and death rates of each year
 DTM_STAGES = ["Stage 1 · High birth and death rates", "Stage 2 · Death rate falling, birth rate high",
               "Stage 3 · Birth rate falling", "Stage 4 · Low birth and death rates", "Stage 5 · Deaths outnumber births"]
@@ -807,7 +828,9 @@ def num_json(v):
     t = format(v, ".4g")
     return t.replace("e+0", "e").replace("e+", "e").replace("e-0", "e-")
 with open(os.path.join(ROOT, "timeseries.json"), "w", encoding="utf-8") as f:
-    f.write('{"years":' + json.dumps(YEARS, separators=(",", ":")) + ',"series":{')
+    # the year list runs on to the last projected year; yearly series stop at 2025 (the app treats the rest as empty)
+    last = max([YEARS[-1]] + [p[i] for s_ in sparse.values() for p in s_.values() for i in range(0, len(p), 2)])
+    f.write('{"years":' + json.dumps(list(range(YEARS[0], last + 1)), separators=(",", ":")) + ',"series":{')
     f.write(",".join(json.dumps(k) + ":{" + ",".join(json.dumps(iso) + ":[" + ",".join(num_json(v) for v in vals) + "]" for iso, vals in s.items()) + "}" for k, s in series.items()))
     f.write('},"sparse":' + json.dumps(sparse, separators=(",", ":")) + "}")
 print("Wrote timeseries.json:", {k: len(v) for k, v in series.items()})

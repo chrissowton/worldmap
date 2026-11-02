@@ -2046,3 +2046,175 @@ Object.assign(window.SOURCES, {
       variants: [["pew_fav_us", "USA"], ["pew_fav_china", "China"], ["pew_fav_un", "UN"], ["pew_fav_eu", "EU"], ["pew_fav_russia", "Russia"], ["pew_fav_nato", "NATO"]] },
   );
 }
+
+/* =====================================================================
+ * MORE MEASURES (v47): hazards and disasters, food and water, forests, ecological footprint, urbanisation,
+ * UN population projections, aid and debt. Built by make_extra.py; see DATA.md for sources.
+ * Measures marked "with projections" carry on past today on the year slider (UN medium-variant projections).
+ * ===================================================================== */
+window.FILTER_GROUPS.push("Hazards & disasters", "Food & water", "Population futures");
+window.THEMES.find((t) => t.id === "planet").groups.splice(1, 0, "Hazards & disasters", "Food & water");
+window.THEMES.find((t) => t.id === "people").groups.splice(1, 0, "Population futures");
+Object.assign(window.SOURCES, {
+  wri: { name: "WorldRiskReport 2025 (Bündnis Entwicklung Hilft / IFHV, Ruhr University Bochum), WorldRiskIndex trend data", url: "https://data.humdata.org/dataset/worldriskindex", licence: "CC BY 4.0" },
+  emdat: { name: "EM-DAT, CRED / UCLouvain, via Our World in Data", url: "https://ourworldindata.org/natural-disasters", licence: "Free for non-commercial use; CC BY 4.0 (Our World in Data)" },
+  idmc: { name: "Internal Displacement Monitoring Centre (IDMC), Global Internal Displacement Database", url: "https://www.internal-displacement.org/database", licence: "CC BY-NC 4.0" },
+  era5: { name: "Copernicus Climate Change Service, ERA5, via Our World in Data", url: "https://ourworldindata.org/grapher/annual-temperature-anomalies", licence: "CC BY 4.0" },
+  ghi: { name: "Global Hunger Index 2026 (Welthungerhilfe, Concern Worldwide, IFHV)", url: "https://www.globalhungerindex.org/", licence: "Free to use with attribution" },
+  faoowid: { name: "Food and Agriculture Organization (FAO, incl. AQUASTAT), via Our World in Data", url: "https://ourworldindata.org/", licence: "CC BY 4.0" },
+  gfw: { name: "Global Forest Watch (Hansen et al., University of Maryland), via Our World in Data", url: "https://ourworldindata.org/grapher/tree-cover-loss", licence: "CC BY 4.0" },
+  gfn: { name: "National Footprint and Biocapacity Accounts 2026, Global Footprint Network / FoDaFo, York University", url: "https://www.footprintnetwork.org/public", licence: "CC BY-SA 4.0" },
+  wup: { name: "UN World Urbanization Prospects 2025", url: "https://population.un.org/wup/", licence: "CC BY 3.0 IGO" },
+  wpp: { name: "UN World Population Prospects 2024 (estimates to 2023, medium-variant projections after)", url: "https://population.un.org/wpp/", licence: "CC BY 3.0 IGO" },
+});
+{
+  const PROJ = " On the year slider, figures after 2023 are the UN's projections (medium variant), so you can play the future.";
+  const x = (key, group, label, short, source, format, info, say, kw, o = {}) =>
+    window.FILTERS.push({ key, group, label, short, type: "range", scale: "linear", step: o.step || 1, format, source, year: key + "_year", info, say, keywords: kw, ...o });
+  // ---- Hazards & disasters ----
+  x("wri_risk", "Hazards & disasters", "Disaster risk (WorldRiskIndex)", "Disaster risk", "wri", "dec1",
+    "The WorldRiskIndex: how likely extreme natural events are to turn into disasters. It combines exposure (how many people are in the path of earthquakes, tsunamis, cyclones, floods, droughts and sea-level rise) with vulnerability (how well society can cope and adapt). 0–100; higher is more at risk.",
+    (b) => `its disaster risk score is ${b}`, "risk hazard disaster vulnerability exposure worldriskindex world risk index", { step: 0.1, clip: true });
+  x("wri_exposure", "Hazards & disasters", "Exposure to natural hazards", "Exposure", "wri", "dec1",
+    "How many people are exposed to earthquakes, tsunamis, coastal and river floods, cyclones, droughts and sea-level rise (WorldRiskIndex). 0–100.",
+    (b) => `its exposure score is ${b}`, "exposure hazard risk", { step: 0.1, clip: true });
+  x("wri_vulnerability", "Hazards & disasters", "Vulnerability to disasters", "Vulnerability", "wri", "dec1",
+    "How badly a society would suffer when a hazard strikes: how susceptible people are, and how well they can cope and adapt (WorldRiskIndex). 0–100.",
+    (b) => `its vulnerability score is ${b}`, "vulnerability susceptibility coping adaptive capacity", { step: 0.1 });
+  x("wri_susceptibility", "Hazards & disasters", "Susceptibility", "Susceptibility", "wri", "dec1",
+    "Part of vulnerability: things like poverty, poor housing, food and health that make people likely to be harmed (WorldRiskIndex). 0–100.", (b) => `its susceptibility score is ${b}`, "susceptibility", { step: 0.1 });
+  x("wri_coping", "Hazards & disasters", "Lack of coping capacity", "Lack of coping", "wri", "dec1",
+    "Part of vulnerability: how little a country can do to limit harm straight after a disaster (government, health care, warnings, insurance) (WorldRiskIndex). 0–100; higher is worse.", (b) => `its lack-of-coping score is ${b}`, "coping capacity", { step: 0.1 });
+  x("wri_adaptive", "Hazards & disasters", "Lack of adaptive capacity", "Lack of adapting", "wri", "dec1",
+    "Part of vulnerability: how little a country is preparing for future hazards and climate change (education, research, investment, environment) (WorldRiskIndex). 0–100; higher is worse.", (b) => `its lack-of-adapting score is ${b}`, "adaptive capacity adaptation", { step: 0.1 });
+  x("dis_deaths_10y", "Hazards & disasters", "Deaths from disasters (10 years)", "Disaster deaths", "emdat", "count",
+    "People killed by natural disasters (earthquakes, volcanoes, floods, landslides, storms, droughts, wildfires and extreme temperatures) in the ten years up to the year shown. One big disaster can dominate.",
+    (b) => `${b} people died in disasters in ten years`, "deaths disasters killed hazard emdat", { clip: true });
+  x("dis_deaths_10y_pm", "Hazards & disasters", "Deaths from disasters per million (10 years)", "Disaster deaths per million", "emdat", "permillion",
+    "Deaths from natural disasters in the ten years up to the year shown, per million people.", (b) => `${b} disaster deaths per million people in ten years`, "deaths disasters per capita rate", { clip: true });
+  for (const [k, what, kw] of [["quake", "earthquakes", "earthquake tectonic"], ["flood", "floods", "flood flooding river"], ["storm", "storms (incl. tropical cyclones)", "storm hurricane cyclone typhoon"],
+    ["drought", "droughts", "drought famine"], ["heat", "extreme temperatures (heatwaves and cold)", "heatwave heat cold extreme temperature"]])
+    x(`${k}_deaths_10y`, "Hazards & disasters", `Deaths from ${what} (10 years)`, `Deaths: ${what.split(" ")[0]}`, "emdat", "count",
+      `People killed by ${what} in the ten years up to the year shown (EM-DAT).`, (b) => `${b} people died from ${what.split(" (")[0]} in ten years`, `deaths ${kw}`, { clip: true });
+  x("dis_displaced", "Hazards & disasters", "People displaced by disasters", "Displaced by disasters", "idmc", "people",
+    "Internal displacements caused by disasters (floods, storms, earthquakes and others) during the year: each time someone is forced from their home within their own country. One person can be counted more than once.",
+    (b) => `${b} displacements by disasters in a year`, "displaced displacement idp disaster flood storm evacuated homeless", { clip: true });
+  x("dis_displaced_per1000", "Hazards & disasters", "Displaced by disasters, per 1,000 people", "Displaced per 1,000", "idmc", "per1000",
+    "Disaster displacements during the year per 1,000 people living in the country.", (b) => `${b} disaster displacements per 1,000 people`, "displaced displacement rate", { step: 0.1, clip: true });
+  x("conf_displaced", "Refugees", "People displaced by conflict in a year", "Displaced by conflict", "idmc", "people",
+    "New internal displacements caused by conflict and violence during the year (IDMC).", (b) => `${b} displacements by conflict in a year`, "conflict displaced displacement idp war violence", { clip: true });
+  // ---- Climate & environment ----
+  x("temp_anomaly", "Climate", "Temperature compared with 1991–2020", "Temperature anomaly", "era5", "anom",
+    "How much warmer (or cooler) the year was than the country's 1991–2020 average, in °C. Play it from 1960 to see warming spread.",
+    (b) => `the year was ${b} warmer than usual`, "warming global warming temperature anomaly climate change heat", { step: 0.1, bounds: [-2.5, 3] });
+  x("tree_loss_ha", "Environment", "Tree cover lost in a year", "Tree cover lost", "gfw", "ha",
+    "Area of tree cover lost during the year, in hectares (1 ha = 100 m × 100 m), from satellite images. Includes deforestation, logging, fires and plantations being harvested.",
+    (b) => `${b} of tree cover was lost`, "deforestation forest loss trees logging rainforest amazon", { scale: "log" });
+  x("tree_loss_pct", "Environment", "Tree cover lost, % of the country", "Tree loss (% of land)", "gfw", "pct",
+    "Tree cover lost during the year as a share of the country's land area, so big and small countries can be compared.", (b) => `${b} of the land lost its tree cover`, "deforestation forest loss rate", { step: 0.01, clip: true });
+  x("eco_footprint", "Environment", "Ecological footprint per person", "Ecological footprint", "gfn", "gha",
+    "How much biologically productive land and sea each person uses for food, timber, fibre, housing and to absorb their carbon emissions, in global hectares (2023).",
+    (b) => `the footprint is ${b} per person`, "ecological footprint sustainability consumption overshoot", { step: 0.1, clip: true });
+  x("biocapacity", "Environment", "Biocapacity per person", "Biocapacity", "gfn", "gha",
+    "How much biologically productive land and sea the country has per person, in global hectares (2023).", (b) => `biocapacity is ${b} per person`, "biocapacity land resources sustainability", { step: 0.1, clip: true });
+  x("eco_reserve", "Environment", "Ecological reserve (+) or deficit (−)", "Reserve or deficit", "gfn", "gha",
+    "Biocapacity minus ecological footprint, per person. Negative means the country uses more than its own land and sea can renew (an ecological deficit).",
+    (b) => `its reserve or deficit is ${b} per person`, "ecological deficit reserve overshoot sustainability", { step: 0.1, clip: true });
+  x("earths_needed", "Environment", "Earths needed if everyone lived like this", "Earths needed", "gfn", "earths",
+    "How many planet Earths we would need if everyone in the world used resources like the average person in this country (2023).",
+    (b) => `we'd need ${b} Earths if everyone lived like this`, "earths overshoot footprint sustainability planets", { step: 0.1, clip: true });
+  // ---- Food & water ----
+  x("ghi", "Food & water", "Global Hunger Index", "Hunger index", "ghi", "dec1",
+    "Combines undernourishment, child stunting, child wasting and child mortality into one score. Below 10 is low hunger, 20–35 serious, above 35 alarming. Scores of “less than 5” are shown as 4.9. Rich countries are not scored.",
+    (b) => `its hunger index score is ${b}`, "hunger famine food insecurity undernourishment malnutrition ghi", { step: 0.1, bounds: [0, 50] });
+  x("calories", "Food & water", "Food supply (calories per person per day)", "Calories", "faoowid", "kcal",
+    "Food available for each person each day, in kilocalories. It is food supplied, not eaten: some is wasted. Adults need roughly 2,000–2,500.",
+    (b) => `${b} of food per person each day`, "calories food supply diet kcal nutrition", { step: 10, clip: true });
+  x("water_pc", "Food & water", "Water used per person", "Water use", "faoowid", "m3",
+    "Fresh water taken from rivers, lakes and underground each year per person, for farming, industry and homes, in cubic metres (1 m³ = 1,000 litres).",
+    (b) => `${b} of water per person a year`, "water withdrawal use consumption irrigation", { scale: "log" });
+  x("water_agri_pct", "Food & water", "Water used by farming", "Water for farming", "faoowid", "pct",
+    "Share of all fresh water taken that goes to farming (mainly irrigation and livestock).", (b) => `${b} of water goes to farming`, "irrigation agriculture water", { step: 1 });
+  // ---- Population futures (with projections) ----
+  x("pop_un", "Population futures", "Population (with projections to 2100)", "Population to 2100", "wpp", "people",
+    "Population from the UN World Population Prospects 2024." + PROJ, (b) => `the population is ${b}`, "population projection future 2050 2100 forecast", { scale: "log" });
+  x("fertility_un", "Population futures", "Fertility rate (with projections to 2100)", "Fertility to 2100", "wpp", "dec1",
+    "Average number of children per woman (UN)." + PROJ, (b) => `women have ${b} children on average`, "fertility projection future", { step: 0.1, bounds: [0.5, 7.5] });
+  x("life_exp_un", "Population futures", "Life expectancy (with projections to 2100)", "Life expectancy to 2100", "wpp", "years",
+    "Life expectancy at birth (UN)." + PROJ, (b) => `life expectancy is ${b}`, "life expectancy projection future", { bounds: [30, 95] });
+  x("median_age_un", "Population futures", "Median age (with projections to 2100)", "Median age to 2100", "wpp", "years",
+    "Half the population is older than this, half younger (UN)." + PROJ, (b) => `the median age is ${b}`, "median age ageing aging projection future", { bounds: [10, 65] });
+  x("natural_change_un", "Population futures", "Natural increase (with projections)", "Natural increase to 2100", "wpp", "per1000",
+    "Births minus deaths per 1,000 people each year. Negative means more deaths than births (UN)." + PROJ, (b) => `natural increase is ${b} per 1,000 people`, "natural increase births deaths projection dtm", { step: 0.5, bounds: [-15, 40] });
+  x("net_migration_un", "Population futures", "Net migration rate (with projections)", "Net migration to 2100", "wpp", "per1000",
+    "People arriving minus people leaving each year, per 1,000 people (UN)." + PROJ, (b) => `net migration is ${b} per 1,000 people`, "net migration projection", { step: 0.5, clip: true });
+  x("pop_growth_un", "Population futures", "Population growth (with projections)", "Growth to 2100", "wpp", "pct",
+    "How fast the population grows each year (UN)." + PROJ, (b) => `the population grows ${b} a year`, "population growth projection future shrinking", { step: 0.1, bounds: [-3, 5] });
+  // ---- Cities and urbanisation (with projections to 2050) ----
+  x("urban_pct_un", "Cities", "Urban population (UN, with projections to 2050)", "Urban to 2050", "wup", "pct",
+    "Share of people living in urban areas, as each country defines them (UN World Urbanization Prospects 2025). Figures after 2025 are UN projections.", (b) => `${b} of people live in urban areas`, "urban urbanisation urbanization projection 2050", { bounds: [0, 100] });
+  x("pct_cities_un", "Cities", "Living in cities (UN degree of urbanisation)", "In cities", "wup", "pct",
+    "Share of people living in cities, using the UN's new “degree of urbanisation” method, which applies the same rule to every country (a city is a dense, continuous built-up area of at least 50,000 people). Projected to 2050.",
+    (b) => `${b} of people live in cities`, "cities degree of urbanisation degurba urban", { bounds: [0, 100] });
+  x("pct_towns_un", "Cities", "Living in towns (UN degree of urbanisation)", "In towns", "wup", "pct",
+    "Share of people living in towns and semi-dense areas (UN degree of urbanisation). Projected to 2050.", (b) => `${b} of people live in towns`, "towns semi-dense suburbs", { bounds: [0, 100] });
+  x("pct_rural_un", "Cities", "Living in rural areas (UN degree of urbanisation)", "Rural", "wup", "pct",
+    "Share of people living in rural areas (UN degree of urbanisation). Projected to 2050.", (b) => `${b} of people live in rural areas`, "rural countryside village", { bounds: [0, 100] });
+  x("pct_million_cities", "Cities", "Living in cities of a million or more", "In million-plus cities", "wup", "pct",
+    "Share of the whole population living in cities of at least one million people (UN degree of urbanisation). Projected to 2050.", (b) => `${b} of people live in million-plus cities`, "big cities million metropolis", { bounds: [0, 100] });
+  x("pct_megacities", "Cities", "Living in megacities (10 million+)", "In megacities", "wup", "pct",
+    "Share of the whole population living in megacities of more than 10 million people (UN degree of urbanisation). Projected to 2050.", (b) => `${b} of people live in megacities`, "megacity megacities", { bounds: [0, 100] });
+  // ---- Aid and debt ----
+  x("aid_pc", "Global links", "Aid received per person", "Aid per person", "worldbank", "usd",
+    "Net official development assistance (aid) received, in US dollars per person. Mainly low- and middle-income countries receive aid.", (b) => `it receives ${b} of aid per person`, "aid oda development assistance donors", { clip: true });
+  x("debt_gni_pct", "Work & money", "Debt owed abroad (% of income)", "External debt", "worldbank", "pct",
+    "Total debt owed to lenders in other countries, as a share of the country's income (GNI). Only reported for low- and middle-income countries.", (b) => `its foreign debt is ${b} of its income`, "debt external borrowing loans imf", { clip: true });
+  window.FAMILIES.push(
+    { id: "wri", label: "Disaster risk (WorldRiskIndex)", short: "Disaster risk", info: "The WorldRiskIndex and its parts.",
+      variants: [["wri_risk", "Risk"], ["wri_exposure", "Exposure"], ["wri_vulnerability", "Vulnerability"], ["wri_susceptibility", "Susceptibility"], ["wri_coping", "Lack of coping"], ["wri_adaptive", "Lack of adapting"]] },
+    { id: "disdeaths", label: "Deaths from disasters", short: "Disaster deaths", info: "People killed by natural disasters in the past ten years: all disasters, or one kind.",
+      variants: [["dis_deaths_10y", "All disasters"], ["dis_deaths_10y_pm", "Per million people"], ["quake_deaths_10y", "Earthquakes"], ["flood_deaths_10y", "Floods"], ["storm_deaths_10y", "Storms"], ["drought_deaths_10y", "Droughts"], ["heat_deaths_10y", "Extreme temperatures"]] },
+    { id: "disdisp", label: "Displaced by disasters", short: "Displaced", info: "People forced from their homes by disasters during the year.",
+      variants: [["dis_displaced", "Number"], ["dis_displaced_per1000", "Per 1,000 people"]] },
+    { id: "treeloss", label: "Tree cover lost", short: "Tree cover lost", info: "Tree cover lost each year.", variants: [["tree_loss_ha", "Hectares"], ["tree_loss_pct", "% of the land"]] },
+    { id: "footprint", label: "Ecological footprint", short: "Footprint", info: "How much of the planet's productive land and sea people use, and how much the country has.",
+      variants: [["eco_footprint", "Footprint"], ["biocapacity", "Biocapacity"], ["eco_reserve", "Reserve or deficit"], ["earths_needed", "Earths needed"]] },
+    { id: "water", label: "Water use", short: "Water", info: "Fresh water taken each year.", variants: [["water_pc", "Per person"], ["water_agri_pct", "Share for farming"]] },
+    { id: "degurba", label: "Cities, towns or rural (UN)", short: "Cities, towns, rural", info: "Where people live, using the UN's degree of urbanisation, which is the same for every country.",
+      variants: [["pct_cities_un", "Cities"], ["pct_towns_un", "Towns"], ["pct_rural_un", "Rural"], ["pct_million_cities", "Million-plus cities"], ["pct_megacities", "Megacities"]] },
+  );
+}
+
+/* ---------- v48: corruption, press freedom, conflict deaths, plastic, marriage ---------- */
+Object.assign(window.SOURCES, {
+  ti: { name: "Transparency International, Corruption Perceptions Index 2025 (time series 2012–2025)", url: "https://www.transparency.org/en/cpi/2025", licence: "CC BY-ND 4.0" },
+  rsf: { name: "Reporters Without Borders (RSF), World Press Freedom Index 2026", url: "https://rsf.org/en/index", licence: "Free to use with attribution" },
+  ucdp: { name: "Uppsala Conflict Data Program (UCDP), via Our World in Data", url: "https://ourworldindata.org/grapher/deaths-in-armed-conflicts-by-country", licence: "CC BY 4.0" },
+  owidmisc: { name: "Our World in Data (Meijer et al. 2021 for plastic; UNICEF for child marriage; OECD and national statistics for births outside marriage)", url: "https://ourworldindata.org/", licence: "CC BY 4.0" },
+});
+{
+  const x = (key, group, label, short, source, format, info, say, kw, o = {}) =>
+    window.FILTERS.push({ key, group, label, short, type: "range", scale: "linear", step: o.step || 1, format, source, year: key + "_year", info, say, keywords: kw, ...o });
+  x("cpi", "Politics", "Corruption Perceptions Index", "Corruption (CPI)", "ti", "count",
+    "How corrupt experts and business people think the public sector is, from 0 (highly corrupt) to 100 (very clean). Transparency International, 2012–2025.",
+    (b) => `its corruption score is ${b} (higher is cleaner)`, "corruption bribery transparency cpi clean government", { bounds: [0, 100] });
+  x("press_freedom", "Politics", "Press freedom (RSF score)", "Press freedom", "rsf", "dec1",
+    "How free journalists are to report, from 0 to 100 (higher is freer): political, economic, legal and social conditions, and their safety. Reporters Without Borders, 2025 and 2026.",
+    (b) => `its press freedom score is ${b}`, "press freedom journalists media censorship rsf", { step: 0.5, bounds: [0, 100] });
+  x("conflict_deaths", "Refugees", "Deaths in armed conflicts", "Conflict deaths", "ucdp", "count",
+    "People killed in wars and other armed conflicts in the country during the year: soldiers and civilians, including deaths from one-sided violence (UCDP).",
+    (b) => `${b} people died in armed conflicts in a year`, "war conflict deaths battle killed violence ucdp", { clip: true });
+  x("conflict_deaths_per100k", "Refugees", "Deaths in armed conflicts per 100,000 people", "Conflict deaths per 100k", "ucdp", "dec1",
+    "Deaths in armed conflicts during the year per 100,000 people.", (b) => `${b} conflict deaths per 100,000 people`, "war conflict deaths rate", { step: 0.1, clip: true });
+  x("plastic_mismanaged", "Environment", "Plastic waste that isn't managed properly", "Mismanaged plastic", "owidmisc", "dec1",
+    "Plastic waste per person each year (kg) that is littered or dumped in open or leaky sites, and so can reach rivers and the sea (2019 estimates).",
+    (b) => `${b} kg of mismanaged plastic per person a year`, "plastic pollution ocean waste litter rubbish", { step: 0.5, clip: true });
+  x("married_by_15", "Gender", "Girls married before 15", "Married by 15", "owidmisc", "pct",
+    "Women aged 20–24 who were married or in a union before they were 15 (latest survey; UNICEF).", (b) => `${b} of young women were married before 15`, "child marriage early marriage girls", { step: 0.5, bounds: [0, 40] });
+  x("births_outside_marriage", "Population", "Births outside marriage", "Births outside marriage", "owidmisc", "pct",
+    "Share of babies born to parents who are not married (mostly richer countries; 1960–2024).", (b) => `${b} of babies are born outside marriage`, "births marriage family unmarried cohabiting", { bounds: [0, 100] });
+  const t = window.FILTERS.find((f) => f.key === "tourists");
+  if (t) t.info += " From 2023 on, figures are UN Tourism's count of overnight visitors (tourists) where reported; earlier years and countries without recent data use the World Bank series, which sometimes counts all visitors.";
+  window.FAMILIES.push({ id: "conflictdeaths", label: "Deaths in armed conflicts", short: "Conflict deaths", info: "People killed in armed conflicts during the year.",
+    variants: [["conflict_deaths", "Number"], ["conflict_deaths_per100k", "Per 100,000 people"]] });
+}
