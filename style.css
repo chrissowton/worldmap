@@ -2307,3 +2307,17 @@ body.cp-off .sidetoggle.left, body.res-off .sidetoggle.right { min-width: 34px !
   #cpShare .cp-tool:first-child { grid-column: auto; }
 }
 @media (min-width: 1101px) { .shell:has(.cpanel .editor:not([hidden])) { grid-template-columns: 350px minmax(0, 1fr); } }
+
+/* ===== v53 ===== */
+/* the closed "Detailed data view" tab glows softly now and then, as a reminder it's there */
+@keyframes tabglow { 0%, 86%, 100% { box-shadow: var(--shadow); } 91% { box-shadow: 0 0 0 4px color-mix(in srgb, #d6453d 30%, transparent), 0 0 18px color-mix(in srgb, #d6453d 45%, transparent); } }
+body.res-off .sidetoggle.right { animation: tabglow 10s ease-in-out 3s infinite; }
+body.res-off .sidetoggle.right small { white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { body.res-off .sidetoggle.right { animation: none; } }
+/* country labels options */
+.vopts-pop .vopt-sel { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.vopts-pop .vopt-sel select { font: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.tchecks .tlabf { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; font-size: 13px; margin: 0; }
+.tchecks .tlabf span { color: var(--muted); }
+.tchecks .tlabf select { font: inherit; font-size: 12.5px; padding: 2px 6px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.tchecks .tlabf[hidden] { display: none; }

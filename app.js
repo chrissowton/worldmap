@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "52";
+  const DATA_VERSION = "53";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -2875,6 +2875,13 @@
       const nums = rows.map((r) => r[f.key]).filter((v) => typeof v === "number").sort((a, b) => a - b);
       Object.assign(f, { type: "range", scale: "linear", step: f.step || 1, dmin: f.dmin ?? nums[0] ?? 0, dmax: f.dmax ?? nums[nums.length - 1] ?? 100 });
       f.toT = (v) => v; f.fromT = (t) => t; f.round = (v) => Math.round(v / f.step) * f.step;
+      f.say ||= (b) => `${f.label} is ${b}`;
+      // listed with the other measures, so the charts can use it
+      const old = FILTERS.findIndex((x) => x.key === f.key);
+      if (old >= 0) FILTERS[old] = f; else FILTERS.push(f);
+      const oi = numericFilters.findIndex((x) => x.key === f.key);
+      if (oi >= 0) numericFilters[oi] = f; else numericFilters.push(f);
+      if (f.group && !window.FILTER_GROUPS.includes(f.group)) window.FILTER_GROUPS.unshift(f.group);
       F[f.key] = f;
       return f;
     },

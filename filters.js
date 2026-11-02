@@ -1258,6 +1258,7 @@ window.FILTERS = [
 ];
 
 window.SOURCES = {
+  myindex: { name: "Your own index, worked out on this site from the measures and weights you chose (each measure from its own source)", url: "#", licence: "—" },
   countries: { name: "mledoze/countries", url: "https://github.com/mledoze/countries", licence: "ODbL 1.0" },
   cldr: { name: "Unicode CLDR territory data", url: "https://cldr.unicode.org/", licence: "Unicode License" },
   worldbank: { name: "World Bank, World Development Indicators", url: "https://data.worldbank.org/", licence: "CC BY 4.0" },

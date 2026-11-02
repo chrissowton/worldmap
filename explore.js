@@ -107,6 +107,12 @@
     out.forEach((o) => (o.r.__myindex = o.v));
     return { parts, out };
   }
+  // your index as a measure like any other: on the map, and in every chart's measure list
+  function register(parts) {
+    W.addField({ key: "__myindex", label: IX.name, short: IX.name, group: "Your index", format: "dec1", step: 0.1, dmin: 0, dmax: 100, source: "myindex", yearText: "latest figures",
+      info: `Your own index, from 0 (lowest) to 100 (highest): ${parts.map(([k, w, d]) => `${W.F[k].label} (weight ${w}, ${d > 0 ? "higher is better" : "lower is better"})`).join("; ")}.`,
+      keywords: "my index own index development index custom" });
+  }
   function indexCard() {
     let el = $("#ixCard");
     if (!el) { el = document.createElement("div"); el.id = "ixCard"; el.className = "card dsc stx ix"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Build your own index"); document.body.appendChild(el); }
@@ -147,7 +153,7 @@
     });
     if ($("#ixAdd")) $("#ixAdd").onclick = () => { IX.parts.push(["internet", 1, 1]); save(); };
     $("#ixMap").onclick = () => {
-      W.addField({ key: "__myindex", label: IX.name, short: IX.name, group: "Your index", format: "dec1", step: 0.1, dmin: 0, dmax: 100, source: "", info: `Your own index: ${parts.map(([k, w, d]) => `${W.F[k].label} (weight ${w}, ${d > 0 ? "higher is better" : "lower is better"})`).join("; ")}.` });
+      register(parts);
       el.hidden = true;
       W.applyQS("f=__myindex:0~100&c=__myindex");
     };
@@ -243,7 +249,7 @@
       if ($("#stxBtn")) $("#stxBtn").after(ib); else tools.prepend(ib);
     }
     // a saved index is there for links that use it
-    if (store.get("wc-index", null)) { computeIndex(); W.addField({ key: "__myindex", label: IX.name, short: IX.name, group: "Your index", format: "dec1", step: 0.1, dmin: 0, dmax: 100, source: "" }); }
+    if (store.get("wc-index", null)) register(computeIndex().parts);
   }
   window.WX = { init, zoomed: () => { if (L.on) draw(); }, layout: () => { if (L.on) draw(); if (SW.on) refresh(); }, refresh, swipe, toggleLive, indexCard, _L: L, _SW: SW };
 })();

@@ -186,6 +186,7 @@
           <label class="tog"><input type="checkbox" id="tC"> Continents</label>
           <label class="tog" id="tGL"><input type="checkbox" id="tG"> Your countries together</label>
           <label class="tog" id="tML"><input type="checkbox" id="tM"> Each matching country</label>
+          <label class="fld tlabf" id="tLabL"><span>Label them</span><select id="tLab"><option value="">No</option><option value="name">Names</option><option value="code">Short codes (e.g. GBR)</option></select></label>
           <label class="tog" id="tLogL"><input type="checkbox" id="tLog"> Log scale</label>
         </div>
       </div>
@@ -210,6 +211,7 @@
     $("#tC").onchange = (e) => { t.conts = e.target.checked; W.render(); };
     $("#tG").onchange = (e) => { t.group = e.target.checked; W.render(); };
     $("#tM").onchange = (e) => { t.matches = e.target.checked; W.render(); };
+    $("#tLab").onchange = (e) => { t.labs = e.target.value; W.render(); };
     $("#tLog").onchange = (e) => { t.log = e.target.checked; W.render(); };
     $("#tFind").onchange = (e) => { const r = H.findCountry(e.target.value); e.target.value = ""; if (r && !t.pins.includes(r.iso3)) { t.pins = t.pins.concat(r.iso3).slice(-6); W.render(); } };
   }
@@ -247,6 +249,7 @@
     $("#tW").checked = t.world; $("#tC").checked = t.conts;
     $("#tGL").hidden = !ms; $("#tG").checked = t.group;
     $("#tML").hidden = !ms; $("#tM").checked = t.matches;
+    $("#tLabL").hidden = !ms || !t.matches; $("#tLab").value = t.labs || "";
     const showsGroups = ["line", "bar", "table", "slope"].includes(t.type);
     $("#tAggF").hidden = !showsGroups;
     $$(".tchecks .tog").forEach((l) => (l.style.display = ""));
@@ -399,6 +402,7 @@
       .attr("stroke", (s) => s.colour).attr("stroke-width", (s) => s.width).attr("stroke-dasharray", (s) => s.dash).attr("opacity", (s) => s.opacity ?? 1)
       .attr("stroke-linejoin", "round").attr("stroke-linecap", "round");
     endLabels(svg, series.filter((s) => s.label), ys, sx, sy, w, h, M, mob, log);
+    if (t.labs) countryLabels(svg, series.filter((s) => s.thin), ys, sx, sy, log, t.labs === "code");
     hoverRule(svg, sx, ys, w, h, M, (i) => series.filter((s) => s.label && s.vals[i] != null).sort((a, b) => b.vals[i] - a.vals[i])
       .map((s) => `<dt><span class="sw" style="background:${s.colour}"></span> ${esc(s.name)}</dt><dd>${esc(fmtShort(f, s.vals[i]))}</dd>`).join(""));
     $("#tNote").innerHTML = survey ? `Each dot is one survey. Different countries were surveyed in each wave, so world and continent medians are not shown: add countries below to compare them. ${f.info ? esc(f.info) : ""}` : `${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
@@ -426,6 +430,16 @@
     svg.append("g").selectAll("text").data(ends).join("text").attr("x", w - M.r + 6).attr("y", (e) => e.y).attr("dy", "0.35em")
       .attr("font-size", 11).attr("font-weight", (e) => (e.s.bold ? 600 : 400)).attr("fill", ink).text((e) => clip(e.s.name, mob ? 12 : 22));
     svg.append("g").selectAll("line").data(ends).join("line").attr("x1", (e) => e.x).attr("x2", w - M.r + 3).attr("y1", (e) => sy(e.v)).attr("y2", (e) => e.y).attr("stroke", (e) => e.s.colour).attr("stroke-width", 1).attr("opacity", 0.6);
+  }
+  // a name or code at the end of each country's line
+  function countryLabels(svg, list, ys, sx, sy, log, code) {
+    const ends = list.map((s) => {
+      let i = s.vals.length - 1; while (i >= 0 && (s.vals[i] == null || (log && s.vals[i] <= 0))) i--;
+      return i < 0 ? null : { s, x: sx(ys[i]) + 3, y: sy(s.vals[i]) };
+    }).filter(Boolean);
+    svg.append("g").attr("class", "clabs").selectAll("text").data(ends).join("text").attr("x", (e) => e.x).attr("y", (e) => e.y).attr("dy", "0.35em")
+      .attr("font-size", code ? 9 : 9.5).attr("fill", H.css("--ink")).attr("stroke", H.css("--surface")).attr("stroke-width", 2.5).attr("paint-order", "stroke")
+      .attr("pointer-events", "none").text((e) => (code ? e.s.id : clip(e.s.name, 18)));
   }
   function hoverRule(svg, sx, ys, w, h, M, rowsFor) {
     const rule = svg.append("line").attr("y1", M.t).attr("y2", h - M.b).attr("stroke", H.css("--muted")).attr("opacity", 0).attr("pointer-events", "none");

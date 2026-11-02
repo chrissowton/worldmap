@@ -34,14 +34,14 @@
     military_spend_pct: ["low military spending", "high military spending"], tourists: ["few tourists", "many tourists"], migrants_pct: ["few migrants", "many migrants"],
     homicides: ["safe", "violent"], wgm_trust_science: ["low trust in science", "high trust in science"], wrp_resilience: ["less resilient", "more resilient"],
   };
-  const adj = (key) => ADJ[key] || [`low ${lower(F[key].short || F[key].label)}`, `high ${lower(F[key].short || F[key].label)}`];
+  const adj = (key) => ADJ[key] || (key.startsWith("__") ? [`low on ${lower(F[key].label)}`, `high on ${lower(F[key].label)}`] : [`low ${lower(F[key].short || F[key].label)}`, `high ${lower(F[key].short || F[key].label)}`]);
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const contColour = (reg) => css(CONT_VAR[reg] || "--muted");
   const lower = (s) => (/^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 
   // ---------- State for each view (saved in the link) ----------
   const V = {
-    cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: true, only: true, focus: null },
+    cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: true, only: true, labs: "", focus: null },
     rank: { key: "", mode: "bars", year: null, only: false },
     trend: { key: "life_expectancy", pins: [], conts: true, world: true, matches: false, group: true, log: null, type: "line", agg: null, year: null, from: null, share: false, sk: "" },
     task: "",
@@ -145,6 +145,7 @@
           <label class="fld"><span>Colour</span><select id="cC" data-pick></select></label>
           <span class="vtools">
             <details class="vopts-menu"><summary>⚙ Options</summary><div class="vopts-pop">
+              <label class="fld vopt-sel"><span>Country labels</span><select id="cLab"><option value="">A few (the biggest)</option><option value="name">Every country: names</option><option value="code">Every country: short codes (e.g. GBR)</option></select></label>
               <label class="tog" id="cOnlyL"><input type="checkbox" id="cOnly"> Only countries that match the filters</label>
               <label class="tog"><input type="checkbox" id="cFit"> Trend line</label>
               <label class="tog"><input type="checkbox" id="cQuad"> Corner labels</label>
@@ -294,6 +295,7 @@
     $("#cLogX").onchange = (e) => { c.logx = e.target.checked; W.render(); };
     $("#cLogY").onchange = (e) => { c.logy = e.target.checked; W.render(); };
     $("#cFit").onchange = (e) => { c.fit = e.target.checked; W.render(); };
+    $("#cLab").onchange = (e) => { c.labs = e.target.value; W.render(); };
     $("#cOnly").onchange = (e) => { c.only = e.target.checked; c.zt = null; W.render(); };
     $("#cYear").oninput = (e) => { stopPlay(); c.year = +e.target.value; drawCompare(); };
     $("#cYear").onchange = () => W.render();
@@ -337,6 +339,7 @@
     const c = V.cmp, yrs = compareYears();
     if (!yrs) return;
     if (c.year == null || c.year >= yrs.to) c.year = yrs.from;
+    playTimer = true;  // playing: the axes cover every year from the first frame
     drawCompare();
     const sig = cmpSig();
     const tick = () => {
@@ -365,7 +368,7 @@
     const logx = isLog(c.x, c.logx), logy = isLog(c.y, c.logy);
     $("#cLogX").checked = logx; $("#cLogY").checked = logy; $("#cFit").checked = c.fit;
     const nAct = W.lastEval.act.length;
-    $("#cOnly").checked = c.only; $("#cOnly").disabled = !nAct;
+    $("#cOnly").checked = c.only; $("#cOnly").disabled = !nAct; $("#cLab").value = c.labs || "";
     $("#cOnlyL").title = nAct ? "Show only the countries that match your filters, and fit the chart to them" : "Add a filter to use this";
     $("#cOnlyL").lastChild.textContent = ` Only countries that match the ${nAct === 1 ? "filter" : "filters"}`;
     // year slider
@@ -384,7 +387,8 @@
     if (window.WPL) {
       const sig = yrs ? cmpSig() : new Map(); window.WPL.marks(range, sig); window.WPL.light($("#cSig"), sig, year);
       let p = $("#cSigText"); if (!p) { p = document.createElement("p"); p.id = "cSigText"; $("#cYearRow").appendChild(p); }
-      const st = year && sig.get(year); p.hidden = !st; if (st) { p.textContent = st.text; p.className = `tsigtext pop l${st.level}`; }
+      const st = year && sig.get(year); p.hidden = !st || !playTimer; if (st)  // only while playing, so it doesn't cover the chart
+       { p.textContent = st.text; p.className = `tsigtext pop l${st.level}`; }
     }
     // data
     const ms = matchSet();
@@ -410,12 +414,12 @@
     const M = { t: 58, r: mob ? 40 : 60, b: 40, l: mob ? 46 : 60 };
     const rmax = Math.max(16, Math.min(46, Math.min(w, h) / 12));
     const PAD = mob ? 8 : Math.round(fz ? Math.max(16, rmax * 0.55) : 16); // keeps bubbles at the very top or end of the scale (e.g. 100%) inside the chart
-    // the axes fit the bubbles on the chart: for yearly data, those countries in every year on the slider,
-    // so the bubbles move against still axes
+    // the axes fit the bubbles on the chart. While playing through the years they cover those countries in every year,
+    // so the bubbles move against still axes.
     const shown = new Set(pts.map((p) => p.iso));
     const ext = (key, log) => {
       let e = [null, null];
-      if (yrs && TS[key]) {
+      if (yrs && TS[key] && playTimer) {
         const i0 = TS_YEARS.indexOf(yrs.from), i1 = TS_YEARS.indexOf(yrs.to), vs = [];
         for (const iso of shown) { const sr = TS[key][iso]; if (sr) for (let i = Math.max(0, i0); i <= (i1 < 0 ? sr.length - 1 : i1); i++) { const v = sr[i]; if (v != null && (!log || v > 0)) vs.push(v); } }
         e = d3.extent(vs);
@@ -556,11 +560,14 @@
     // labels: followed and selected countries, plus the largest bubbles when there is room
     const labelled = new Set(pinned.concat(sel ? [sel] : []));
     if (!mob && fz) pts.filter((p) => p.m).sort((p, q) => q.z - p.z).slice(0, 6).forEach((p) => labelled.add(p.iso));
-    const lab = pts.filter((p) => labelled.has(p.iso));
+    // or every country, by name or by its three-letter code (handy for saving the chart)
+    if (c.labs) pts.filter((p) => p.m).forEach((p) => labelled.add(p.iso));
+    const code = c.labs === "code", lab = pts.filter((p) => labelled.has(p.iso));
+    const big = (p) => pinned.includes(p.iso) || p.iso === sel;
     svg.select("g.labels").selectAll("text").data(lab, (p) => p.iso).join("text")
-      .attr("font-size", 11.5).attr("font-weight", (p) => (pinned.includes(p.iso) || p.iso === sel ? 600 : 400)).attr("fill", ink)
-      .attr("stroke", surface).attr("stroke-width", 3).attr("paint-order", "stroke").attr("pointer-events", "none")
-      .text((p) => p.r.name)
+      .attr("font-size", (p) => (big(p) ? 11.5 : code ? 9.5 : c.labs ? 10 : 11.5)).attr("font-weight", (p) => (big(p) ? 600 : 400)).attr("fill", ink)
+      .attr("stroke", surface).attr("stroke-width", c.labs ? 2.5 : 3).attr("paint-order", "stroke").attr("pointer-events", "none")
+      .text((p) => (code && !big(p) ? p.iso : p.r.name))
       .transition().duration(dur).ease(d3.easeLinear)
       .attr("x", (p) => sx(p.x) + Math.max(2.5, sr(p.z)) + 3).attr("y", (p) => sy(p.y) + 4);
     // legend
@@ -1120,6 +1127,7 @@
       if (c.pins.length) p.set("cp", c.pins.join("."));
       if (!c.fit) p.set("cf", "0");
       if (!c.only) p.set("co", "0");
+      if (c.labs) p.set("clb", c.labs);
     } else if (st.view === "rank") {
       p.set("rk", V.rank.key || defaultKey());
       if (V.rank.mode !== "bars") p.set("rm", V.rank.mode);
@@ -1131,6 +1139,7 @@
       const fl = (V.trend.world ? "w" : "") + (V.trend.conts ? "c" : "") + (V.trend.matches ? "m" : "");
       if (fl !== "wc") p.set("tf", fl || "-");
       if (V.trend.log != null) p.set("tl", V.trend.log ? "1" : "0");
+      if (V.trend.labs) p.set("tlb", V.trend.labs);
       window.WCH?.encode(p);
     } else if (st.view === "insights") window.WIN?.encode(p);
     if (V.task) p.set("task", V.task);
@@ -1148,12 +1157,14 @@
     if (p.get("cp")) c.pins = p.get("cp").split(".").filter((x) => /^[A-Z]{3}$/.test(x)).slice(0, 8);
     c.fit = p.get("cf") !== "0";
     c.only = p.get("co") !== "0";
+    c.labs = ["name", "code"].includes(p.get("clb")) ? p.get("clb") : "";
     if (ok(p.get("rk"))) V.rank.key = p.get("rk");
     if (p.get("rm") === "cont") V.rank.mode = "cont";
     if (+p.get("ry")) V.rank.year = +p.get("ry");
     V.rank.only = p.get("ro") === "1";
     if (ok(p.get("tk"))) V.trend.key = p.get("tk");
     if (p.get("tp")) V.trend.pins = p.get("tp").split(".").filter((x) => /^[A-Z]{3}$/.test(x)).slice(0, 6);
+    V.trend.labs = ["name", "code"].includes(p.get("tlb")) ? p.get("tlb") : "";
     if (p.get("tf")) { const t = p.get("tf"); V.trend.world = t.includes("w"); V.trend.conts = t.includes("c"); V.trend.matches = t.includes("m"); }
     if (p.get("tl")) V.trend.log = p.get("tl") === "1";
     if (p.get("v") === "trends") window.WCH?.decode(p);

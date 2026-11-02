@@ -79,7 +79,7 @@
     document.body.classList.toggle("res-off", resOff);
     const a = $("#cpToggle"), b = $("#resToggle");
     if (a) { a.innerHTML = cpOff ? "<span>›</span><small>Panel</small>" : "<span>‹</span>"; a.title = cpOff ? "Show the control panel" : "Hide the control panel (more room for the map)"; a.setAttribute("aria-expanded", String(!cpOff)); }
-    if (b) { b.innerHTML = resOff ? "<span>‹</span><small>List</small>" : "<span>›</span>"; b.title = resOff ? "Show the list of countries" : "Hide the list of countries (more room for the map)"; b.setAttribute("aria-expanded", String(!resOff)); }
+    if (b) { b.innerHTML = resOff ? "<span>‹</span><small>Detailed data view</small>" : "<span>›</span>"; b.title = resOff ? "Show the detailed data: every country's figures, in a list you can sort" : "Hide the detailed data view (more room for the map)"; b.setAttribute("aria-expanded", String(!resOff)); }
     placeToggles();
   }
   function placeToggles() {

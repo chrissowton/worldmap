@@ -86,11 +86,11 @@
     // categories under their theme headings
     const byTheme = new Map();
     for (const c of cats) {
-      const th = of.get(c.g) || "Other";
+      const th = of.get(c.g) || (c.g === "Your index" ? "Made by you" : "Other");
       if (!byTheme.has(th)) byTheme.set(th, []);
       byTheme.get(th).push(c);
     }
-    const themesInOrder = [...order.filter((t) => byTheme.has(t)), ...(byTheme.has("Other") ? ["Other"] : [])];
+    const themesInOrder = [...(byTheme.has("Made by you") ? ["Made by you"] : []), ...order.filter((t) => byTheme.has(t)), ...(byTheme.has("Other") ? ["Other"] : [])];
     const current = cats.find((c) => c.items.some((i) => i.v === sel.value)) || cats[0];
     const many = cats.reduce((s, c) => s + c.items.length, 0) > 12;
 
