@@ -101,11 +101,22 @@
     sides();
   }
 
+  // a Download button on the map too, under the zoom buttons
+  function mapDownload() {
+    const z = $(".zoom");
+    if (!z || $("#mapDl")) return;
+    const b = document.createElement("button");
+    b.type = "button"; b.id = "mapDl"; b.textContent = "⬇"; b.title = "Download this map as a picture, or its data as a spreadsheet"; b.setAttribute("aria-label", "Download");
+    b.onclick = (e) => { e.stopPropagation(); window.WV?.openDownloadMenu(b); };
+    z.appendChild(b);
+  }
+
   let queued = false;
   const tick = () => { queued = false; enhance(); stack(); placeToggles(); };
   function init() {
     W = window.WC;
     makeToggles();
+    mapDownload();
     tick();
     new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(tick); } }).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", placeToggles);

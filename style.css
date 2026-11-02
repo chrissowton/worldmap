@@ -2271,3 +2271,39 @@ body.cp-off .sidetoggle.left, body.res-off .sidetoggle.right { min-width: 34px !
 .mapdock .mapcards > .card { position: relative !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; flex: none; }
 /* keep the closed-column tabs off the charts' labels */
 @media (min-width: 761px) { body.cp-off #viewwrap { padding-left: 34px; } body.res-off #viewwrap { padding-right: 34px; } }
+
+/* ===== v52 ===== */
+/* Download and Full screen on every chart */
+.vhead.has-tools { position: relative; padding-right: 250px; }
+.vhead.has-tools > .vtools-auto { position: absolute; top: 10px; right: 14px; }
+@media (max-width: 760px) { .vhead.has-tools { padding-right: 10px; } .vhead.has-tools > .vtools-auto { position: static; margin-top: 6px; } }
+.vtools { position: relative; display: flex; gap: 6px; align-items: center; flex: none; }
+.vtools .ghost { white-space: nowrap; }
+.vtools .dlmenu { position: absolute; right: 0; top: 100%; width: max-content; max-width: 320px; }
+.zoom { z-index: 20; }
+.zoom .dlmenu { right: 100%; left: auto; top: auto; bottom: 0; margin: 0 6px 0 0; }
+.zoom { position: absolute; }
+.zoom .dlmenu button { width: auto; height: auto; border: 0; box-shadow: none; background: none; font-size: 13px; line-height: 1.3; border-radius: 6px; }
+.zoom .dlmenu button:hover { background: var(--accent-soft); }
+/* filter editor: a clear Add / Done button at the bottom; ＋ at the top while new, × (remove) once added */
+.editor .edfoot { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.editor .edfoot .remove { margin-top: 0; }
+.editor .edadd { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.editor .edadd:hover { filter: brightness(1.08); }
+.editor .edtop { flex: none; margin-left: auto; }
+.editor .edtop.add { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+.editor .edtop:not(.add):hover { color: var(--danger); border-color: var(--danger); }
+:root[data-theme="dark"] .editor .edadd, :root[data-theme="dark"] .editor .edtop.add { color: #08262c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .editor .edadd, :root:not([data-theme="light"]) .editor .edtop.add { color: #08262c; } }
+/* a slightly wider first column, so each Learn & share button fits on one line */
+.shell { grid-template-columns: 290px minmax(0, 1fr); }
+@media (min-width: 1101px) { .shell { grid-template-columns: 300px minmax(0, 1fr); } }
+@media (min-width: 761px) {
+  .cp-tool { white-space: nowrap; overflow-wrap: normal; hyphens: manual; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .shell { grid-template-columns: 240px minmax(0, 1fr); }
+  .cp-tools { grid-template-columns: minmax(0, 1fr); }
+  #cpShare .cp-tool:first-child { grid-column: auto; }
+}
+@media (min-width: 1101px) { .shell:has(.cpanel .editor:not([hidden])) { grid-template-columns: 350px minmax(0, 1fr); } }

@@ -41,7 +41,7 @@
 
   // ---------- State for each view (saved in the link) ----------
   const V = {
-    cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: true, focus: null },
+    cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: true, only: true, focus: null },
     rank: { key: "", mode: "bars", year: null, only: false },
     trend: { key: "life_expectancy", pins: [], conts: true, world: true, matches: false, group: true, log: null, type: "line", agg: null, year: null, from: null, share: false, sk: "" },
     task: "",
@@ -145,11 +145,13 @@
           <label class="fld"><span>Colour</span><select id="cC" data-pick></select></label>
           <span class="vtools">
             <details class="vopts-menu"><summary>⚙ Options</summary><div class="vopts-pop">
+              <label class="tog" id="cOnlyL"><input type="checkbox" id="cOnly"> Only countries that match the filters</label>
               <label class="tog"><input type="checkbox" id="cFit"> Trend line</label>
               <label class="tog"><input type="checkbox" id="cQuad"> Corner labels</label>
               <label class="tog"><input type="checkbox" id="cLogX"> Log scale across</label>
               <label class="tog"><input type="checkbox" id="cLogY"> Log scale up</label>
             </div></details>
+            <button type="button" class="ghost vdl" title="Download this chart as a picture, or its data as a spreadsheet">⬇ Download</button>
             <button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)">⛶ Full screen</button>
           </span>
         </div></div>
@@ -176,6 +178,13 @@
     };
     wrap.innerHTML = (shells[view] || "") + `<div id="vtip" class="tooltip" hidden></div>`;
     if ($("#vCountries")) $("#vCountries").innerHTML = countryOptions();
+    // every chart has Download and Full screen buttons at the top right (like Our World in Data)
+    const head = wrap.querySelector(".vhead");
+    if (head && !head.querySelector(".vdl")) {
+      head.classList.add("has-tools");
+      head.insertAdjacentHTML("beforeend", `<span class="vtools vtools-auto"><button type="button" class="ghost vdl" title="Download this chart as a picture, or its data as a spreadsheet">⬇ Download</button><button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)">${wrap.classList.contains("is-fs") ? "🗗 Leave full screen" : "⛶ Full screen"}</button></span>`);
+    }
+    wrap.querySelectorAll(".vdl").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openDownloadMenu(b); }));
     if (view === "compare") bindCompare();
     if (view === "rank") bindRank();
     if (view === "trends") window.WCH?.bind();
@@ -285,6 +294,7 @@
     $("#cLogX").onchange = (e) => { c.logx = e.target.checked; W.render(); };
     $("#cLogY").onchange = (e) => { c.logy = e.target.checked; W.render(); };
     $("#cFit").onchange = (e) => { c.fit = e.target.checked; W.render(); };
+    $("#cOnly").onchange = (e) => { c.only = e.target.checked; c.zt = null; W.render(); };
     $("#cYear").oninput = (e) => { stopPlay(); c.year = +e.target.value; drawCompare(); };
     $("#cYear").onchange = () => W.render();
     $("#cPlay").onclick = () => (playTimer ? stopPlay() : startPlay());
@@ -354,6 +364,10 @@
     if (yrs) c.year = year;
     const logx = isLog(c.x, c.logx), logy = isLog(c.y, c.logy);
     $("#cLogX").checked = logx; $("#cLogY").checked = logy; $("#cFit").checked = c.fit;
+    const nAct = W.lastEval.act.length;
+    $("#cOnly").checked = c.only; $("#cOnly").disabled = !nAct;
+    $("#cOnlyL").title = nAct ? "Show only the countries that match your filters, and fit the chart to them" : "Add a filter to use this";
+    $("#cOnlyL").lastChild.textContent = ` Only countries that match the ${nAct === 1 ? "filter" : "filters"}`;
     // year slider
     const yr = $("#cYearRow");
     yr.classList.toggle("off", !yrs);
@@ -379,7 +393,9 @@
       const x = val(r, c.x, year), y = val(r, c.y, year);
       if (x == null || y == null || (logx && x <= 0) || (logy && y <= 0)) continue;
       const z = fz ? val(r, c.size, year) : null;
-      pts.push({ r, iso: r.iso3, x, y, z: z ?? 0, m: !ms || ms.has(r.iso3) });
+      const m = !ms || ms.has(r.iso3);
+      if (!m && c.only && ms) continue;  // only the matching countries
+      pts.push({ r, iso: r.iso3, x, y, z: z ?? 0, m });
     }
     // the list in the results pane
     V.list = { title: year ? `Figures for ${year}` : "Latest figures", cols: [fy, fx], rows: pts.filter((p) => p.m).map((p) => ({ iso: p.iso, vals: [p.y, p.x] })),
@@ -392,15 +408,24 @@
     if (drawCompare.size !== w + "x" + h) { dur = 0; drawCompare.size = w + "x" + h; }
     const mob = w < 560;
     const M = { t: 58, r: mob ? 40 : 60, b: 40, l: mob ? 46 : 60 };
-    const PAD = mob ? 8 : 16; // keeps bubbles at the very top or end of the scale (e.g. 100%) inside the chart
-    // axes span every year so bubbles move against still axes
+    const rmax = Math.max(16, Math.min(46, Math.min(w, h) / 12));
+    const PAD = mob ? 8 : Math.round(fz ? Math.max(16, rmax * 0.55) : 16); // keeps bubbles at the very top or end of the scale (e.g. 100%) inside the chart
+    // the axes fit the bubbles on the chart: for yearly data, those countries in every year on the slider,
+    // so the bubbles move against still axes
+    const shown = new Set(pts.map((p) => p.iso));
     const ext = (key, log) => {
-      const e = yrs && TS[key] ? allYearsExtent(key, log) : d3.extent(pts, (p) => (key === c.x ? p.x : p.y));
-      return e[0] == null ? [0, 1] : e;
+      let e = [null, null];
+      if (yrs && TS[key]) {
+        const i0 = TS_YEARS.indexOf(yrs.from), i1 = TS_YEARS.indexOf(yrs.to), vs = [];
+        for (const iso of shown) { const sr = TS[key][iso]; if (sr) for (let i = Math.max(0, i0); i <= (i1 < 0 ? sr.length - 1 : i1); i++) { const v = sr[i]; if (v != null && (!log || v > 0)) vs.push(v); } }
+        e = d3.extent(vs);
+      }
+      if (e[0] == null) e = d3.extent(pts, (p) => (key === c.x ? p.x : p.y));
+      if (e[0] == null) return [0, 1];
+      if (e[0] === e[1]) return log ? [e[0] / 2, e[0] * 2] : [e[0] - 1, e[1] + 1];
+      return e;
     };
-    let ex = ext(c.x, logx), ey = ext(c.y, logy);
-    if (fx.bounds && !logx) ex = [Math.min(ex[0], fx.bounds[0]), Math.max(ex[1], fx.bounds[1])];
-    if (fy.bounds && !logy) ey = [Math.min(ey[0], fy.bounds[0]), Math.max(ey[1], fy.bounds[1])];
+    const ex = ext(c.x, logx), ey = ext(c.y, logy);
     const sx0 = (logx ? d3.scaleLog() : d3.scaleLinear()).domain(ex).range([M.l + PAD, w - M.r - PAD]).nice();
     const sy0 = (logy ? d3.scaleLog() : d3.scaleLinear()).domain(ey).range([h - M.b - PAD, M.t + PAD]).nice();
     // zoomed in: the same scales, stretched
@@ -409,7 +434,6 @@
     if (zoomer) zoomer.extent([[M.l, M.t], [w - M.r, h - M.b]]).translateExtent([[M.l, M.t], [w - M.r, h - M.b]]);
     $(".czoom")?.classList.toggle("zoomed", !!zt);
     const zmax = fz ? (yrs && TS[c.size] ? allYearsExtent(c.size)[1] : d3.max(pts, (p) => p.z)) || 1 : 1;
-    const rmax = Math.max(16, Math.min(46, Math.min(w, h) / 12));
     const sr = fz ? d3.scaleSqrt().domain([0, zmax]).range([0, rmax]) : () => (mob ? 5 : 6.5);
     const colour = (p) => {
       if (!p.m) return css("--land");
@@ -471,16 +495,30 @@
     const [loX, hiX] = adj(c.x), [loY, hiY] = adj(c.y);
     const neg = corr && corr.r < -0.2;
     const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-    const corner = (yWord, xWord, odd) => cap(`${yWord} ${odd ? "but" : "and"} ${xWord}`);
+    // "Longer lives / poor": on two lines when long, with a big arrow pointing into the corner
+    const fsQ = mob ? 10.5 : 12.5, lh = fsQ + 3;
+    const corner = (yWord, xWord) => { const one = `${cap(yWord)} / ${xWord}`; return one.length > (mob ? 18 : 26) ? [`${cap(yWord)} /`, xWord] : [one]; };
     const quads = c.quads === false ? [] : [
-      { t: "↖ " + corner(hiY, loX, !neg), x: M.l + 8, y: M.t + 16, a: "start" },
-      { t: corner(hiY, hiX, neg) + " ↗", x: w - M.r - 8, y: M.t + 16, a: "end" },
-      { t: "↙ " + corner(loY, loX, neg), x: M.l + 8, y: h - M.b - 9, a: "start" },
-      { t: corner(loY, hiX, !neg) + " ↘", x: w - M.r - 8, y: h - M.b - 9, a: "end" },
+      { lines: corner(hiY, loX), arrow: "↖", x: M.l + 8, y: M.t + 18, a: "start", top: true },
+      { lines: corner(hiY, hiX), arrow: "↗", x: w - M.r - 8, y: M.t + 18, a: "end", top: true },
+      { lines: corner(loY, loX), arrow: "↙", x: M.l + 8, y: h - M.b - 10, a: "start", top: false },
+      { lines: corner(loY, hiX), arrow: "↘", x: w - M.r - 8, y: h - M.b - 10, a: "end", top: false },
     ];
-    svg.select("g.quad").selectAll("text").data(quads).join("text").attr("x", (d) => d.x).attr("y", (d) => d.y).attr("text-anchor", (d) => d.a)
-      .attr("font-size", mob ? 10.5 : 12.5).attr("font-weight", 600).attr("font-style", "italic").attr("fill", muted).attr("opacity", 0.85)
-      .attr("stroke", surface).attr("stroke-width", 3).attr("paint-order", "stroke").attr("pointer-events", "none").text((d) => d.t);
+    svg.select("g.quad").selectAll("text").data(quads).join("text").attr("text-anchor", (d) => d.a)
+      .attr("font-size", fsQ).attr("font-weight", 600).attr("font-style", "italic").attr("fill", muted).attr("opacity", 0.9)
+      .attr("stroke", surface).attr("stroke-width", 3).attr("paint-order", "stroke").attr("pointer-events", "none")
+      .each(function (d) {
+        const t = d3.select(this); t.selectAll("*").remove(); t.text(null);
+        const n = d.lines.length, y0 = d.top ? d.y : d.y - (n - 1) * lh;
+        const arrowLine = d.top ? 0 : n - 1;
+        d.lines.forEach((ln, i) => {
+          const sp = t.append("tspan").attr("x", d.x).attr("y", y0 + i * lh);
+          const big = (s) => sp.append("tspan").attr("font-size", fsQ * 1.7).attr("font-style", "normal").attr("font-weight", 700).attr("dy", 0).text(s);
+          if (i === arrowLine && d.a === "start") { big(d.arrow); sp.append("tspan").text(" " + ln); }
+          else if (i === arrowLine) { sp.append("tspan").text(ln + " "); big(d.arrow); }
+          else sp.append("tspan").text(ln);
+        });
+      });
     // trails for followed countries
     const pinned = c.pins.filter((iso) => W.byIso.has(iso));
     const trails = yrs ? pinned.map((iso) => {
@@ -1081,6 +1119,7 @@
       if (c.year) p.set("cyr", c.year);
       if (c.pins.length) p.set("cp", c.pins.join("."));
       if (!c.fit) p.set("cf", "0");
+      if (!c.only) p.set("co", "0");
     } else if (st.view === "rank") {
       p.set("rk", V.rank.key || defaultKey());
       if (V.rank.mode !== "bars") p.set("rm", V.rank.mode);
@@ -1108,6 +1147,7 @@
     if (+p.get("cyr")) c.year = +p.get("cyr");
     if (p.get("cp")) c.pins = p.get("cp").split(".").filter((x) => /^[A-Z]{3}$/.test(x)).slice(0, 8);
     c.fit = p.get("cf") !== "0";
+    c.only = p.get("co") !== "0";
     if (ok(p.get("rk"))) V.rank.key = p.get("rk");
     if (p.get("rm") === "cont") V.rank.mode = "cont";
     if (+p.get("ry")) V.rank.year = +p.get("ry");
@@ -1159,5 +1199,5 @@
   function snapshot() { const { built, ...rest } = V; return JSON.parse(JSON.stringify(rest)); }
   function restore(o) { if (!o) return; stopPlay(); Object.assign(V.cmp, o.cmp); Object.assign(V.rank, o.rank); Object.assign(V.trend, o.trend); V.task = o.task || ""; }
   function clearYears() { stopPlay(); V.cmp.year = null; V.cmp.pins = []; V.cmp.focus = null; V.cmp.zt = null; V.trend.year = null; V.trend.from = null; V.trend.pins = []; V.rank.year = null; }
-  window.WV = { clearYears, currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
+  window.WV = { openDownloadMenu, clearYears, currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
 })();

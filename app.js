@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "51";
+  const DATA_VERSION = "52";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -1448,6 +1448,8 @@
     return active().every((fl) => fl.key === key || passes(r, fl));
   }
   function renderEditor() {
+    // a filter only counts as "new" while its editor is first open
+    state.filters.forEach((x) => { if (x.key !== state.open) delete x.fresh; });
     const fl = state.filters.find((x) => x.key === state.open);
     const el = $("#editor");
     if (!fl) { el.hidden = true; return; }
@@ -1461,18 +1463,25 @@
     el.hidden = false;
     el.dataset.g = gslug(f.group);
     const fam = famOf[fl.key];
-    el.innerHTML = `<div class="eyebrow">${esc(f.group)}${fam ? ` · ${esc(fam.label)}` : ""}</div><header><h3>${esc(f.label)}</h3><button type="button" class="iconbtn" id="edClose" aria-label="Close">×</button></header>
+    el.innerHTML = `<div class="eyebrow">${esc(f.group)}${fam ? ` · ${esc(fam.label)}` : ""}</div><header><h3>${esc(f.label)}</h3>${fl.fresh
+        ? `<button type="button" class="iconbtn edtop add" id="edTop" aria-label="Add this filter" title="Add this filter">＋</button>`
+        : `<button type="button" class="iconbtn edtop" id="edTop" aria-label="Remove this filter" title="Remove this filter">×</button>`}</header>
       <p class="info">${glossify(esc(f.info))} <br>Source: <a href="${src.url}" target="_blank" rel="noopener">${esc(src.name)}</a>${year ? `, ${year}` : ""}.${timeNote}</p>
       ${window.WL && !f.target ? `<details class="edmore"><summary>Find out more about ${esc(lowerL(f.label))}</summary>${window.WL.html(window.WL.measure(f), "")}</details>` : ""}
       ${famPicker(fl)}
       ${f.modes ? `<div class="seg modes" role="group" aria-label="Match">
         ${[["any", "Any of these"], ["all", "All of these"], ["none", "None of these"]].map(([m, t]) => `<button type="button" data-mode="${m}" class="${(fl.mode || "any") === m ? "on" : ""}">${t}</button>`).join("")}</div>` : ""}
       <div id="edBody"></div>
-      <button type="button" class="remove" id="edRemove">Remove this filter</button>`;
+      <div class="edfoot">${fl.fresh
+        ? `<button type="button" class="edadd" id="edDone">＋ Add this filter</button><button type="button" class="ghost" id="edCancel">Cancel</button>`
+        : `<button type="button" class="edadd" id="edDone">✓ Done</button><button type="button" class="remove" id="edRemove">Remove this filter</button>`}</div>`;
     el.querySelectorAll(".modes button").forEach((b) => (b.onclick = () => { fl.mode = b.dataset.mode; render(); }));
     el.querySelectorAll(".fampick button").forEach((b) => (b.onclick = () => switchVariant(fl, b.dataset.key)));
-    $("#edClose").onclick = () => { state.open = null; render(); };
-    $("#edRemove").onclick = () => removeFilter(fl.key);
+    const done = () => { delete fl.fresh; state.open = null; render(); };
+    $("#edDone").onclick = done;
+    $("#edTop").onclick = () => (fl.fresh ? done() : removeFilter(fl.key));
+    if ($("#edRemove")) $("#edRemove").onclick = () => removeFilter(fl.key);
+    if ($("#edCancel")) $("#edCancel").onclick = () => removeFilter(fl.key);
     const body = $("#edBody");
     if (f.type === "range") rangeEditor(body, f, fl);
     else if (f.type === "bool") boolEditor(body, f, fl);
@@ -2565,7 +2574,7 @@
     if (!it) return;
     if (it.ask) { input.value = ""; closeMenu(); input.blur(); if (openTheme) closeThemes(); window.WA.apply(it.ask); return; }
     let fl = state.filters.find((x) => x.key === it.key);
-    if (!fl) { fl = makeFilter(it.key); state.filters.push(fl); }
+    if (!fl) { fl = makeFilter(it.key); fl.fresh = true; state.filters.push(fl); }
     if (it.value && fl.values && !fl.values.includes(it.value)) fl.values.push(it.value);
     state.open = it.key; state.selected = null;
     if (F[it.key].target === "city") state.tab = "cities";
