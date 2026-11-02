@@ -17,7 +17,7 @@
   // ---------- Learn & share in three groups ----------
   const GROUPS = [
     ["Analyse", ["dscBtn", "stxBtn", "ixBtn", "nhBtn"]],
-    ["Teach", ["qmBtn", "curBtn", "tourBtn"]],
+    ["Teach", ["qmBtn", "wvBtn", "curBtn", "tourBtn"]],
     ["Share", ["ffBtn", "sbsBtn", "shareBtn", "dlBtn", "tblBtn"]],
   ];
   function group() {

@@ -49,6 +49,7 @@
       [`${n} on Wikipedia`, wiki(n), "read"], [`Geography of ${cn(r)}`, wiki(`Geography of ${cn(r)}`), "read"],
       [`${n}: country profile (BBC News)`, bbc(`${n} country profile`), "read"],
       [`${n} on Our World in Data`, owid(n), "data"],
+      [`Dollar Street: photos of how families live, at every income (find ${n} on the map)`, "https://www.gapminder.org/dollar-street/map", "photo"],
       [`Videos about ${n} (Geography Now and others)`, yt(`${n} geography explained`), "video"],
       ...(CURATED.country[r.iso3] || []),
     ];
@@ -80,7 +81,7 @@
   function sdg(n, name) {
     return [[`Goal ${n}: ${name} (UN)`, `https://sdgs.un.org/goals/goal${n}`, "read"], [`Goal ${n} on Our World in Data's SDG tracker`, owid(`SDG ${n} ${name}`), "data"]];
   }
-  const ICON = { read: "📖", video: "▶", data: "📊" };
+  const ICON = { read: "📖", video: "▶", data: "📊", photo: "📷" };
   function html(list, title = "Find out more") {
     if (!list || !list.length) return "";
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

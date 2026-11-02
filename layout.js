@@ -18,7 +18,7 @@
     el.classList.toggle("is-fs", on);
     document.body.classList.toggle("has-fs", !!document.querySelector(".is-fs"));
     el.querySelectorAll(".fsbtn").forEach((b) => { b.textContent = on ? "🗗" : "⛶"; b.title = on ? "Leave full screen (Esc)" : "Full screen"; b.setAttribute("aria-pressed", String(on)); });
-    if (el.matches("[data-fs-target], #viewwrap")) document.querySelectorAll(`[data-fs="#${el.id}"]`).forEach((b) => (b.textContent = on ? "🗗 Leave full screen" : "⛶ Full screen"));
+    if (el.matches("[data-fs-target], #viewwrap")) document.querySelectorAll(`[data-fs="#${el.id}"]`).forEach((b) => { b.textContent = on ? "🗗" : "⛶"; b.title = on ? "Leave full screen (Esc)" : "Full screen (Esc to leave)"; });
     rerender();
   }
   document.addEventListener("click", (e) => {
@@ -47,7 +47,7 @@
 
   // ---------- Buttons and boxes on the map: all together in the bottom-left corner ----------
   // (on a laptop or bigger; on a phone they stay where they were, at the top)
-  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard"];
+  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard"];
   const wide = window.matchMedia("(min-width: 761px)");
   function stack() {
     const stage = $("#mapstage");

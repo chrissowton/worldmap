@@ -655,3 +655,12 @@ Projections: measures from WPP and WUP carry on past today on the year slider (t
 | Births outside marriage; mismanaged plastic waste per person (2019); girls married before 15 | Our World in Data (OECD; Meijer et al. 2021; UNICEF) | CC BY 4.0 |
 | Tourist arrivals 2023–2024 | UN Tourism, inbound tourism (overnight visitors, or all visitors where that's all that is reported) | Attribution |
 | Energy (rewrites `energy_latest.csv`) | Our World in Data energy dataset, owid-energy-data.csv (Energy Institute and others) | CC BY 4.0 |
+
+
+## Regions within countries (Global Data Lab)
+
+From https://globaldatalab.org/shdi/ (free to use with credit). Cite: Data retrieved from the Subnational HDI Database of the Global Data Lab, https://globaldatalab.org/shdi/ ; and Smits, J. and Permanyer, I. The Subnational Human Development Database. Sci. Data 6:190038 https://doi.org/10.1038/sdata.2019.38 (2019).
+
+- The Subnational HDI table for all years (one CSV), and the latest year of every indicator (exported in batches: Human Development, Gender Development, Indicators).
+- The GDL shapefile, made into `regions_geo.json` with mapshaper (the command is at the top of `make_regions.py`).
+- Then run `python3 make_regions.py <folder with the CSVs>` to write `regions_data.json`.

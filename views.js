@@ -152,8 +152,9 @@
               <label class="tog"><input type="checkbox" id="cLogX"> Log scale across</label>
               <label class="tog"><input type="checkbox" id="cLogY"> Log scale up</label>
             </div></details>
+            <button type="button" class="ghost vab" title="Where the data comes from, what it means, and how to cite it">ⓘ About this data</button>
             <button type="button" class="ghost vdl" title="Download this chart as a picture, or its data as a spreadsheet">⬇ Download</button>
-            <button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)">⛶ Full screen</button>
+            <button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)" aria-label="Full screen">⛶</button>
           </span>
         </div></div>
         <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg>
@@ -183,9 +184,10 @@
     const head = wrap.querySelector(".vhead");
     if (head && !head.querySelector(".vdl")) {
       head.classList.add("has-tools");
-      head.insertAdjacentHTML("beforeend", `<span class="vtools vtools-auto"><button type="button" class="ghost vdl" title="Download this chart as a picture, or its data as a spreadsheet">⬇ Download</button><button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)">${wrap.classList.contains("is-fs") ? "🗗 Leave full screen" : "⛶ Full screen"}</button></span>`);
+      head.insertAdjacentHTML("beforeend", `<span class="vtools vtools-auto"><button type="button" class="ghost vab" title="Where the data comes from, what it means, and how to cite it">ⓘ About this data</button><button type="button" class="ghost vdl" title="Download this chart as a picture, or its data as a spreadsheet">⬇ Download</button><button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)" aria-label="Full screen">${wrap.classList.contains("is-fs") ? "🗗" : "⛶"}</button></span>`);
     }
     wrap.querySelectorAll(".vdl").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openDownloadMenu(b); }));
+    wrap.querySelectorAll(".vab").forEach((b) => (b.onclick = () => window.WAB?.open()));
     if (view === "compare") bindCompare();
     if (view === "rank") bindRank();
     if (view === "trends") window.WCH?.bind();
@@ -931,9 +933,17 @@
   }
 
   // ======================= Share and tasks =======================
-  function shareURL(task) {
+  // A teacher can add a task and up to five questions. Students see them at the top of the page, can type answers
+  // (kept in their browser), then copy them, email them to the teacher, or open the teacher's Google Form.
+  V.qs ||= []; V.qform ||= ""; V.qmail ||= "";
+  function shareURL(task, extra) {
     const p = new URLSearchParams(location.search);
-    if (task) p.set("task", task); else p.delete("task");
+    ["task", "tq", "tform", "tmail", "embed"].forEach((k) => p.delete(k));
+    const o = extra || (task === undefined ? { qs: V.qs, form: V.qform, mail: V.qmail } : { qs: [], form: "", mail: "" });
+    if (task) p.set("task", task);
+    (o.qs || []).filter(Boolean).slice(0, 5).forEach((q) => p.append("tq", q));
+    if (o.form) p.set("tform", o.form);
+    if (o.mail) p.set("tmail", o.mail);
     const q = p.toString();
     let base = location.href.split("?")[0].split("#")[0];
     if (!/^https?:/.test(base)) base = W.SITE?.url || base;
@@ -941,19 +951,27 @@
   }
   function openShare() {
     const el = $("#share");
+    const qs = V.qs.concat(["", "", "", "", ""]).slice(0, 5);
     el.innerHTML = `<div class="panel share" role="dialog" aria-modal="true" aria-labelledby="shareH">
       <button type="button" class="iconbtn close" id="shareClose" aria-label="Close">×</button>
       <h2 id="shareH">Share this view</h2>
       <p class="sub">The link opens exactly what you see now: the filters, the year, the map style or chart, and the country you have open.</p>
-      <label class="fld"><span>Add a question or task for students (optional)</span>
-        <textarea id="shareTask" rows="3" maxlength="400" placeholder="e.g. Which continent has the fastest-falling fertility rate since 1990? Suggest two reasons.">${esc(V.task || "")}</textarea></label>
+      <label class="fld"><span>A task or introduction for students (optional)</span>
+        <textarea id="shareTask" rows="2" maxlength="400" placeholder="e.g. Look at how fertility rates have changed since 1990.">${esc(V.task || "")}</textarea></label>
+      <details class="shq" ${V.qs.length ? "open" : ""}><summary>Add questions for students to answer (up to 5)</summary>
+        ${qs.map((q, i) => `<label class="fld"><span>Question ${i + 1}</span><input class="shq-q" maxlength="300" value="${esc(q)}" placeholder="${["e.g. Which continent has the fastest-falling fertility rate?", "e.g. Name two countries that don't fit the pattern.", "e.g. Suggest two reasons for the pattern.", "", ""][i]}"></label>`).join("")}
+        <label class="fld"><span>Your email, so students can send you their answers (optional)</span><input id="shqMail" type="email" maxlength="120" value="${esc(V.qmail)}" placeholder="teacher@school.org"></label>
+        <label class="fld"><span>Or a Google Form (or Microsoft Form) for their answers (optional)</span><input id="shqForm" type="url" maxlength="300" value="${esc(V.qform)}" placeholder="https://forms.gle/…"></label>
+        <p class="sub">Students type their answers under each question. Their answers stay on their own device until they copy them, email them to you, or paste them into your form.</p>
+      </details>
       <label class="fld"><span>Link</span><div class="copyrow"><input id="shareLink" readonly><button type="button" class="primary" id="shareCopy">Copy link</button></div></label>
-      <p class="sub" id="shareMsg">Students who open the link see the task at the top of the page.</p>
+      <p class="sub" id="shareMsg">Students who open the link see the task and questions at the top of the page.</p>
     </div>`;
     el.hidden = false;
-    const upd = () => { $("#shareLink").value = shareURL($("#shareTask").value.trim()); };
+    const read = () => ({ qs: [...el.querySelectorAll(".shq-q")].map((x) => x.value.trim()).filter(Boolean), form: /^https:\/\//.test($("#shqForm").value.trim()) ? $("#shqForm").value.trim() : "", mail: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($("#shqMail").value.trim()) ? $("#shqMail").value.trim() : "" });
+    const upd = () => { $("#shareLink").value = shareURL($("#shareTask").value.trim(), read()); };
     upd();
-    $("#shareTask").oninput = upd;
+    el.querySelectorAll("textarea, input:not(#shareLink)").forEach((x) => (x.oninput = upd));
     $("#shareCopy").onclick = async () => {
       const inp = $("#shareLink");
       try { await navigator.clipboard.writeText(inp.value); $("#shareMsg").textContent = "Copied. Paste it into an email, your class page or a slide."; }
@@ -962,13 +980,43 @@
     $("#shareClose").onclick = () => (el.hidden = true);
     el.onclick = (e) => { if (e.target === el) el.hidden = true; };
   }
+  const ansKey = () => "wc-ans-" + [V.task, ...V.qs].join("|").split("").reduce((h, c) => ((h * 31 + c.charCodeAt(0)) | 0), 7);
+  function loadAns() { try { return JSON.parse(localStorage.getItem(ansKey()) || "{}"); } catch (e) { return {}; } }
+  function saveAns(a) { try { localStorage.setItem(ansKey(), JSON.stringify(a)); } catch (e) { /* private mode */ } }
   function renderTask() {
     const el = $("#task");
     if (!el) return;
-    el.hidden = !V.task;
-    if (!V.task) return;
-    el.innerHTML = `<span class="tk">📝 <b>Task:</b> ${esc(V.task)}</span><button type="button" class="iconbtn" id="taskClose" aria-label="Hide the task">×</button>`;
-    $("#taskClose").onclick = () => { V.task = ""; renderTask(); W.render(); };
+    const has = V.task || V.qs.length;
+    el.hidden = !has;
+    if (!has) return;
+    el.innerHTML = `<span class="tk">📝 <b>Task:</b> ${esc(V.task || "Answer the questions.")}</span>${V.qs.length ? `<button type="button" class="primary tkq" id="taskQs">✍️ ${V.qs.length} question${V.qs.length > 1 ? "s" : ""}</button>` : ""}<button type="button" class="iconbtn" id="taskClose" aria-label="Hide the task">×</button>`;
+    $("#taskClose").onclick = () => { V.task = ""; V.qs = []; V.qform = ""; V.qmail = ""; renderTask(); W.render(); };
+    if ($("#taskQs")) $("#taskQs").onclick = openAnswers;
+  }
+  function openAnswers() {
+    let el = $("#ansCard");
+    if (!el) { el = document.createElement("div"); el.id = "ansCard"; el.className = "card dsc ans"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Questions"); document.body.appendChild(el); }
+    el.hidden = false;
+    const a = loadAns();
+    el.innerHTML = `<div class="dsc-head"><h2>✍️ Your answers</h2><button type="button" class="iconbtn" id="ansX" aria-label="Close">×</button></div>
+      ${V.task ? `<p>${esc(V.task)}</p>` : ""}
+      <label class="fld"><span>Your name</span><input id="ansName" maxlength="80" value="${esc(a.name || "")}"></label>
+      ${V.qs.map((q, i) => `<label class="fld ansq"><span><b>${i + 1}.</b> ${esc(q)}</span><textarea data-i="${i}" rows="3">${esc(a["q" + i] || "")}</textarea></label>`).join("")}
+      <p class="hint">You can change the map or chart while you answer: your answers are kept on this device.</p>
+      <div class="dsc-row">
+        <button type="button" class="primary" id="ansCopy">Copy my answers</button>
+        ${V.qmail ? `<a class="ghost btnlink" id="ansMail" href="#">Email them to my teacher</a>` : ""}
+        ${V.qform ? `<a class="ghost btnlink" href="${esc(V.qform)}" target="_blank" rel="noopener" id="ansForm">Open the answer form ↗</a>` : ""}
+      </div>
+      ${V.qform ? `<p class="hint">Copy your answers first, then paste them into the form.</p>` : ""}`;
+    const text = () => {
+      const x = loadAns();
+      return [`Name: ${x.name || ""}`, V.task ? `Task: ${V.task}` : "", ...V.qs.map((q, i) => `${i + 1}. ${q}\n${x["q" + i] || ""}\n`), `Map/chart: ${shareURL()}`].filter(Boolean).join("\n");
+    };
+    el.querySelectorAll("textarea, #ansName").forEach((t) => (t.oninput = () => { const x = loadAns(); if (t.id === "ansName") x.name = t.value; else x["q" + t.dataset.i] = t.value; saveAns(x); }));
+    $("#ansX").onclick = () => (el.hidden = true);
+    $("#ansCopy").onclick = async (e) => { try { await navigator.clipboard.writeText(text()); e.target.textContent = "Copied ✓"; } catch (er) { prompt("Copy your answers:", text()); } };
+    if ($("#ansMail")) $("#ansMail").onclick = (e) => { e.preventDefault(); location.href = `mailto:${encodeURIComponent(V.qmail)}?subject=${encodeURIComponent("My answers" + (loadAns().name ? " – " + loadAns().name : ""))}&body=${encodeURIComponent(text())}`; };
   }
 
   // ======================= Downloads =======================
@@ -1020,8 +1068,12 @@
     if (!svgEl) return;
     const scale = 2;
     const chart = await svgToCanvas(svgEl, scale, view === "map" ? css("--ocean") : css("--surface"));
-    const title = view === "map" ? (document.querySelector("#sentence")?.textContent || "World map").trim() : V.title || "";
-    const pad = 20 * scale, titleH = 44 * scale;
+    // notes drawn on top (arrows, circles, text) go into the picture too
+    const ann = document.getElementById("annSvg");
+    if (ann && ann.querySelector("g.items > *")) { const ac = await svgToCanvas(ann, scale); chart.getContext("2d").drawImage(ac, 0, 0, chart.width, chart.height); }
+    // charts that draw their own title (the bubble chart) don't need a second one
+    const title = view === "map" ? (document.querySelector("#sentence")?.textContent || "World map").trim() : svgEl.querySelector("text.ctitle") ? "" : V.title || "";
+    const pad = 20 * scale, titleH = (title ? 44 : 12) * scale;
     const src = currentSource();
     const footLines = [];
     {
@@ -1064,18 +1116,24 @@
     m.innerHTML = `<p class="dl-h">Image</p>
       <button type="button" data-a="png">This ${what} as a picture (PNG)</button>
       <button type="button" data-a="svg">This ${what} for editing (SVG)</button>
+      <button type="button" data-a="notes">Add arrows, circles and notes first…</button>
       ${W.state.view === "map" ? `<button type="button" data-a="cw">Coursework map (A4, with key and north arrow)</button>` : ""}
       <p class="dl-h">Data</p>
       <button type="button" data-a="csv">The data shown (CSV, opens in Excel)</button>
       <button type="button" data-a="all">Every measure for these countries (CSV)</button>
-      <p class="dl-h">Cite</p>
+      <p class="dl-h">Cite and share</p>
       <button type="button" data-a="cite">Copy a reference for this ${what}</button>
+      <button type="button" data-a="embed">Embed this ${what} in a website or Google Classroom</button>
+      <button type="button" data-a="about">About this data: sources and definitions</button>
       <p class="dl-note">All data is free to reuse with credit to the original sources (see Sources &amp; methods).</p>`;
     btn.after(m);
     m.querySelectorAll("button").forEach((b) => (b.onclick = async () => {
       m.remove();
       const a = b.dataset.a;
       if (a === "cw") window.WMS?.courseworkDialog();
+      else if (a === "embed") window.WAB?.embedDialog();
+      else if (a === "notes") window.WLN?.startNotes();
+      else if (a === "about") window.WAB?.open();
       else if (a === "png") downloadImage().catch(() => alertMsg("Sorry, the image could not be made in this browser."));
       else if (a === "svg") downloadSVG();
       else if (a === "all") downloadCSV(allMeasuresRows(), `which-countries-all-measures.csv`);
@@ -1096,6 +1154,8 @@
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg"); clone.setAttribute("width", vb[2]); clone.setAttribute("height", vb[3]);
     if (W.state.view === "map") { const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect"); bg.setAttribute("width", "100%"); bg.setAttribute("height", "100%"); bg.setAttribute("fill", css("--ocean")); clone.insertBefore(bg, clone.firstChild); }
     const title = document.createElementNS("http://www.w3.org/2000/svg", "title"); title.textContent = citation(); clone.insertBefore(title, clone.firstChild);
+    const ann = document.getElementById("annSvg");
+    if (ann && ann.querySelector("g.items > *")) { const a = inlineSVG(ann); [...a.childNodes].forEach((n) => clone.appendChild(n)); }
     download(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" }), `which-countries-${W.state.view}.svg`);
   }
   // every measure (latest figures, or the chosen year) for the countries on the map
@@ -1143,6 +1203,9 @@
       window.WCH?.encode(p);
     } else if (st.view === "insights") window.WIN?.encode(p);
     if (V.task) p.set("task", V.task);
+    V.qs.forEach((q) => p.append("tq", q));
+    if (V.qform) p.set("tform", V.qform);
+    if (V.qmail) p.set("tmail", V.qmail);
   }
   function decode(p) {
     const F0 = Object.fromEntries((window.FILTERS || []).map((f) => [f.key, f]));
@@ -1170,6 +1233,9 @@
     if (p.get("v") === "trends") window.WCH?.decode(p);
     if (p.get("v") === "insights") window.WIN?.decode(p);
     V.task = (p.get("task") || "").slice(0, 400);
+    V.qs = p.getAll("tq").map((q) => q.slice(0, 300)).filter(Boolean).slice(0, 5);
+    V.qform = /^https:\/\//.test(p.get("tform") || "") ? p.get("tform").slice(0, 300) : "";
+    V.qmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p.get("tmail") || "") ? p.get("tmail").slice(0, 120) : "";
   }
 
   function init() {
@@ -1208,7 +1274,7 @@
   }
   // for the Back button: the chart settings as plain data, and back again
   function snapshot() { const { built, ...rest } = V; return JSON.parse(JSON.stringify(rest)); }
-  function restore(o) { if (!o) return; stopPlay(); Object.assign(V.cmp, o.cmp); Object.assign(V.rank, o.rank); Object.assign(V.trend, o.trend); V.task = o.task || ""; }
+  function restore(o) { if (!o) return; stopPlay(); Object.assign(V.cmp, o.cmp); Object.assign(V.rank, o.rank); Object.assign(V.trend, o.trend); V.task = o.task || ""; V.qs = o.qs || []; V.qform = o.qform || ""; V.qmail = o.qmail || ""; }
   function clearYears() { stopPlay(); V.cmp.year = null; V.cmp.pins = []; V.cmp.focus = null; V.cmp.zt = null; V.trend.year = null; V.trend.from = null; V.trend.pins = []; V.rank.year = null; }
-  window.WV = { openDownloadMenu, clearYears, currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
+  window.WV = { downloadImage, openDownloadMenu, srcKeys, shareURL, clearYears, currentSource, sourceText, init, showRank, snapshot, restore, render, encode, decode, profileHTML, bindProfile, highlight, openSideBySide, lineChartSVG, pyramidSVG, loadPyramids, medianSeries, svgToCanvas, lineKey, get pyramids() { return pyramids; } };
 })();

@@ -35,6 +35,18 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Population futures**: UN projections to 2100 for population, fertility, life expectancy, median age, natural increase and migration, playable on the year slider.
 - **Hazards, food, water and footprint**: WorldRiskIndex, disaster deaths and displacement, warming since 1940, Global Hunger Index, calories, water use, tree cover loss, ecological footprint, urbanisation to 2050, aid and debt.
 - **Politics and society**: Corruption Perceptions Index (2012–2025), press freedom (RSF 2026), deaths in armed conflicts, girls married before 15, births outside marriage, and mismanaged plastic waste; tourism updated to 2024 and energy production updated.
+- **Regions within countries**: the 🗺️ Regions button colours about 1,800 regions in 188 countries (Global Data Lab): the HDI for every year from 1990, and life expectancy, schooling, income and gender measures, for women and men.
+- **What's new** (`whatsnew.html`): every update, newest first.
+- **Small multiples**: one small chart for each continent or country, on the same scale, with the world for comparison.
+- **Worldview quiz**: Gapminder-style A/B/C questions that most people get wrong, worked out live from the data.
+- **Describe**: the main points of the map or any chart, in plain words.
+- **Notes**: draw arrows, circles, highlights and text on a chart or map, then download it (Download → Add arrows, circles and notes).
+- **Questions for students**: Share can add up to five questions, a teacher's email and a Google or Microsoft Form; students answer on the page and copy, email or submit their answers.
+- **Dollar Street**: each country's links include Gapminder's Dollar Street photos.
+- **About this data**: every chart and the map has an ⓘ panel with each measure's definition, unit, source, licence, years, coverage, links and how to cite it, plus a download of the measure for every year.
+- **Embed**: Download → Embed gives code for a website or Google Site; the embedded chart stays interactive.
+- **Change since a start year** on line charts (change, % change, or an index where the start year = 100), and a **bar chart race** for any yearly measure.
+- **A page for every measure** (`m/`), with every country ranked, for search engines and for linking to.
 - **Country labels**: the bubble chart (Options) and the line chart (with “Each matching country”) can label every country by name or by its three-letter code, which is handy for saved charts.
 - **Your own index** appears in every measure list (under “Made by you”), so it can go on any chart.
 - **Download on every chart**: like Our World in Data, every chart and the map have a Download button (picture, editable SVG, the data shown, every measure, or a reference to cite).
@@ -188,6 +200,11 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `fetch_raw.py` | Downloads fresh copies of the source files |
 | `build_data.py` | Joins the source files into `countries.json` and `cities.json` |
 | `make_data_table.cjs` | Writes `DATA.md` from the filter list |
+| `make_pages.cjs`, `m/`, `sitemap.xml`, `robots.txt` | A page for every measure (so search engines can find them), the list of every measure, and the sitemap. Run `node make_pages.cjs` after updating the data |
+| `regions.js`, `regions_data.json`, `regions_geo.json`, `make_regions.py` | Regions within countries: the map layer and card, the data, the region shapes, and the script that builds them from the Global Data Lab downloads |
+| `whatsnew.html` | What's new |
+| `learn.js` | Worldview quiz, Describe for charts, and notes on charts and maps |
+| `about.js` | “About this data” for every chart and the map, and embed mode (`?embed=1`) |
 | `build_single.py` | Bundles everything into one self-contained HTML file in `dist/` |
 
 Libraries: [D3](https://d3js.org/) and [topojson-client](https://github.com/topojson/topojson-client), loaded from cdnjs. No build step and no framework.

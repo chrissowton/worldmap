@@ -1258,6 +1258,7 @@ window.FILTERS = [
 ];
 
 window.SOURCES = {
+  gdl: { name: "Global Data Lab, Subnational Human Development Database (Smits & Permanyer 2019, Scientific Data 6:190038)", url: "https://globaldatalab.org/shdi/", licence: "Free to use with credit" },
   myindex: { name: "Your own index, worked out on this site from the measures and weights you chose (each measure from its own source)", url: "#", licence: "—" },
   countries: { name: "mledoze/countries", url: "https://github.com/mledoze/countries", licence: "ODbL 1.0" },
   cldr: { name: "Unicode CLDR territory data", url: "https://cldr.unicode.org/", licence: "Unicode License" },

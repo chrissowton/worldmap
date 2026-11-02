@@ -70,6 +70,8 @@
     { id: "slope", label: "Slope", icon: '<path d="M3 11l10-6M3 5l10 3" stroke="currentColor" stroke-width="1.5"/><path d="M3 2v12M13 2v12" stroke="currentColor" stroke-width="1" opacity=".5"/>', more: true },
     { id: "mekko", label: "Marimekko", icon: '<path d="M1.5 14V9h2.5v5zM4.5 14V5h5v9zM10 14V7h4.5v7z" fill="currentColor"/>', more: true },
     { id: "mix", label: "Parts of a whole", icon: '<path d="M2 3h12v3H2z" fill="currentColor" opacity=".35"/><path d="M2 3h5v3H2zM2 9h8v3H2z" fill="currentColor"/><path d="M2 9h12v3H2z" fill="none" stroke="currentColor" stroke-width="1"/>', more: true },
+    { id: "multi", label: "Small multiples", icon: '<path d="M1.5 1.5h5.5v5.5H1.5zM9 1.5h5.5v5.5H9zM1.5 9h5.5v5.5H1.5zM9 9h5.5v5.5H9z" fill="none" stroke="currentColor" stroke-width="1"/><path d="M2.5 5.5l1.5-1.5 1.5 1 1-2M10 5l1.5-.5 1.5-2M2.5 13l2-2.5 2 .5M10 12.5l1.5-1 2 .5" fill="none" stroke="currentColor" stroke-width="1"/>', more: true },
+    { id: "race", label: "Bar chart race", icon: '<path d="M2 3h11M2 6.5h8M2 10h5.5M2 13.5h3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M14 9.5l1.5 1.5-1.5 1.5" fill="none" stroke="currentColor" stroke-width="1.2"/>', more: true },
     { id: "sankey", label: "Sankey", icon: '<path d="M2 3c6 0 6 7 12 7M2 9c6 0 6-5 12-5M2 13c6 0 6-1 12-1" fill="none" stroke="currentColor" stroke-width="1.8"/>', more: true },
   ];
 
@@ -152,6 +154,10 @@
     switch (type) {
       case "line": case "slope":
         return yearly(key) ? "" : `“${f.label}” has data for one year only, so there is nothing to draw over time. Try Bar, Table or Map.`;
+      case "multi":
+        return yearly(key) ? "" : `“${f.label}” has data for one year only, so there is nothing to draw over time. Try Bar or Map.`;
+      case "race":
+        return yearly(key) ? "" : `“${f.label}” has data for one year only, so there is nothing to race through. Try Bar or Map.`;
       case "area":
         if (!yearly(key)) return `“${f.label}” has data for one year only.`;
         return isSum(key) ? "" : "A stacked area adds the continents together, so it needs something you can add up, such as population, CO₂ emissions or refugees. Rates and percentages can't be added.";
@@ -169,6 +175,7 @@
     mekko: [["gdp_per_capita", "GDP per person"], ["life_expectancy", "Life expectancy"], ["co2_per_capita", "CO₂ per person"]],
     mix: [["coal_elec_pct", "Electricity sources"], ["emp_agriculture", "Jobs by sector"], ["exp_manuf_pct", "Exports by type"], ["pct_christian", "Religions"], ["pct_under15", "Age groups"]],
     sankey: [["refugees_from", "Refugee flows"], ["exports_usd", "Exports by type"]],
+    race: [["population", "Population"], ["gdp_usd", "GDP"], ["co2_mt", "CO₂ emissions"], ["life_expectancy", "Life expectancy"]],
     line: [["life_expectancy", "Life expectancy"], ["population", "Population"], ["co2_mt", "CO₂ emissions"]],
     slope: [["life_expectancy", "Life expectancy"], ["fertility", "Fertility rate"], ["gdp_per_capita", "GDP per person"]],
   };
@@ -188,6 +195,7 @@
           <label class="tog" id="tML"><input type="checkbox" id="tM"> Each matching country</label>
           <label class="fld tlabf" id="tLabL"><span>Label them</span><select id="tLab"><option value="">No</option><option value="name">Names</option><option value="code">Short codes (e.g. GBR)</option></select></label>
           <label class="tog" id="tLogL"><input type="checkbox" id="tLog"> Log scale</label>
+          <label class="fld tlabf" id="tRelL"><span>Show</span><select id="tRel"><option value="">The actual figures</option><option value="abs">Change since…</option><option value="pct">% change since…</option><option value="idx">Index: start year = 100</option></select><select id="tBase" aria-label="Start year"></select></label>
         </div>
       </div>
       <div class="ctabs" role="tablist" aria-label="Chart type" id="tTypes"></div></div>
@@ -213,6 +221,8 @@
     $("#tM").onchange = (e) => { t.matches = e.target.checked; W.render(); };
     $("#tLab").onchange = (e) => { t.labs = e.target.value; W.render(); };
     $("#tLog").onchange = (e) => { t.log = e.target.checked; W.render(); };
+    $("#tRel").onchange = (e) => { t.rel = e.target.value; W.render(); };
+    $("#tBase").onchange = (e) => { t.base = +e.target.value; W.render(); };
     $("#tFind").onchange = (e) => { const r = H.findCountry(e.target.value); e.target.value = ""; if (r && !t.pins.includes(r.iso3)) { t.pins = t.pins.concat(r.iso3).slice(-6); W.render(); } };
   }
   function setKey(k) {
@@ -250,12 +260,15 @@
     $("#tGL").hidden = !ms; $("#tG").checked = t.group;
     $("#tML").hidden = !ms; $("#tM").checked = t.matches;
     $("#tLabL").hidden = !ms || !t.matches; $("#tLab").value = t.labs || "";
-    const showsGroups = ["line", "bar", "table", "slope"].includes(t.type);
+    const showsGroups = ["line", "bar", "table", "slope", "multi"].includes(t.type);
     $("#tAggF").hidden = !showsGroups;
     $$(".tchecks .tog").forEach((l) => (l.style.display = ""));
     $(".tchecks").hidden = !["line", "bar", "table", "slope", "mix"].includes(t.type);
     const log = lineLog(key);
-    $("#tLogL").hidden = t.type !== "line"; $("#tLog").checked = log;
+    $("#tLogL").hidden = t.type !== "line" || !!t.rel; $("#tLog").checked = log;
+    $("#tRelL").hidden = t.type !== "line" || W.SURVEY_KEYS?.has(key); $("#tRel").value = t.rel || "";
+    { const ys = yearsFor(key), b = t.base && ys.includes(t.base) ? t.base : ys[0];
+      $("#tBase").innerHTML = ys.map((y) => `<option ${y === b ? "selected" : ""}>${y}</option>`).join(""); $("#tBase").hidden = !t.rel; }
     // chart type tabs
     $("#tTypes").innerHTML = TYPES.map((x, i) => {
       const w = why(x.id, key);
@@ -274,13 +287,13 @@
     V.csv = null;
     const w = why(t.type, key);
     if (w) { explain(t.type, w); pinsUI(); V.list = null; return; }
-    ({ line: drawLine, bar: drawBar, table: drawTable, area: drawArea, slope: drawSlope, mekko: drawMekko, mix: drawMix, sankey: drawSankey })[t.type]();
+    ({ line: drawLine, bar: drawBar, table: drawTable, area: drawArea, slope: drawSlope, mekko: drawMekko, mix: drawMix, sankey: drawSankey, race: drawRace, multi: drawMulti })[t.type]();
     pinsUI();
     // the list in the results pane: every country's value in the year the chart shows
     const ly = yearly(key) ? (t.year && yearsFor(key).includes(t.year) ? t.year : bestYear(key, "median")) : null;
     V.list = { title: ly ? `Figures for ${ly}` : `Latest figures`, cols: [f], asc: f.format === "rank",
       rows: W.pool().filter((r) => !ms || ms.has(r.iso3)).map((r) => ({ iso: r.iso3, vals: [value(key, r.iso3, ly)] })).filter((x) => x.vals[0] != null),
-      pinned: t.pins, note: ["area", "mekko", "sankey"].includes(t.type) ? "Countries added here show in Line, Bar, Table, Slope and Parts of a whole." : "Click a country to add it to the chart (up to 6).", max: 6,
+      pinned: t.pins, note: ["area", "mekko", "sankey", "race"].includes(t.type) ? "Countries added here show in Line, Bar, Table, Slope and Parts of a whole." : t.type === "multi" ? "Click a country to add a small chart for it (up to 6)." : "Click a country to add it to the chart (up to 6).", max: 6,
       toggle: (iso) => { t.pins = t.pins.includes(iso) ? t.pins.filter((x) => x !== iso) : t.pins.concat(iso).slice(-6); } };
   }
 
@@ -344,7 +357,7 @@
 
   function pinsUI() {
     const t = V.trend, pins = pinsList();
-    const usesPins = !["area", "mekko", "sankey"].includes(t.type) || !!why(t.type, t.key);
+    const usesPins = !["area", "mekko", "sankey", "race"].includes(t.type) || !!why(t.type, t.key);
     $(".vopts", $("#viewwrap")).hidden = !usesPins;
     $("#tPins").innerHTML = pins.map((iso, i) => `<span class="pin"><span class="sw" style="background:${pinColour(i)}"></span>${esc(W.byIso.get(iso).name)}<button type="button" data-iso="${iso}" aria-label="Remove ${esc(W.byIso.get(iso).name)}">×</button></span>`).join("") +
       (!pins.length ? `<span class="hint">Add countries to compare them with the groups.</span>` : "");
@@ -362,6 +375,7 @@
     return svg;
   };
   const clip = (s, n) => (s.length > n + 1 ? s.slice(0, n) + "…" : s);
+  const lower = (s) => H.lower(s);
 
   // ======================= LINE =======================
   function drawLine() {
@@ -380,34 +394,51 @@
     if (survey && !series.length) for (const [iso, arr] of Object.entries(TS[key])) if (!pins.includes(iso) && W.byIso.get(iso)?.sovereign)
       series.push({ id: iso, name: W.byIso.get(iso).name, vals: ys.map((y) => arr[y - TS_YEARS[0]] ?? null), colour: H.css("--muted"), width: 1, opacity: 0.35, thin: true });
     pins.forEach((iso, i) => series.push({ id: iso, name: W.byIso.get(iso).name, vals: ys.map((y) => TS[key][iso]?.[y - TS_YEARS[0]] ?? null), colour: pinColour(i), width: 2.8, label: true, bold: true }));
+    // change since a start year: every line starts from the same place, so growth can be compared
+    const rel = !survey && t.rel ? t.rel : "";
+    let fy = f, base = null;
+    if (rel) {
+      base = t.base && ys.includes(t.base) ? t.base : ys[0];
+      const bi = ys.indexOf(base);
+      series.forEach((s) => {
+        // the start value: the start year, or the first year after it with data
+        let j = bi; while (j < s.vals.length && s.vals[j] == null) j++;
+        const b0 = s.vals[j];
+        s.vals = s.vals.map((v, i) => (i < bi || v == null || b0 == null ? null : rel === "abs" ? v - b0 : !b0 ? null : rel === "pct" ? (100 * (v - b0)) / Math.abs(b0) : (100 * v) / b0));
+      });
+      fy = rel === "abs" ? f : { ...f, format: rel === "pct" ? "pct" : "dec1", scale: "linear" };
+    }
+    const logL = log && !rel;
     const { w, h } = H.size();
     const mob = w < 560;
     const M = { t: 26, r: mob ? 96 : 160, b: 30, l: mob ? 48 : 62 };
-    const all = series.flatMap((s) => s.vals).filter((v) => v != null && (!log || v > 0));
+    const all = series.flatMap((s) => s.vals).filter((v) => v != null && (!logL || v > 0));
     const svg = svgSel(w, h, `${f.label} over time`);
     if (!all.length) { $("#tNote").textContent = "No data to show. Try ticking World or Continents, or add a country."; return; }
     const ext = d3.extent(all);
-    if (!log && ext[0] > 0 && ext[0] < ext[1] * 0.35) ext[0] = 0;
-    const sx = d3.scaleLinear().domain([ys[0], ys[ys.length - 1]]).range([M.l, w - M.r]);
-    const sy = (log ? d3.scaleLog() : d3.scaleLinear()).domain(ext).range([h - M.b, M.t]).nice();
-    axes(svg, sx, sy, log, f, w, h, M, mob, `↑ ${f.label}${log ? " (log scale)" : ""}`);
-    const ln = d3.line().defined((v) => v != null && (!log || v > 0)).x((v, i) => sx(ys[i])).y((v) => sy(v));
+    if (!logL && !rel && ext[0] > 0 && ext[0] < ext[1] * 0.35) ext[0] = 0;
+    const sx = d3.scaleLinear().domain([rel ? base : ys[0], ys[ys.length - 1]]).range([M.l, w - M.r]);
+    const sy = (logL ? d3.scaleLog() : d3.scaleLinear()).domain(ext).range([h - M.b, M.t]).nice();
+    axes(svg, sx, sy, logL, fy, w, h, M, mob, rel ? `↑ ${{ abs: "Change in", pct: "% change in", idx: "Index of" }[rel]} ${lower(f.label)} ${rel === "idx" ? `(${base} = 100)` : `since ${base}`}` : `↑ ${f.label}${logL ? " (log scale)" : ""}`);
+    // the start line: 0 or 100
+    if (rel) { const y0 = sy(rel === "idx" ? 100 : 0); svg.append("line").attr("x1", sx(base)).attr("x2", w - M.r).attr("y1", y0).attr("y2", y0).attr("stroke", H.css("--ink")).attr("stroke-width", 1.2).attr("opacity", 0.55); }
+    const ln = d3.line().defined((v) => v != null && (!logL || v > 0)).x((v, i) => sx(ys[i])).y((v) => sy(v));
     const order = series.slice().sort((a, b) => (a.thin ? 0 : 1) - (b.thin ? 0 : 1));
     // survey measures (asked every few years): join each country's survey points and mark them
-    const pts = (s) => s.vals.map((v, i) => (v == null || (log && v <= 0) ? null : [sx(ys[i]), sy(v)])).filter(Boolean);
+    const pts = (s) => s.vals.map((v, i) => (v == null || (logL && v <= 0) ? null : [sx(ys[i]), sy(v)])).filter(Boolean);
     const path = (s) => (survey ? d3.line()(pts(s)) : ln(s.vals));
     if (survey) svg.append("g").selectAll("circle").data(order.flatMap((s) => pts(s).map((p) => ({ p, s }))))
       .join("circle").attr("cx", (d) => d.p[0]).attr("cy", (d) => d.p[1]).attr("r", (d) => (d.s.thin ? 2 : 3.5)).attr("fill", (d) => d.s.colour).attr("opacity", (d) => d.s.opacity ?? 1);
     svg.append("g").selectAll("path").data(order).join("path").attr("d", (s) => path(s)).attr("fill", "none")
       .attr("stroke", (s) => s.colour).attr("stroke-width", (s) => s.width).attr("stroke-dasharray", (s) => s.dash).attr("opacity", (s) => s.opacity ?? 1)
       .attr("stroke-linejoin", "round").attr("stroke-linecap", "round");
-    endLabels(svg, series.filter((s) => s.label), ys, sx, sy, w, h, M, mob, log);
-    if (t.labs) countryLabels(svg, series.filter((s) => s.thin), ys, sx, sy, log, t.labs === "code");
+    endLabels(svg, series.filter((s) => s.label), ys, sx, sy, w, h, M, mob, logL);
+    if (t.labs) countryLabels(svg, series.filter((s) => s.thin), ys, sx, sy, logL, t.labs === "code");
     hoverRule(svg, sx, ys, w, h, M, (i) => series.filter((s) => s.label && s.vals[i] != null).sort((a, b) => b.vals[i] - a.vals[i])
-      .map((s) => `<dt><span class="sw" style="background:${s.colour}"></span> ${esc(s.name)}</dt><dd>${esc(fmtShort(f, s.vals[i]))}</dd>`).join(""));
-    $("#tNote").innerHTML = survey ? `Each dot is one survey. Different countries were surveyed in each wave, so world and continent medians are not shown: add countries below to compare them. ${f.info ? esc(f.info) : ""}` : `${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
+      .map((s) => `<dt><span class="sw" style="background:${s.colour}"></span> ${esc(s.name)}</dt><dd>${esc((rel && rel !== "idx" && s.vals[i] > 0 ? "+" : "") + fmtShort(fy, s.vals[i]))}</dd>`).join(""));
+    $("#tNote").innerHTML = survey ? `Each dot is one survey. Different countries were surveyed in each wave, so world and continent medians are not shown: add countries below to compare them. ${f.info ? esc(f.info) : ""}` : `${rel ? `${{ abs: "Each line shows how much it has gone up or down", pct: "Each line shows the % change", idx: "Each line starts at 100, so you can compare growth" }[rel]} since ${base} (or the first year with data after it). ` : ""}${aggNote(key, mode)} ${f.info ? esc(f.info) : ""}`;
     V.csv = () => [["Year", ...series.map((s) => s.name)], ...ys.map((y, i) => [y, ...series.map((s) => s.vals[i] ?? "")])];
-    V.title = `${f.label}, ${ys[0]}–${ys[ys.length - 1]}`;
+    V.title = rel ? `${{ abs: "Change in", pct: "% change in", idx: "Index of" }[rel]} ${lower(f.label)} since ${base}` : `${f.label}, ${ys[0]}–${ys[ys.length - 1]}`;
   }
   function axes(svg, sx, sy, log, f, w, h, M, mob, ylab) {
     const ink = H.css("--ink"), muted = H.css("--muted"), line = H.css("--line");
@@ -493,6 +524,136 @@
     void muted;
     V.csv = () => [["Name", f.label + (year ? ` (${year})` : "")], ...list.map((p) => [p.group ? `${p.name} ${p.sub}` : p.name, p.v])];
     V.title = `${f.label}${year ? `, ${year}` : ""}`;
+  }
+
+  // ======================= SMALL MULTIPLES =======================
+  // one small chart for each continent (or each country), side by side, on the same scale, with the world for reference
+  function drawMulti() {
+    const t = V.trend, key = t.key, f = F[key], mode = t.agg;
+    const ys = yearsFor(key);
+    const ms = H.matchSet(), pins = pinsList();
+    const base = W.rows.filter((r) => r.sovereign || W.state.territories).map((r) => r.iso3);
+    const world = ys.map((y) => agg(key, base, y, mode, 20));
+    const byCountries = t.mby === "countries" || (t.mby !== "cont" && ((ms && ms.size <= 30) || pins.length));
+    let panels;
+    if (byCountries) {
+      let isos = pins.slice();
+      if (ms) {
+        const latest = (iso) => { const s = TS[key][iso]; if (!s) return null; for (let i = s.length - 1; i >= 0; i--) if (s[i] != null) return s[i]; return null; };
+        isos = isos.concat([...ms].filter((iso) => !isos.includes(iso) && TS[key][iso]).sort((a, b) => (latest(b) ?? -Infinity) - (latest(a) ?? -Infinity)));
+      }
+      panels = isos.slice(0, 30).map((iso, i) => ({ name: W.byIso.get(iso).name, flag: W.byIso.get(iso).flag, iso, vals: ys.map((y) => TS[key][iso]?.[y - TS_YEARS[0]] ?? null), colour: pins.includes(iso) ? pinColour(pins.indexOf(iso)) : H.contColour(W.byIso.get(iso).region) }));
+    } else {
+      panels = H.CONTINENTS.map((c) => ({ name: c, vals: ys.map((y) => agg(key, base.filter((iso) => W.byIso.get(iso).region === c), y, mode, 5)), colour: H.contColour(c) }));
+      if (ms && t.group) panels.push({ name: `Your ${ms.size} countries`, vals: ys.map((y) => agg(key, [...ms], y, mode, 3)), colour: H.css("--match") });
+    }
+    panels = panels.filter((p) => p.vals.some((v) => v != null));
+    const { w } = H.size();
+    const mob = w < 560;
+    const cols = mob ? 2 : panels.length <= 4 ? 2 : panels.length <= 9 ? 3 : panels.length <= 16 ? 4 : 5;
+    const pw = (w - 12) / cols, ph = Math.max(120, Math.min(190, pw * 0.62));
+    const rows = Math.ceil(panels.length / cols);
+    const svg = svgSel(w, rows * ph + 8, `${f.label}: small multiples`);
+    if (!panels.length) { $("#tNote").textContent = "No data to show. Add a filter or some countries."; return; }
+    const ink = H.css("--ink"), muted = H.css("--muted"), line = H.css("--line");
+    const log = lineLog(key);
+    const shared = !t.mfree;
+    const extOf = (arrs) => { const e = d3.extent(arrs.flat().filter((v) => v != null && (!log || v > 0))); if (!log && e[0] > 0 && e[0] < e[1] * 0.35) e[0] = 0; return e; };
+    const ext0 = extOf(panels.map((p) => p.vals).concat([world]));
+    const pm = { t: 24, r: 10, b: 20, l: 40 };
+    panels.forEach((p, i) => {
+      const x0 = 6 + (i % cols) * pw, y0 = 4 + Math.floor(i / cols) * ph;
+      const g = svg.append("g").attr("transform", `translate(${x0},${y0})`);
+      const ext = shared ? ext0 : extOf([p.vals, world]);
+      const sx = d3.scaleLinear().domain([ys[0], ys[ys.length - 1]]).range([pm.l, pw - pm.r]);
+      const sy = (log ? d3.scaleLog() : d3.scaleLinear()).domain(ext).range([ph - pm.b, pm.t]).nice();
+      const ty = H.ticksFor(sy, log, 3);
+      g.append("g").selectAll("line").data(ty).join("line").attr("x1", pm.l).attr("x2", pw - pm.r).attr("y1", sy).attr("y2", sy).attr("stroke", line);
+      g.append("g").selectAll("text").data(ty).join("text").attr("x", pm.l - 4).attr("y", sy).attr("dy", "0.35em").attr("text-anchor", "end").attr("font-size", 9.5).attr("fill", muted).text((v) => fmtShort(f, v));
+      g.append("g").selectAll("text").data([ys[0], ys[ys.length - 1]]).join("text").attr("x", sx).attr("y", ph - 6).attr("text-anchor", (d, j) => (j ? "end" : "start")).attr("font-size", 9.5).attr("fill", muted).text((d) => d);
+      const ln = d3.line().defined((v) => v != null && (!log || v > 0)).x((v, j) => sx(ys[j])).y((v) => sy(v));
+      g.append("path").attr("d", ln(world)).attr("fill", "none").attr("stroke", muted).attr("stroke-width", 1.2).attr("stroke-dasharray", "4 3").attr("opacity", 0.8);
+      g.append("path").attr("d", ln(p.vals)).attr("fill", "none").attr("stroke", p.colour).attr("stroke-width", 2.4).attr("stroke-linejoin", "round");
+      let li = p.vals.length - 1; while (li >= 0 && p.vals[li] == null) li--;
+      if (li >= 0) {
+        g.append("circle").attr("cx", sx(ys[li])).attr("cy", sy(p.vals[li])).attr("r", 3).attr("fill", p.colour);
+        g.append("text").attr("x", pw - pm.r).attr("y", 14).attr("text-anchor", "end").attr("font-size", 11).attr("font-weight", 600).attr("fill", ink).text(`${fmtShort(f, p.vals[li])} (${ys[li]})`);
+      }
+      g.append("text").attr("x", 4).attr("y", 14).attr("font-size", 12.5).attr("font-weight", 700).attr("fill", ink).text(clip(`${p.flag ? p.flag + " " : ""}${p.name}`, Math.floor(pw / 9)));
+      if (p.iso) g.style("cursor", "pointer").on("click", () => W.select(p.iso));
+    });
+    $("#tLeg").innerHTML = `<span class="lg"><span class="sw dash"></span>World ${aggName(mode)}, for comparison</span>
+      <label class="fld inline rn-pick"><span>One chart for each</span><select id="mBy"><option value="auto">Automatic</option><option value="cont">Continent</option><option value="countries">Country (your countries)</option></select></label>
+      <label class="tog"><input type="checkbox" id="mFree" ${t.mfree ? "checked" : ""}> Each chart its own scale</label>`;
+    $("#mBy").value = t.mby || "auto";
+    $("#mBy").onchange = (e) => { t.mby = e.target.value; W.render(); };
+    $("#mFree").onchange = (e) => { t.mfree = e.target.checked; W.render(); };
+    $("#tNote").innerHTML = `${esc(f.label)}: one small chart for each ${byCountries ? "country" : "continent"}${shared ? ", all on the same scale so they can be compared" : ", each on its own scale (careful: compare shapes, not heights)"}. The dashed line is the world ${aggName(mode)}.${byCountries && ms && ms.size > 30 ? " Showing the first 30 countries." : ""} ${!byCountries ? aggNote(key, mode) : ""}`;
+    V.csv = () => [["Year", ...panels.map((p) => p.name), "World"], ...ys.map((y, i) => [y, ...panels.map((p) => p.vals[i] ?? ""), world[i] ?? ""])];
+    V.title = `${f.label}, ${ys[0]}–${ys[ys.length - 1]}: ${byCountries ? "by country" : "by continent"}`;
+  }
+
+  // ======================= BAR CHART RACE =======================
+  // the top countries in each year; press play and the bars race past each other
+  function drawRace() {
+    const t = V.trend, key = t.key, f = F[key];
+    const ys = yearsFor(key);
+    const { year } = yearPicker(key, { def: bestYear(key, "median") || ys[ys.length - 1] });
+    const ms = H.matchSet();
+    const { w, h } = H.size();
+    const mob = w < 560;
+    const N = mob ? Math.min(10, t.raceN || 15) : t.raceN || 15;
+    const asc = f.format === "rank";
+    const all = W.pool().filter((r) => !ms || ms.has(r.iso3)).map((r) => ({ iso: r.iso3, r, v: value(key, r.iso3, year) })).filter((d) => d.v != null);
+    all.sort((a, b) => (asc ? a.v - b.v : b.v - a.v));
+    const top = all.slice(0, N);
+    const M = { t: 8, r: mob ? 60 : 84, b: 26, l: mob ? 108 : 168 };
+    const rowH = Math.max(14, Math.min(34, (h - M.t - M.b - 12) / N));
+    const H2 = M.t + M.b + rowH * N;
+    const svg = d3.select("#vsvg").attr("viewBox", `0 0 ${w} ${H2}`).attr("width", w).attr("height", H2).attr("aria-label", `${f.label}: the top ${N}, ${year}`);
+    const sig = `${key}|${N}|${w}|${!!ms}`;
+    let root = svg.select("g.race");
+    if (root.empty() || root.attr("data-s") !== sig) {
+      svg.selectAll("*").remove();
+      root = svg.append("g").attr("class", "race").attr("data-s", sig);
+      root.append("g").attr("class", "rgrid"); root.append("g").attr("class", "rbars");
+      root.append("text").attr("class", "ryear").attr("text-anchor", "end").attr("font-weight", 700).attr("fill", H.css("--line")).attr("opacity", 0.9);
+    }
+    const ink = H.css("--ink"), muted = H.css("--muted");
+    const max = d3.max(top, (d) => Math.abs(d.v)) || 1;
+    const sx = d3.scaleLinear().domain([0, asc ? Math.max(...top.map((d) => d.v)) : max]).range([M.l, w - M.r]).nice();
+    const dur = playTimer ? (window.WPL ? window.WPL.ms(420) : 420) * 0.95 : 300;
+    const tr = d3.transition().duration(dur).ease(d3.easeLinear);
+    root.select("g.rgrid").selectAll("g.tk").data(sx.ticks(mob ? 3 : 5), (d) => d).join((en) => { const g = en.append("g").attr("class", "tk"); g.append("line"); g.append("text"); return g; })
+      .call((g) => g.select("line").attr("y1", M.t).attr("y2", M.t + rowH * N).attr("stroke", H.css("--line")))
+      .call((g) => g.select("text").attr("y", M.t + rowH * N + 16).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", muted).text((d) => fmtShort(f, d)))
+      .transition(tr).attr("transform", (d) => `translate(${sx(d)},0)`);
+    root.select("text.ryear").attr("x", w - M.r - 6).attr("y", M.t + rowH * N - 10).attr("font-size", Math.min(96, rowH * N * 0.28)).text(year || "");
+    const yOf = (i) => M.t + i * rowH;
+    const bars = root.select("g.rbars").selectAll("g.rb").data(top, (d) => d.iso).join(
+      (en) => {
+        const g = en.append("g").attr("class", "rb").attr("transform", `translate(0,${yOf(N)})`).attr("opacity", 0);
+        g.append("rect").attr("x", M.l).attr("y", 2).attr("rx", 3).attr("width", 0);
+        g.append("text").attr("class", "rn").attr("x", M.l - 6).attr("text-anchor", "end").attr("dy", "0.35em");
+        g.append("text").attr("class", "rv").attr("dy", "0.35em");
+        return g;
+      },
+      (up) => up,
+      (ex) => ex.transition(tr).attr("transform", `translate(0,${yOf(N)})`).attr("opacity", 0).remove());
+    bars.style("cursor", "pointer").on("click", (e, d) => W.select(d.iso));
+    bars.transition(tr).attr("transform", (d, i) => `translate(0,${yOf(i)})`).attr("opacity", 1);
+    bars.select("rect").attr("height", rowH - 4).attr("fill", (d) => H.contColour(d.r.region)).transition(tr).attr("width", (d) => Math.max(1, sx(d.v) - M.l));
+    bars.select("text.rn").attr("y", rowH / 2).attr("font-size", Math.min(13, rowH * 0.55)).attr("fill", ink).text((d) => clip(`${d.r.flag || ""} ${d.r.name}`, mob ? 14 : 24));
+    bars.select("text.rv").attr("y", rowH / 2).attr("font-size", Math.min(12, rowH * 0.5)).attr("fill", ink)
+      .transition(tr).attr("x", (d) => Math.max(M.l, sx(d.v)) + 5)
+      .tween("text", function (d) { const el = this, from = +(el.dataset.v ?? d.v), ip = d3.interpolateNumber(from, d.v); el.dataset.v = d.v; return (k) => { el.textContent = fmtShort(f, ip(k)); }; });
+    // continents key and how many to show
+    $("#tLeg").innerHTML = H.CONTINENTS.map((c) => `<span class="lg"><span class="sw" style="background:${H.contColour(c)}"></span>${esc(c)}</span>`).join("") +
+      `<label class="fld inline rn-pick"><span>Show the top</span><select id="raceN">${[10, 15, 20, 30].map((n) => `<option ${n === N ? "selected" : ""}>${n}</option>`).join("")}</select></label>`;
+    $("#raceN").onchange = (e) => { t.raceN = +e.target.value; W.render(); };
+    $("#tNote").innerHTML = `The ${N} ${asc ? "best-ranked" : "highest"} ${ms ? "of the countries that match your filters" : "countries"} for ${esc(lower(f.label))}${year ? ` in ${year}` : ""}. Press ▶ to race through the years from ${ys[0]}.${f.info ? " " + esc(f.info) : ""}`;
+    V.csv = () => [["Rank", "Country", `${f.label}${year ? ` (${year})` : ""}`], ...all.map((d, i) => [i + 1, d.r.name, d.v])];
+    V.title = `${f.label}: the top ${N}${year ? `, ${year}` : ""}`;
   }
 
   // ======================= TABLE =======================
@@ -885,6 +1046,11 @@
     if (t.agg) p.set("ta", t.agg);
     if (t.year) p.set("ty", t.year);
     if (t.from) p.set("t0", t.from);
+    if (t.rel) p.set("trel", t.rel);
+    if (t.rel && t.base) p.set("tb", t.base);
+    if (t.raceN && t.raceN !== 15) p.set("trn", t.raceN);
+    if (t.mby && t.mby !== "auto") p.set("tmb", t.mby);
+    if (t.mfree) p.set("tmf", "1");
     if (t.share) p.set("tsh", "1");
     if (t.sk) p.set("tsk", t.sk);
     if (!t.group) p.set("tg", "0");
@@ -895,6 +1061,11 @@
     if (["median", "avg", "total"].includes(p.get("ta"))) t.agg = p.get("ta");
     if (+p.get("ty")) t.year = +p.get("ty");
     if (+p.get("t0")) t.from = +p.get("t0");
+    t.rel = ["abs", "pct", "idx"].includes(p.get("trel")) ? p.get("trel") : "";
+    t.base = +p.get("tb") || null;
+    t.raceN = [10, 15, 20, 30].includes(+p.get("trn")) ? +p.get("trn") : 15;
+    t.mby = ["cont", "countries"].includes(p.get("tmb")) ? p.get("tmb") : "auto";
+    t.mfree = p.get("tmf") === "1";
     t.share = p.get("tsh") === "1";
     t.sk = p.get("tsk") === "c" ? "c" : "";
     t.group = p.get("tg") !== "0";

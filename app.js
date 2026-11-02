@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "53";
+  const DATA_VERSION = "56";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -623,7 +623,7 @@
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
     drawCities();
-    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw();
+    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw(); window.WRG?.layout();
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
@@ -919,7 +919,7 @@
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
     if (state.view !== "map") window.WV?.render();
-    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh();
+    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh(); window.WRG?.refresh();
     const chartList = state.view !== "map" && window.WV_H?.V?.list;
     if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
     document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
@@ -1725,6 +1725,8 @@
   function footHTML() {
     return `<div class="rfoot">
         <button type="button" id="srcLink">Sources &amp; methods</button>
+        <a href="m/index.html" target="_blank" rel="noopener">Every measure A–Z</a>
+        <a href="whatsnew.html" target="_blank" rel="noopener">What's new</a>
         ${SITE.donate ? `<a href="${SITE.donate}" target="_blank" rel="noopener">Support this project</a>` : ""}
         ${SITE.github ? `<a href="${SITE.github}" target="_blank" rel="noopener">Contribute on GitHub</a>` : ""}
         ${window.self === window.top ? `<button type="button" id="copyLink">Copy link to this view</button>` : ""}
@@ -2748,14 +2750,14 @@
   // ---------- About ----------
   function openAbout() {
     const el = $("#about");
-    const used = [...new Set(FILTERS.map((f) => f.source))].concat("boundaries");
+    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl");
     el.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="aboutH">
       <button type="button" class="iconbtn close" id="aboutClose" aria-label="Close">×</button>
       <h2 id="aboutH">About Which Countries?</h2>
       <p>An open-source map for asking questions about the world. Every filter shows where its data comes from and what year it describes. Measures like “democracy” depend on who defines them, so each filter names its definition.</p>
       <p>Countries match when they pass <b>every</b> filter. City filters show cities on the map, inside the countries that match. Each end of a slider means “no limit”. Within a list filter, such as languages, ticking several options matches countries that have <b>any</b> of them. Countries with no data for a filter don’t match it.</p>
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Used for</th><th>Licence</th></tr></thead><tbody>
-      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || "Country shapes")}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
+      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || (k === "gdl" ? "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions" : "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
       </tbody></table></div>
       <p>Borders follow Natural Earth’s default view. Disputed areas such as Somaliland and Northern Cyprus take the data of the internationally recognised state; Kosovo, Taiwan and Palestine have their own entries.</p>
     </div>`;
@@ -2849,7 +2851,7 @@
   }
   function saveURL() {
     try {
-      const q = [encodeState(), window.WTR?.urlExtra?.() || ""].filter(Boolean).join("&");
+      const q = [encodeState(), window.WTR?.urlExtra?.() || "", document.body.classList.contains("embed") ? "embed=1" : ""].filter(Boolean).join("&");
       history.replaceState(null, "", location.pathname + (q ? "?" + q : ""));
     } catch (e) { /* sandboxed frames may refuse */ }
   }
@@ -2867,7 +2869,7 @@
     panBy: (dx, dy) => { const t = d3.zoomTransform(svg.node()); svg.transition().duration(200).call(zoom.translateBy, dx / t.k, dy / t.k); },
     resetZoom: () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity),
     zoomToCountry: (iso) => zoomToCountry(iso),
-    project: (lon, lat) => projection([lon, lat]), get k() { return d3.zoomTransform(svg.node()).k; },
+    project: (lon, lat) => projection([lon, lat]), geoPath: () => path, landNode: () => gLand.node(), get k() { return d3.zoomTransform(svg.node()).k; },
     layer: (name) => { let g = gRoot.select(`g.layer-${name}`); if (g.empty()) g = gRoot.append("g").attr("class", `layer-${name}`); return g; },
     zoomToPoint: (lon, lat, k = 4) => { const [x, y] = projection([lon, lat]); const vb = svg.attr("viewBox").split(" ").map(Number); svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(vb[2] / 2 - x * k, vb[3] / 2 - y * k).scale(k)); },
     // a measure made on the page (e.g. your own index)
@@ -2918,9 +2920,12 @@
   window.WTR?.init();
   window.WQM?.init();
   window.WX?.init();
+  window.WLN?.init();
   window.WCL?.init();
   window.WCG?.init();
+  window.WRG?.init();
   window.WLY?.init();
+  window.WAB?.init();
   window.WA?.init();
 
   // ---------- Go ----------
