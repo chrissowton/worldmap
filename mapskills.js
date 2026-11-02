@@ -1,4 +1,4 @@
-/* Map skills: "Describe this map" (a description and a writing frame for "describe the distribution"
+/* Map skills: "Describe this map" (the main points of the pattern on the map, with the filters in plain words)
    questions) and the coursework map (A4 landscape, with title, key, north arrow, projection, sources and the student's name). */
 (function () {
   "use strict";
@@ -68,9 +68,12 @@
     const what = a.cs ? a.f?.label : null;
     const yr = a.year ? ` in ${a.year}` : "";
     if (!a.act.length && !a.cs) return { empty: true };
+    // the filters in plain words
+    const fp = a.act.map((fl) => W.phrase?.(fl)).filter(Boolean);
+    const where = fp.length ? ` (countries where ${W.andList(fp)})` : "";
     if (a.cs && a.rows) {
       const f = a.f;
-      out.push({ h: "What the map shows", t: `${what}${yr}, for ${a.rows.length} countries${a.act.length ? " that match your filters" : ""}.` });
+      out.push({ h: "What the map shows", t: `${what}${yr}, for ${a.rows.length} countries${a.act.length ? ` that match your filters${where}` : ""}.` });
       if (a.cont.length >= 2) {
         const hi = a.cont[0], lo = a.cont[a.cont.length - 1];
         out.push({ h: "General pattern", t: `Generally highest in ${hi.k} (median ${v(f, hi.med)}) and lowest in ${lo.k} (median ${v(f, lo.med)}).` +
@@ -84,7 +87,7 @@
       if (a.links.length) out.push({ h: "Might be linked to", t: a.links.map((l) => `${l.g.label} (${l.rho > 0 ? "rises with it" : "falls as it rises"}, ρ = ${l.rho.toFixed(2)})`).join("; ") + ". A link doesn't prove one causes the other." });
     } else {
       const top = a.regions.filter((r) => r.m > 0);
-      out.push({ h: "What the map shows", t: `${a.n} of ${a.total} countries match your filters${yr}.` });
+      out.push({ h: "What the map shows", t: `${a.n} of ${a.total} countries match your filters${yr}${where}.` });
       if (top.length) {
         const main = top[0];
         out.push({ h: "General pattern", t: `${main.m} of them (${Math.round((main.m / Math.max(1, a.n)) * 100)}%) are in ${main.k}` +
@@ -98,27 +101,6 @@
     return { out, what, a };
   }
 
-  function frameHTML(d) {
-    const a = d.a;
-    if (a.cs && a.rows) {
-      const hi = a.cont[0]?.k || "____", lo = a.cont[a.cont.length - 1]?.k || "____", an = a.anoms[0];
-      return [
-        `The map shows <b>${esc(d.what)}</b>${a.year ? ` in ${a.year}` : ""}.`,
-        `In general, values are highest in <b>${esc(hi)}</b>, for example <b>${esc(a.top[0].r.name)}</b> (<b>${esc(v(a.f, a.top[0].v))}</b>), and lowest in <b>${esc(lo)}</b>, for example ____ (____).`,
-        `Values range from ____ in ____ to ____ in ____.`,
-        an ? `One anomaly is <b>${esc(an.r.name)}</b>, which is ${an.d > 0 ? "higher" : "lower"} than its neighbours in ${esc(an.sub)}. This could be because ________________.` : `One anomaly is ____, which ________________ because ________________.`,
-        `This pattern may be explained by ________________${a.links[0] ? ` (look at ${esc(a.links[0].g.label.toLowerCase())})` : ""}.`,
-      ];
-    }
-    return [
-      `The map shows the countries where ________________.`,
-      `Most of them are in <b>${esc(a.regions[0]?.k || "____")}</b>, for example ____ and ____.`,
-      `There are few or none in ____.`,
-      `One anomaly is ____, because ________________.`,
-      `This pattern may be explained by ________________.`,
-    ];
-  }
-
   function open() {
     if (W.state.view !== "map") W.setView("map");
     const d = describe();
@@ -127,23 +109,17 @@
     el.hidden = false;
     if (d.empty) {
       el.innerHTML = `<div class="dsc-head"><h2>📝 Describe this map</h2><button type="button" class="iconbtn" id="dscX" aria-label="Close">×</button></div>
-        <p>Add a filter, or shade the map by a number (for example “Life expectancy”), and I'll describe the pattern for you to check and explain.</p>`;
+        <p>Add a filter, or shade the map by a number (for example “Life expectancy”), and the main points of the pattern will appear here.</p>`;
       $("#dscX").onclick = close; return;
     }
-    const tab = open.tab || "desc";
     el.innerHTML = `<div class="dsc-head"><h2>📝 Describe this map</h2><button type="button" class="iconbtn" id="dscX" aria-label="Close">×</button></div>
-      <div class="seg dsc-tabs" role="tablist"><button type="button" role="tab" data-t="desc" aria-selected="${tab === "desc"}">Description</button><button type="button" role="tab" data-t="frame" aria-selected="${tab === "frame"}">Writing frame</button></div>
-      <div class="dsc-body">${tab === "desc" ? `<dl class="dsc-list">${d.out.map((o) => `<dt>${esc(o.h)}</dt><dd>${esc(o.t)}</dd>`).join("")}</dl>
-          <p class="hint">Worked out from the data on the map. Check it against the map, then <b>explain</b> it: that's where the marks are.</p>`
-        : `<ol class="dsc-frame">${frameHTML(d).map((l) => `<li>${l}</li>`).join("")}</ol><p class="hint">Fill in the gaps using the map and the list. Remember: describe (where, how much, examples with numbers, anomalies) before you explain.</p>`}</div>
-      <div class="dsc-row"><button type="button" class="ghost" id="dscCopy">Copy</button><button type="button" class="ghost" id="dscPrint">Coursework map…</button></div>`;
+      <div class="dsc-body"><dl class="dsc-list">${d.out.map((o) => `<dt>${esc(o.h)}</dt><dd>${esc(o.t)}</dd>`).join("")}</dl>
+        <p class="hint">Worked out from the data on the map.</p></div>
+      <div class="dsc-row"><button type="button" class="ghost" id="dscCopy">Copy</button></div>`;
     $("#dscX").onclick = close;
-    el.querySelectorAll(".dsc-tabs button").forEach((b) => (b.onclick = () => { open.tab = b.dataset.t; openCard(); }));
-    const plain = () => (open.tab === "frame" ? frameHTML(d).map((l, i) => `${i + 1}. ${l.replace(/<[^>]+>/g, "")}`) : d.out.map((o) => `${o.h}: ${o.t}`));
+    const plain = () => d.out.map((o) => `${o.h}: ${o.t}`);
     $("#dscCopy").onclick = () => { navigator.clipboard?.writeText(plain().join("\n")); $("#dscCopy").textContent = "Copied ✓"; };
-    $("#dscPrint").onclick = () => { close(); courseworkDialog(); };
   }
-  const openCard = () => open();
   function close() { const el = $("#dscCard"); if (el) el.hidden = true; }
   // keep it up to date as the map changes
   function refresh() { const el = $("#dscCard"); if (el && !el.hidden) open(); }

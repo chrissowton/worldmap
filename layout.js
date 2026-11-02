@@ -1,6 +1,6 @@
 /* Layout helpers (v50):
    - every pop-up box can be resized (drag its bottom-right corner) and made full screen (⛶ in its title bar)
-   - boxes that sit on the map (live hazards, city growth, climate graphs) stack in the bottom-left corner (the South Pacific)
+   - the map's buttons (live hazards, climate, city growth, map style) and the boxes they open sit together in the bottom-left corner (the South Pacific)
    - the two side columns can be closed with the arrows on their edges, to give the map or chart more room
    - charts and other views have a full-screen button ([data-fs]) */
 (function () {
@@ -45,15 +45,32 @@
     });
   }
 
-  // ---------- Boxes on the map stack in the bottom-left corner ----------
+  // ---------- Buttons and boxes on the map: all together in the bottom-left corner ----------
+  // (on a laptop or bigger; on a phone they stay where they were, at the top)
   const MAPBOXES = ["#liveCard", "#cgCard", "#climCard"];
+  const wide = window.matchMedia("(min-width: 761px)");
   function stack() {
     const stage = $("#mapstage");
     if (!stage) return;
+    let dock = $("#mapdock");
+    if (!dock) { dock = document.createElement("div"); dock.id = "mapdock"; dock.className = "mapdock"; stage.appendChild(dock); }
     let box = $("#mapcards");
-    if (!box) { box = document.createElement("div"); box.id = "mapcards"; box.className = "mapcards"; stage.appendChild(box); }
+    if (!box) { box = document.createElement("div"); box.id = "mapcards"; box.className = "mapcards"; }
+    if (box.parentElement !== dock) dock.prepend(box);
     MAPBOXES.forEach((sel) => { const el = $(sel); if (el && el.parentElement !== box && !el.classList.contains("is-fs")) box.appendChild(el); });
+    const btns = $("#mapbtns"), mm = $("#mmBtn"), mmCard = $("#mmCard");
+    if (wide.matches) {
+      if (btns && btns.parentElement !== dock) dock.appendChild(btns);
+      if (btns && mm && mm.parentElement !== btns) btns.appendChild(mm);
+      if (mmCard && mmCard.parentElement !== box && !mmCard.classList.contains("is-fs")) box.prepend(mmCard);
+    } else {
+      // a phone: the buttons go back to the top of the map
+      if (btns && btns.parentElement !== stage) stage.appendChild(btns);
+      if (mm && mm.parentElement !== stage) stage.insertBefore(mm, $(".zoom"));
+      if (mmCard && mmCard.parentElement !== stage) stage.insertBefore(mmCard, $(".zoom"));
+    }
   }
+  wide.addEventListener?.("change", () => stack());
 
   // ---------- Closing the side columns ----------
   let cpOff = !!store.get("wc-cp-off", false), resOff = !!store.get("wc-res-off", false);

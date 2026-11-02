@@ -2208,3 +2208,66 @@ body.cp-off .sidetoggle small, body.res-off .sidetoggle small { color: #fff; }
 .vnote.clamp.open { -webkit-line-clamp: unset; display: block; }
 /* ---------- Charts: the chart-type bar wraps instead of scrolling ---------- */
 .ctabs { flex-wrap: wrap; overflow: visible; row-gap: 4px; }
+
+/* ===== v51 ===== */
+/* Statistics: (i) explanations, sortable headings, amber and red for numbers that stand out */
+.stx-i { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; margin-left: 3px; border-radius: 50%; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font: italic 700 10.5px/1 Georgia, serif; vertical-align: 1px; cursor: help; }
+.stx-i:hover, .stx-i:focus-visible { background: var(--accent); color: var(--surface); }
+.stx-tip { position: fixed; z-index: 200; background: var(--ink); color: var(--surface); font-size: 12.5px; line-height: 1.45; padding: 8px 11px; border-radius: 8px; box-shadow: var(--shadow); pointer-events: none; }
+.stx-tip[hidden] { display: none; }
+.stx-fm { display: block; font-weight: 400; font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+.stx-sumt th { font-weight: 600; color: var(--ink); }
+.stx-sumt td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stx-amber { background: color-mix(in srgb, #e0a000 22%, var(--surface)) !important; box-shadow: inset 3px 0 0 #e0a000; }
+.stx-red { background: color-mix(in srgb, #d6453d 18%, var(--surface)) !important; box-shadow: inset 3px 0 0 #d6453d; }
+.stx-key .stx-amber, .stx-key .stx-red { padding: 1px 7px; border-radius: 5px; box-shadow: none; font-weight: 600; }
+.stx-key { font-size: 12px; color: var(--muted); }
+.stx-redt { color: #b3261e; } .stx-ambert { color: #a86d00; }
+.stx-plain { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.stx-plain p { margin: 2px 0; font-size: 13.5px; }
+.stx-hint { font-size: 11.5px; font-weight: 400; color: var(--muted); margin: 4px 0; }
+h4 .stx-hint { margin-left: 8px; }
+.stx-sort th.stx-sh { cursor: pointer; user-select: none; }
+.stx-sort th.stx-sh:hover { color: var(--accent); }
+.stx-sort th.stx-sh::after { content: " ⇅"; opacity: .35; font-size: 10px; }
+.stx-sort th[data-dir="desc"]::after { content: " ▼"; opacity: .9; color: var(--accent); }
+.stx-sort th[data-dir="asc"]::after { content: " ▲"; opacity: .9; color: var(--accent); }
+.stx-formula .stx-i { margin-right: 4px; }
+:root[data-cvd] .stx-red { background: color-mix(in srgb, #7b3294 16%, var(--surface)) !important; box-shadow: inset 3px 0 0 #7b3294; }
+
+/* group colours for the newer groups */
+[data-g="population-futures"] { --gc: var(--g-population); }
+[data-g="hazards-disasters"] { --gc: var(--g-risk-safety); }
+[data-g="food-water"] { --gc: var(--g-environment); }
+
+/* filter chips: a pastel of their group's colour, never plain white */
+.tpanel .fchip, .menu button.fchip { background: color-mix(in srgb, var(--gc, var(--accent)) 14%, var(--surface)); border-color: color-mix(in srgb, var(--gc, var(--accent)) 40%, var(--line)); }
+.tpanel .fchip:hover, .tpanel .fchip:focus-visible, .menu button.fchip:hover { background: color-mix(in srgb, var(--gc, var(--accent)) 26%, var(--surface)); }
+.tpanel .fchip.added, .menu button.fchip.added { background: color-mix(in srgb, var(--gc, var(--accent)) 36%, var(--surface)); }
+.cpanel .chip { background: color-mix(in srgb, var(--gc, var(--accent)) 18%, var(--surface)); border-color: color-mix(in srgb, var(--gc, var(--accent)) 50%, var(--line)); }
+.cpanel .chip.idle { background: color-mix(in srgb, var(--gc, var(--accent)) 8%, var(--surface)); }
+/* Learn & share buttons: tinted, and the words wrap instead of spilling out */
+.cp-tool { background: color-mix(in srgb, var(--tint-learn, #f6eedb) 55%, var(--surface)); }
+.cp-tool:hover { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+@media (min-width: 761px) {
+  .cp-tool { white-space: normal; min-width: 0; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+  .cp-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* the side-column tabs: bigger and easier to see */
+.sidetoggle { min-width: 22px !important; min-height: 64px !important; font-size: 18px !important; font-weight: 700; }
+body.cp-off .sidetoggle.left, body.res-off .sidetoggle.right { min-width: 34px !important; padding: 12px 4px !important; font-size: 20px !important; }
+.sidetoggle small { font-size: 14px !important; font-weight: 700; letter-spacing: .02em; }
+
+/* map buttons and boxes: all together in the bottom-left corner (the South Pacific) */
+.mapdock { position: absolute; left: 12px; bottom: 12px; z-index: 18; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: calc(100% - 90px); max-height: calc(100% - 24px); pointer-events: none; }
+.mapdock > * { pointer-events: auto; }
+.mapdock .mapcards { position: static; max-height: none; max-width: none; flex: 0 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.mapdock .mapbtns { flex: none; }
+.mapdock .mapcards:empty { display: none; }
+.mapdock .mapbtns { position: static; max-width: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.mapdock .mmbtn { position: static !important; top: auto; right: auto; left: auto; }
+.mapdock .mmcard { position: relative !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; width: 300px; max-width: 100%; }
+.mapdock .mapcards > .card { position: relative !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; flex: none; }
+/* keep the closed-column tabs off the charts' labels */
+@media (min-width: 761px) { body.cp-off #viewwrap { padding-left: 34px; } body.res-off #viewwrap { padding-right: 34px; } }

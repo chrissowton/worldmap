@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "50";
+  const DATA_VERSION = "51";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -2366,7 +2366,8 @@
   const themes = () => (state.mode === "physical" ? PHYS_THEMES : HUMAN_THEMES);
   const modeGroups = () => new Set(themes().flatMap((t) => t.groups));
   const MENU_LABELS = window.MENU_LABELS || {};
-  const SHOW_FIRST = 6; // filters shown per category before "More…"
+  // on a phone, filters shown per category before "More…"; on a laptop or bigger, all of them
+  const showFirst = () => (window.innerWidth <= 760 ? 6 : Infinity);
   const touch = window.matchMedia("(hover: none)");
   const expanded = new Set();
   let openTheme = null;
@@ -2422,7 +2423,7 @@
       <div class="tp-body">${t.groups.map((g) => {
         const es = entriesFor(g);
         const open = expanded.has(g);
-        const shown = open ? es : es.slice(0, SHOW_FIRST);
+        const SHOW_FIRST = showFirst(), shown = open ? es : es.slice(0, SHOW_FIRST);
         return `<section class="gsec" data-g="${gslug(g)}"><h4>${esc(g)}</h4><div class="fchips">${shown.map((e) => {
           const added = entryAdded(e);
           return `<button type="button" class="fchip${added ? " added" : ""}" data-id="${esc(e.id)}" data-g="${gslug(g)}">${entryTime(e) ? CLOCK : ""}<span>${esc(entryLabel(e))}</span>${added ? `<span class="tick" aria-label="added">✓</span>` : ""}</button>`;
@@ -2849,7 +2850,7 @@
   window.WC = { openSheet: (n) => openSheet(n),
     F, FILTERS, rows, byIso, geo, topo, cities, flows, state, famOf, esc, gslug, fmt, fmtShort, fmtFull, yearLabel, timeFrom, UNITS,
     applyYear, CLOCK, compact, TS, TS_YEARS, tsValue, SURVEY_KEYS, span, CAT_TS, NO_LOOKBACK, numericFilters, yearlyNumeric, measureOptions, fmtChange, cssVar,
-    pool, isActive, passes, chipLabel, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
+    pool, isActive, passes, chipLabel, phrase, andList, matchList, setMode, itemsFor, showFeature, toggleFeature, hasFeature, applyPreset: (p) => { if (state.view !== "map") state.view = "map"; applyPreset(p); },
     get lastEval() { return lastEval; }, get styleInfo() { return styleInfo; }, get cs() { return lastCS; }, colourKey: () => colourKey(), CLASS_NAMES,
     render: (o) => render(o), refreshList: () => { if (!state.selected && state.view !== "map" && window.WV_H?.V?.list) renderChartList(); }, setView, select: (iso) => { state.selected = iso; state.open = null; render(); }, highlightMap: (iso, on) => highlight(iso, on),
     mapSVG: () => svg.node(), get matches() { return lastMatches; }, applyQS, getQS: () => encodeState(), setYear: (y) => setYear(y), stopPlay: () => stopPlay(),

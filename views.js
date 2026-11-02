@@ -166,7 +166,7 @@
           <label class="fld"><span>Measure</span><select id="rK" data-pick></select></label>
           <label class="fld"><span>Year</span><select id="rYear"></select></label>
           <div class="seg" role="radiogroup" aria-label="Show as"><button type="button" role="radio" data-m="bars">Ranked bars</button><button type="button" role="radio" data-m="cont">By continent</button></div>
-          <label class="tog" id="rOnlyL"><input type="checkbox" id="rOnly"> Only countries that match</label>
+          <label class="tog" id="rOnlyL"><input type="checkbox" id="rOnly"> <span id="rOnlyT">Only countries that match the filters</span></label>
         </div></div>
         <div class="vlegend vlegend-top" id="rLeg"></div>
         <div class="vbody scroll" id="vbody"><svg id="vsvg" role="img"></svg></div>
@@ -391,7 +391,8 @@
     // no animation when the chart has just changed size, so bubbles never lag behind the axes
     if (drawCompare.size !== w + "x" + h) { dur = 0; drawCompare.size = w + "x" + h; }
     const mob = w < 560;
-    const M = { t: 58, r: mob ? 12 : 24, b: 40, l: mob ? 46 : 60 };
+    const M = { t: 58, r: mob ? 40 : 60, b: 40, l: mob ? 46 : 60 };
+    const PAD = mob ? 8 : 16; // keeps bubbles at the very top or end of the scale (e.g. 100%) inside the chart
     // axes span every year so bubbles move against still axes
     const ext = (key, log) => {
       const e = yrs && TS[key] ? allYearsExtent(key, log) : d3.extent(pts, (p) => (key === c.x ? p.x : p.y));
@@ -400,8 +401,8 @@
     let ex = ext(c.x, logx), ey = ext(c.y, logy);
     if (fx.bounds && !logx) ex = [Math.min(ex[0], fx.bounds[0]), Math.max(ex[1], fx.bounds[1])];
     if (fy.bounds && !logy) ey = [Math.min(ey[0], fy.bounds[0]), Math.max(ey[1], fy.bounds[1])];
-    const sx0 = (logx ? d3.scaleLog() : d3.scaleLinear()).domain(ex).range([M.l, w - M.r]).nice();
-    const sy0 = (logy ? d3.scaleLog() : d3.scaleLinear()).domain(ey).range([h - M.b, M.t]).nice();
+    const sx0 = (logx ? d3.scaleLog() : d3.scaleLinear()).domain(ex).range([M.l + PAD, w - M.r - PAD]).nice();
+    const sy0 = (logy ? d3.scaleLog() : d3.scaleLinear()).domain(ey).range([h - M.b - PAD, M.t + PAD]).nice();
     // zoomed in: the same scales, stretched
     const zt = c.zt;
     const sx = zt ? zt.rescaleX(sx0) : sx0, sy = zt ? zt.rescaleY(sy0) : sy0;
@@ -441,6 +442,7 @@
     const a = svg.select("g.axes");
     a.selectAll("text.tx").data(tx).join("text").attr("class", "tx").attr("x", sx).attr("y", h - M.b + 16).attr("text-anchor", "middle").attr("fill", muted).attr("font-size", 11).text((v) => fmtShort(fx, v));
     a.selectAll("text.ty").data(ty).join("text").attr("class", "ty").attr("x", M.l - 6).attr("y", sy).attr("dy", "0.35em").attr("text-anchor", "end").attr("fill", muted).attr("font-size", 11).text((v) => fmtShort(fy, v));
+    a.selectAll("text.ty2").data(ty).join("text").attr("class", "ty2").attr("x", w - M.r + 6).attr("y", sy).attr("dy", "0.35em").attr("text-anchor", "start").attr("fill", muted).attr("font-size", 11).text((v) => fmtShort(fy, v));
     a.selectAll("text.atx").data([fx]).join("text").attr("class", "atx").attr("x", w - M.r).attr("y", h - 6).attr("text-anchor", "end").attr("fill", ink).attr("font-size", 12.5).attr("font-weight", 600).text(`${fx.label} →${logx ? " (log scale)" : ""}`);
     a.selectAll("text.ctitle").data([0]).join("text").attr("class", "ctitle").attr("x", 4).attr("y", 18).attr("fill", ink).attr("font-size", mob ? 14 : 16).attr("font-weight", 700)
       .text(`${fy.label} and ${lower(fx.label)}${year ? `, ${year}` : ""}`);
@@ -592,6 +594,7 @@
     $$(".seg button[data-m]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.m === k.mode)));
     const ms = matchSet();
     $("#rOnlyL").hidden = !ms;
+    $("#rOnlyT").textContent = `Only countries that match the ${W.lastEval.act.length === 1 ? "filter" : "filters"}`;
     $("#rOnly").checked = k.only;
     const year = sp ? k.year : null;
     k.pins ||= [];
