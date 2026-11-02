@@ -1,0 +1,97 @@
+/* Layout helpers (v50):
+   - every pop-up box can be resized (drag its bottom-right corner) and made full screen (⛶ in its title bar)
+   - boxes that sit on the map (live hazards, city growth, climate graphs) stack in the bottom-left corner (the South Pacific)
+   - the two side columns can be closed with the arrows on their edges, to give the map or chart more room
+   - charts and other views have a full-screen button ([data-fs]) */
+(function () {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+  };
+  let W;
+  const rerender = () => setTimeout(() => { window.dispatchEvent(new Event("resize")); W?.render(); }, 30);
+
+  // ---------- Full screen for any box ----------
+  function setFS(el, on) {
+    el.classList.toggle("is-fs", on);
+    document.body.classList.toggle("has-fs", !!document.querySelector(".is-fs"));
+    el.querySelectorAll(".fsbtn").forEach((b) => { b.textContent = on ? "🗗" : "⛶"; b.title = on ? "Leave full screen (Esc)" : "Full screen"; b.setAttribute("aria-pressed", String(on)); });
+    if (el.matches("[data-fs-target], #viewwrap")) document.querySelectorAll(`[data-fs="#${el.id}"]`).forEach((b) => (b.textContent = on ? "🗗 Leave full screen" : "⛶ Full screen"));
+    rerender();
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest?.("[data-fs]");
+    if (b) { const el = $(b.dataset.fs); if (el) setFS(el, !el.classList.contains("is-fs")); return; }
+    const f = e.target.closest?.(".fsbtn");
+    if (f) { const el = f.closest(POPUPS); if (el) setFS(el, !el.classList.contains("is-fs")); }
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const el = [...document.querySelectorAll(".is-fs")].pop(); if (el) { setFS(el, false); e.stopPropagation(); } } }, true);
+
+  // ---------- Pop-ups: resizable, with a full-screen button ----------
+  const POPUPS = ".dsc, .livecard, #starter, #mmCard";
+  const HEADS = ".dsc-head, .mmhead, .qz-head";
+  function enhance() {
+    document.querySelectorAll(POPUPS).forEach((box) => {
+      box.classList.add("rsz");
+      const head = box.querySelector(HEADS);
+      if (!head || head.querySelector(".fsbtn")) return;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "iconbtn fsbtn"; b.textContent = box.classList.contains("is-fs") ? "🗗" : "⛶";
+      b.title = box.classList.contains("is-fs") ? "Leave full screen (Esc)" : "Full screen"; b.setAttribute("aria-label", "Full screen");
+      const close = head.querySelector(".iconbtn:not(.fsbtn), .hide");
+      if (close && close.parentElement === head) head.insertBefore(b, close); else head.appendChild(b);
+    });
+  }
+
+  // ---------- Boxes on the map stack in the bottom-left corner ----------
+  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard"];
+  function stack() {
+    const stage = $("#mapstage");
+    if (!stage) return;
+    let box = $("#mapcards");
+    if (!box) { box = document.createElement("div"); box.id = "mapcards"; box.className = "mapcards"; stage.appendChild(box); }
+    MAPBOXES.forEach((sel) => { const el = $(sel); if (el && el.parentElement !== box && !el.classList.contains("is-fs")) box.appendChild(el); });
+  }
+
+  // ---------- Closing the side columns ----------
+  let cpOff = !!store.get("wc-cp-off", false), resOff = !!store.get("wc-res-off", false);
+  function sides() {
+    document.body.classList.toggle("cp-off", cpOff);
+    document.body.classList.toggle("res-off", resOff);
+    const a = $("#cpToggle"), b = $("#resToggle");
+    if (a) { a.innerHTML = cpOff ? "<span>›</span><small>Panel</small>" : "<span>‹</span>"; a.title = cpOff ? "Show the control panel" : "Hide the control panel (more room for the map)"; a.setAttribute("aria-expanded", String(!cpOff)); }
+    if (b) { b.innerHTML = resOff ? "<span>‹</span><small>List</small>" : "<span>›</span>"; b.title = resOff ? "Show the list of countries" : "Hide the list of countries (more room for the map)"; b.setAttribute("aria-expanded", String(!resOff)); }
+    placeToggles();
+  }
+  function placeToggles() {
+    const b = $("#resToggle"), res = $("#results");
+    if (b && res) b.style.right = (resOff ? 0 : res.offsetWidth) + "px";
+  }
+  function makeToggles() {
+    const content = $(".content"), main = $(".main");
+    if (content && !$("#cpToggle")) {
+      const a = document.createElement("button"); a.type = "button"; a.id = "cpToggle"; a.className = "sidetoggle left";
+      a.onclick = () => { cpOff = !cpOff; store.set("wc-cp-off", cpOff); sides(); rerender(); };
+      content.appendChild(a);
+    }
+    if (main && !$("#resToggle")) {
+      const b = document.createElement("button"); b.type = "button"; b.id = "resToggle"; b.className = "sidetoggle right";
+      b.onclick = () => { resOff = !resOff; store.set("wc-res-off", resOff); sides(); rerender(); };
+      main.appendChild(b);
+    }
+    sides();
+  }
+
+  let queued = false;
+  const tick = () => { queued = false; enhance(); stack(); placeToggles(); };
+  function init() {
+    W = window.WC;
+    makeToggles();
+    tick();
+    new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(tick); } }).observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", placeToggles);
+  }
+  window.WLY = { init, setFS };
+})();

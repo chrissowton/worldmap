@@ -374,6 +374,34 @@ for row in csv.DictReader(open(raw("cities.csv"), encoding="utf-8")):
     if row["iso3"] not in countries:
         continue
     cities.append([row["name"], row["iso3"], float(row["lat"]), float(row["lon"]), int(row["population"]), int(row["capital"])])
+# Use the population of the whole urban area (UN World Urbanization Prospects 2025, from make_extra.py) where we have it:
+# it's the figure people usually quote ("Tokyo, 33 million") and matches the city growth map. Each UN city is matched to
+# the biggest GeoNames city of the same country near its centre; UN cities with no match are added.
+if os.path.exists(os.path.join(ROOT, "cities_growth.json")):
+    import math, re as _re
+    wup = json.load(open(os.path.join(ROOT, "cities_growth.json"), encoding="utf-8"))
+    y25 = wup["years"].index(2025)
+    def km(a, b, c, d):
+        p1, p2 = math.radians(a), math.radians(c)
+        return 6371 * 2 * math.asin(math.sqrt(math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(math.radians(d - b) / 2) ** 2))
+    taken, added, matched = set(), 0, 0
+    for name, iso, lat, lon, cap, pops in sorted(wup["c"], key=lambda c: -c[5][y25]):
+        popK = pops[y25]
+        if popK < 300 or iso not in countries:
+            continue
+        radius = min(60, 10 + math.sqrt(popK) * 0.25)
+        near = [(i, c) for i, c in enumerate(cities) if c[1] == iso and i not in taken and km(lat, lon, c[2], c[3]) <= radius]
+        if near:
+            i, c = max(near, key=lambda ic: (ic[1][5], ic[1][4]))
+            taken.add(i)
+            if popK * 1000 > c[4]:
+                c[4] = int(round(popK * 1000, -3)); matched += 1
+        else:
+            m = _re.search(r"\(([^)]+)\)", name)
+            clean = m.group(1) if m else name
+            cities.append([clean, iso, round(lat, 3), round(lon, 3), int(round(popK * 1000, -3)), 1 if cap else 0])
+            taken.add(len(cities) - 1); added += 1
+    print(f"Cities: {matched} given their urban-area population (UN WUP 2025), {added} added")
 with open(os.path.join(ROOT, "cities.json"), "w", encoding="utf-8") as f:
     json.dump(cities, f, ensure_ascii=False, separators=(",", ":"))
 print(f"Wrote {len(cities)} cities")

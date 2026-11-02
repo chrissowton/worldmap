@@ -35,6 +35,7 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Population futures**: UN projections to 2100 for population, fertility, life expectancy, median age, natural increase and migration, playable on the year slider.
 - **Hazards, food, water and footprint**: WorldRiskIndex, disaster deaths and displacement, warming since 1940, Global Hunger Index, calories, water use, tree cover loss, ecological footprint, urbanisation to 2050, aid and debt.
 - **Politics and society**: Corruption Perceptions Index (2012–2025), press freedom (RSF 2026), deaths in armed conflicts, girls married before 15, births outside marriage, and mismanaged plastic waste; tourism updated to 2024 and energy production updated.
+- **Layout**: each part of the screen has its own light colour; every pop-up can be resized and made full screen; boxes on the map stack in the bottom-left corner; the side columns close with the arrows on their edges; charts have a full-screen button.
 - **Quiz maker**: type what a quiz should be about ("Kenya", "volcanoes in Kenya", "rivers in Africa") and choose how many questions. Remove or swap any, then play it on the site, share a link that takes students straight into it, print it with an answer key (or save as PDF), or download a spreadsheet for Kahoot, Google Forms or Quizizz, or copy it for Quizlet.
 - **Downloads**: every map and chart as a PNG picture or an editable SVG, the data shown, every measure for the countries shown (CSV), a coursework map, and a reference to cite.
 - **Number hunt** (Learn & share, or type a number in the search box and press Enter): finds facts from across the site that come to that number (life expectancy of 42 years, 42% of land covered by forest, a peak 4,200 m high…) and lays them out as a one-page poster to save or print.
@@ -145,6 +146,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `citygrowth.js` | The city growth map (1975–2050) |
 | `make_extra.py` | Builds `extra.csv` and `cities_growth.json` from the downloads listed in DATA.md |
 | `quizmaker.js` | The quiz maker: finds questions on a place or topic, and plays, shares, prints and exports them |
+| `layout.js` | Resizable and full-screen pop-ups, map boxes stacked bottom-left, closing the side columns |
 | `quiz.js` | The quiz: builds the question bank from the data, checks typed answers and makes the multiple-choice options |
 | `physical.js` | The physical side: feature layers, base maps, feature lists and profiles |
 | `physical.json` | Physical map layers: peaks, landforms, rivers, lakes, ice, plates and boundaries, volcanoes, earthquakes, trenches, deltas, waterfalls, biomes, climate zones (built by `make_physical.py`) |

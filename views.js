@@ -41,7 +41,7 @@
 
   // ---------- State for each view (saved in the link) ----------
   const V = {
-    cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: false, focus: null },
+    cmp: { x: "gdp_per_capita", y: "life_expectancy", size: "population", colour: "region", logx: null, logy: null, year: null, pins: [], fit: true, focus: null },
     rank: { key: "", mode: "bars", year: null, only: false },
     trend: { key: "life_expectancy", pins: [], conts: true, world: true, matches: false, group: true, log: null, type: "line", agg: null, year: null, from: null, share: false, sk: "" },
     task: "",
@@ -138,26 +138,29 @@
     const wrap = $("#viewwrap");
     V.built = view;
     const shells = {
-      compare: `<div class="vhead"><div class="vctrls">
+      compare: `<div class="vhead"><div class="vctrls cmpctrls">
           <label class="fld"><span>↑ Up</span><select id="cY" data-pick></select></label>
           <label class="fld"><span>→ Across</span><select id="cX" data-pick></select></label>
           <label class="fld"><span>Bubble size</span><select id="cZ" data-pick></select></label>
           <label class="fld"><span>Colour</span><select id="cC" data-pick></select></label>
+          <span class="vtools">
+            <details class="vopts-menu"><summary>⚙ Options</summary><div class="vopts-pop">
+              <label class="tog"><input type="checkbox" id="cFit"> Trend line</label>
+              <label class="tog"><input type="checkbox" id="cQuad"> Corner labels</label>
+              <label class="tog"><input type="checkbox" id="cLogX"> Log scale across</label>
+              <label class="tog"><input type="checkbox" id="cLogY"> Log scale up</label>
+            </div></details>
+            <button type="button" class="ghost vfs" data-fs="#viewwrap" title="Full screen (Esc to leave)">⛶ Full screen</button>
+          </span>
         </div></div>
         <div class="vbody" id="vbody"><svg id="vsvg" role="img"></svg>
           <div class="czoom" role="group" aria-label="Zoom the chart"><button type="button" id="cZin" aria-label="Zoom in">+</button><button type="button" id="cZout" aria-label="Zoom out">−</button><button type="button" id="cZreset" aria-label="Show the whole chart" title="Show the whole chart">⟲</button></div></div>
         <div class="vfoot">
           <div class="vyear" id="cYearRow"><button type="button" class="play" id="cPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("cSpeed") : ""}<span class="yslide"><input type="range" id="cYear" step="1" aria-label="Year"></span><span class="num vy" id="cYearLab"></span><span class="ysig" id="cSig" hidden></span></div>
-          <div class="vlegend" id="cLeg"></div>
-          <p class="vnote" id="cNote"></p>
-          <div class="vopts">
-            <label class="tog"><input type="checkbox" id="cLogX"> Log scale across</label>
-            <label class="tog"><input type="checkbox" id="cLogY"> Log scale up</label>
-            <label class="tog"><input type="checkbox" id="cFit"> Trend line</label>
-            <label class="tog"><input type="checkbox" id="cQuad"> Corner labels</label>
+          <div class="vrow2"><div class="vlegend" id="cLeg"></div>
             <span class="vfind"><input id="cFind" list="vCountries" placeholder="Follow a country…" aria-label="Follow a country"><datalist id="vCountries"></datalist></span>
-            <span class="pins" id="cPins"></span>
-          </div>
+            <span class="pins" id="cPins"></span></div>
+          <p class="vnote clamp" id="cNote" title="Click to read more"></p>
         </div>`,
       rank: `<div class="vhead"><div class="vctrls">
           <label class="fld"><span>Measure</span><select id="rK" data-pick></select></label>
@@ -191,10 +194,12 @@
     const last = added.length ? added[added.length - 1] : nums[nums.length - 1];
     V.rank.key = last; V.rank.year = null; V.rank.only = W.state.filters.length > 0;
     V.trend.key = last; V.trend.agg = null; V.trend.year = null; V.trend.from = null; V.trend.log = null;
-    V.cmp.y = last; V.cmp.logy = null; V.cmp.year = null;
-    const other = nums.filter((k) => k !== last);
-    if (other.length) { V.cmp.x = other[other.length - 1]; V.cmp.logx = null; }
-    else if (V.cmp.x === last) V.cmp.x = last === "gdp_per_capita" ? "life_expectancy" : "gdp_per_capita";
+    // Compare: with two or more number filters, the first goes across and the second up; with one, it goes up
+    if (nums.length >= 2) { V.cmp.x = nums[0]; V.cmp.y = nums[1]; V.cmp.logx = null; V.cmp.logy = null; V.cmp.year = null; }
+    else {
+      V.cmp.y = last; V.cmp.logy = null; V.cmp.year = null;
+      if (V.cmp.x === last) V.cmp.x = last === "gdp_per_capita" ? "life_expectancy" : "gdp_per_capita";
+    }
   }
   // "Source: …" for the measures a chart shows, on screen and in downloads
   function sourceText(keys, extra = []) {
@@ -284,6 +289,7 @@
     $("#cYear").onchange = () => W.render();
     $("#cPlay").onclick = () => (playTimer ? stopPlay() : startPlay());
     window.WPL?.bindSpeed($("#cSpeed"));
+    $("#cNote").onclick = (e) => e.currentTarget.classList.toggle("open");
     $("#cFind").onchange = (e) => { const r = findCountry(e.target.value); e.target.value = ""; if (r && !c.pins.includes(r.iso3)) { c.pins = c.pins.concat(r.iso3).slice(-8); W.render(); } };
   }
   let zoomer = null;
@@ -385,7 +391,7 @@
     // no animation when the chart has just changed size, so bubbles never lag behind the axes
     if (drawCompare.size !== w + "x" + h) { dur = 0; drawCompare.size = w + "x" + h; }
     const mob = w < 560;
-    const M = { t: 30, r: mob ? 12 : 24, b: 40, l: mob ? 46 : 60 };
+    const M = { t: 58, r: mob ? 12 : 24, b: 40, l: mob ? 46 : 60 };
     // axes span every year so bubbles move against still axes
     const ext = (key, log) => {
       const e = yrs && TS[key] ? allYearsExtent(key, log) : d3.extent(pts, (p) => (key === c.x ? p.x : p.y));
@@ -436,7 +442,11 @@
     a.selectAll("text.tx").data(tx).join("text").attr("class", "tx").attr("x", sx).attr("y", h - M.b + 16).attr("text-anchor", "middle").attr("fill", muted).attr("font-size", 11).text((v) => fmtShort(fx, v));
     a.selectAll("text.ty").data(ty).join("text").attr("class", "ty").attr("x", M.l - 6).attr("y", sy).attr("dy", "0.35em").attr("text-anchor", "end").attr("fill", muted).attr("font-size", 11).text((v) => fmtShort(fy, v));
     a.selectAll("text.atx").data([fx]).join("text").attr("class", "atx").attr("x", w - M.r).attr("y", h - 6).attr("text-anchor", "end").attr("fill", ink).attr("font-size", 12.5).attr("font-weight", 600).text(`${fx.label} →${logx ? " (log scale)" : ""}`);
-    a.selectAll("text.aty").data([fy]).join("text").attr("class", "aty").attr("x", M.l - (mob ? 40 : 54)).attr("y", 14).attr("fill", ink).attr("font-size", 12.5).attr("font-weight", 600).text(`↑ ${fy.label}${logy ? " (log scale)" : ""}`);
+    a.selectAll("text.ctitle").data([0]).join("text").attr("class", "ctitle").attr("x", 4).attr("y", 18).attr("fill", ink).attr("font-size", mob ? 14 : 16).attr("font-weight", 700)
+      .text(`${fy.label} and ${lower(fx.label)}${year ? `, ${year}` : ""}`);
+    a.selectAll("text.csub").data([0]).join("text").attr("class", "csub").attr("x", 4).attr("y", 34).attr("fill", muted).attr("font-size", 11.5)
+      .text(`Each bubble is a country${fz ? `, sized by ${lower(fz.label)}` : ""}${c.colour !== "match" ? `, coloured by ${lower((COLOUR_KEYS.find(([k]) => k === c.colour) || [, "group"])[1])}` : ""}.`);
+    a.selectAll("text.aty").data([fy]).join("text").attr("class", "aty").attr("x", M.l - (mob ? 40 : 54)).attr("y", M.t - 8).attr("fill", ink).attr("font-size", 12.5).attr("font-weight", 600).text(`↑ ${fy.label}${logy ? " (log scale)" : ""}`);
     // trend line and correlation (among the countries shown in colour)
     const used = pts.filter((p) => p.m);
     const T = (v, log) => (log ? Math.log10(v) : v);
@@ -1067,7 +1077,7 @@
       p.set("cl", lg || "-");
       if (c.year) p.set("cyr", c.year);
       if (c.pins.length) p.set("cp", c.pins.join("."));
-      if (c.fit) p.set("cf", "1");
+      if (!c.fit) p.set("cf", "0");
     } else if (st.view === "rank") {
       p.set("rk", V.rank.key || defaultKey());
       if (V.rank.mode !== "bars") p.set("rm", V.rank.mode);
@@ -1094,7 +1104,7 @@
     if (p.get("cl")) { const l = p.get("cl"); c.logx = l.includes("x"); c.logy = l.includes("y"); }
     if (+p.get("cyr")) c.year = +p.get("cyr");
     if (p.get("cp")) c.pins = p.get("cp").split(".").filter((x) => /^[A-Z]{3}$/.test(x)).slice(0, 8);
-    c.fit = p.get("cf") === "1";
+    c.fit = p.get("cf") !== "0";
     if (ok(p.get("rk"))) V.rank.key = p.get("rk");
     if (p.get("rm") === "cont") V.rank.mode = "cont";
     if (+p.get("ry")) V.rank.year = +p.get("ry");

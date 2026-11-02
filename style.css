@@ -2123,3 +2123,88 @@ body.no-anim #map, body.no-anim #map * { transition: none !important; }
 .qm-b { float: right; display: inline-flex; gap: 2px; margin-left: 8px; }
 .qm-b .iconbtn { width: 26px; height: 26px; }
 .qz-setbar { margin: 0 0 4px; font-size: 12.5px; color: var(--quiz); }
+
+/* =====================================================================
+   v50: each part of the screen has its own light colour and a clear edge
+   ===================================================================== */
+:root {
+  --tint-filters: #e8f4f1; --tint-view: #eaf0fb; --tint-learn: #fbf2e3; --tint-foot: #f1edf9; --tint-results: #f3f6ec; --tint-bar: #fdf8e6; --tint-head: #f4f7f9;
+  --edge: color-mix(in srgb, var(--ink) 16%, transparent); --lift: 0 1px 2px rgba(20, 33, 43, .06), 0 2px 8px rgba(20, 33, 43, .06);
+}
+:root[data-theme="dark"] { --tint-filters: #13302b; --tint-view: #172338; --tint-learn: #33291a; --tint-foot: #241e33; --tint-results: #1d2718; --tint-bar: #2f2a15; --tint-head: #121c22; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tint-filters: #13302b; --tint-view: #172338; --tint-learn: #33291a; --tint-foot: #241e33; --tint-results: #1d2718; --tint-bar: #2f2a15; --tint-head: #121c22; } }
+@media (min-width: 761px) {
+  .cpanel { background: var(--bg); }
+  .cp-sec { margin: 8px 8px 0; border: 1px solid var(--edge); border-radius: 12px; box-shadow: var(--lift); }
+  .cp-sec:last-child { border-bottom: 1px solid var(--edge); margin-bottom: 8px; }
+  .cp-sec[data-s="filters"] { background: var(--tint-filters); }
+  .cp-sec[data-s="view"] { background: var(--tint-view); }
+  .cp-sec[data-s="learn"], .cp-sec[data-s="share"] { background: var(--tint-learn); }
+  .cp-sec .cp-tool, .cp-sec .views, .cp-sec .chips .chip { background: var(--surface); }
+  .cp-quiz { margin: 8px 8px 0; width: calc(100% - 16px); box-shadow: var(--lift); }
+  .bar { background: var(--tint-bar); border-bottom: 1px solid var(--edge); }
+  .mapfoot, .vfoot { background: var(--tint-foot); border-top: 2px solid var(--edge); box-shadow: 0 -2px 6px rgba(20, 33, 43, .05); }
+  .vhead { background: var(--tint-view); border-bottom: 1px solid var(--edge); }
+  .results { background: var(--tint-results); border-left: 2px solid var(--edge); box-shadow: -2px 0 6px rgba(20, 33, 43, .05); }
+  .results .rlist .row, .results .frow { background: transparent; }
+  .cpanel { border-right: 2px solid var(--edge); }
+}
+
+/* ---------- Pop-ups: resizable and full screen ---------- */
+.rsz { resize: both; overflow: auto; min-width: 260px; min-height: 120px; }
+#starter.rsz { min-height: 0; }
+.fsbtn { font-size: 14px; }
+.dsc-head, .mmhead { gap: 4px; }
+.dsc-head .fsbtn { margin-left: auto; }
+.dsc-head .fsbtn + .iconbtn { margin-left: 0; }
+.is-fs { position: fixed !important; inset: 12px !important; width: auto !important; height: auto !important; max-width: none !important; max-height: none !important;
+  transform: none !important; z-index: 95 !important; resize: none !important; overflow: auto !important; box-shadow: 0 20px 60px rgba(0,0,0,.35) !important; }
+body.has-fs::after { content: ""; position: fixed; inset: 0; background: rgba(10, 20, 26, .35); z-index: 94; }
+#viewwrap.is-fs { background: var(--surface); border-radius: 12px; display: flex; flex-direction: column; }
+#viewwrap.is-fs .vbody { flex: 1; }
+
+/* ---------- Boxes on the map: stacked bottom-left ---------- */
+.mapcards { position: absolute; left: 12px; bottom: 12px; z-index: 16; display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+  max-height: calc(100% - 64px); max-width: calc(100% - 90px); overflow-y: auto; pointer-events: none; }
+.mapcards > * { pointer-events: auto; }
+.mapcards:empty { display: none; }
+#mapcards > .card { position: relative; inset: auto; left: auto; right: auto; top: auto; bottom: auto; transform: none; margin: 0; max-height: none; flex: none; }
+#mapcards > .livecard { width: min(340px, 100%); }
+#mapcards > .clim { width: min(500px, 100%); }
+#mapcards > .clim:has(.cl-grid.two) { width: min(900px, 100%); }
+
+/* ---------- Side columns can be closed ---------- */
+.content { position: relative; }
+.main { position: relative; }
+.sidetoggle { position: absolute; top: 50%; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 1px solid var(--edge); background: var(--surface); color: var(--ink); box-shadow: var(--shadow); padding: 10px 3px; cursor: pointer; font-size: 16px; line-height: 1; }
+.sidetoggle small { writing-mode: vertical-rl; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; color: var(--accent); }
+.sidetoggle.left { left: 0; border-left: 0; border-radius: 0 10px 10px 0; }
+.sidetoggle.right { border-right: 0; border-radius: 10px 0 0 10px; }
+.sidetoggle:hover { background: var(--accent-soft); }
+body.cp-off .sidetoggle.left, body.res-off .sidetoggle.right { background: var(--accent); color: #fff; padding: 12px 5px; }
+body.cp-off .sidetoggle small, body.res-off .sidetoggle small { color: #fff; }
+@media (min-width: 761px) {
+  body.cp-off .shell { grid-template-columns: minmax(0, 1fr) !important; }
+  body.cp-off .cpanel { display: none; }
+  body.res-off .main { grid-template-columns: minmax(0, 1fr) 0 !important; }
+  body.res-off .main > .results { display: none; }
+}
+@media (max-width: 760px) { .sidetoggle { display: none; } }
+
+/* ---------- Compare: tidier controls ---------- */
+.cmpctrls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; }
+.cmpctrls .vtools { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.vopts-menu { position: relative; }
+.vopts-menu > summary { list-style: none; cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+.vopts-menu > summary::-webkit-details-marker { display: none; }
+.vopts-pop { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
+.vfs { font-size: 13px; padding: 6px 10px; }
+.vrow2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.vrow2 .vlegend { flex: 1 1 auto; }
+.vnote.clamp { font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; margin: 0; }
+.vnote.clamp::after { content: ""; }
+.vnote.clamp.open { -webkit-line-clamp: unset; display: block; }
+/* ---------- Charts: the chart-type bar wraps instead of scrolling ---------- */
+.ctabs { flex-wrap: wrap; overflow: visible; row-gap: 4px; }

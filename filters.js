@@ -552,7 +552,7 @@ window.FILTERS = [
     label: "City population", short: "City pop.", scale: "log", format: "people", initial: { min: 1e6 },
     say: (b) => `the population is ${b}`,
     source: "geonames",
-    info: "People living in the city itself, not counting suburbs and nearby towns. Shows cities on the map. Cities in countries that match your other filters are shown.",
+    info: "People living in the whole urban area (the city and the built-up area around it), from the UN's World Urbanization Prospects 2025, so it matches the City growth map. Smaller cities the UN doesn't cover use the population of the city itself (GeoNames). Shows cities on the map; cities in countries that match your other filters are shown.",
     keywords: "city cities town urban megacity population metropolis",
   },
   {
