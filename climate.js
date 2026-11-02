@@ -108,7 +108,7 @@
     el.innerHTML = `<div class="dsc-head"><h2>🌡️ Climate graph${list.length > 1 ? "s" : ""}</h2><button type="button" class="iconbtn" id="clX" aria-label="Close">×</button></div>
       <div class="cl-grid ${list.length > 1 ? "two" : ""}">${list.map((s, j) => `<section class="cl-one">${graphSVG(s, sc)}
         <table class="stx-t cl-facts">${facts(s).map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join("")}</table>
-        <div class="dsc-row"><button type="button" class="ghost" data-a="ws" data-j="${j}">＋ Worksheet</button><button type="button" class="ghost" data-a="png" data-j="${j}">Download image</button>${list.length > 1 ? `<button type="button" class="linkbtn" data-a="rm" data-j="${j}">Remove</button>` : ""}</div></section>`).join("")}</div>
+        <div class="dsc-row"><button type="button" class="ghost" data-a="png" data-j="${j}">Download image</button>${list.length > 1 ? `<button type="button" class="linkbtn" data-a="rm" data-j="${j}">Remove</button>` : ""}</div></section>`).join("")}</div>
       <label class="fld cl-find">${list.length > 1 ? "Change the second place" : "Compare with another place"} <input id="clFind" list="clList" placeholder="Type a place or country, e.g. Manaus or Kenya" autocomplete="off"></label>
       <datalist id="clList"></datalist>
       <p class="hint">WMO climate normals, 1991–2020 averages. Blue bars: rainfall (right-hand scale). Red line: average temperature${list.some((s) => s.tx) ? "; the pink band shows the average daily highs and lows" : ""}. ${list.length > 1 ? "Both graphs use the same scales, so you can compare them directly." : "Tip: hold Shift and click another station to compare."}</p>`;
@@ -116,7 +116,6 @@
     el.querySelectorAll("[data-a]").forEach((b) => (b.onclick = async () => {
       const s = list[+b.dataset.j], svg = el.querySelectorAll(".cl-svg")[+b.dataset.j];
       if (b.dataset.a === "rm") { C.picked.splice(+b.dataset.j, 1); card(); draw(); return; }
-      if (b.dataset.a === "ws") return window.WK?.addSVG(svg, `Climate graph: ${s.name}, ${W.byIso.get(s.iso)?.name || ""} (${koppen(s)})`, "#ffffff");
       const cv = await window.WV.svgToCanvas(svg, 3, "#ffffff");
       cv.toBlob((bl) => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = `climate-graph-${s.name.replace(/\W+/g, "-").toLowerCase()}.png`; a.click(); }, "image/png");
     }));

@@ -1002,17 +1002,58 @@
     if (m) { m.remove(); return; }
     m = document.createElement("div");
     m.id = "dlMenu"; m.className = "dlmenu card";
-    m.innerHTML = `<button type="button" data-a="png">Image of this ${W.state.view === "map" ? "map" : "chart"} (PNG)</button><button type="button" data-a="csv">Data behind it (CSV, opens in Excel)</button>${W.state.view === "map" ? `<button type="button" data-a="cw">Coursework map (A4, with key and north arrow)</button>` : ""}`;
+    const what = W.state.view === "map" ? "map" : "chart";
+    m.innerHTML = `<p class="dl-h">Image</p>
+      <button type="button" data-a="png">This ${what} as a picture (PNG)</button>
+      <button type="button" data-a="svg">This ${what} for editing (SVG)</button>
+      ${W.state.view === "map" ? `<button type="button" data-a="cw">Coursework map (A4, with key and north arrow)</button>` : ""}
+      <p class="dl-h">Data</p>
+      <button type="button" data-a="csv">The data shown (CSV, opens in Excel)</button>
+      <button type="button" data-a="all">Every measure for these countries (CSV)</button>
+      <p class="dl-h">Cite</p>
+      <button type="button" data-a="cite">Copy a reference for this ${what}</button>
+      <p class="dl-note">All data is free to reuse with credit to the original sources (see Sources &amp; methods).</p>`;
     btn.after(m);
-    m.querySelectorAll("button").forEach((b) => (b.onclick = () => {
+    m.querySelectorAll("button").forEach((b) => (b.onclick = async () => {
       m.remove();
-      if (b.dataset.a === "cw") window.WMS?.courseworkDialog();
-      else if (b.dataset.a === "png") downloadImage().catch(() => alertMsg("Sorry, the image could not be made in this browser."));
-      else { const rows = dataRows(); if (rows) { const s = currentSource(); downloadCSV(s ? rows.concat([[], [s]]) : rows, `which-countries-${W.state.view}.csv`); } }
+      const a = b.dataset.a;
+      if (a === "cw") window.WMS?.courseworkDialog();
+      else if (a === "png") downloadImage().catch(() => alertMsg("Sorry, the image could not be made in this browser."));
+      else if (a === "svg") downloadSVG();
+      else if (a === "all") downloadCSV(allMeasuresRows(), `which-countries-all-measures.csv`);
+      else if (a === "cite") {
+        const t = citation();
+        try { await navigator.clipboard.writeText(t); alertMsg("Reference copied: " + t); } catch (e) { prompt("Copy this reference:", t); }
+      } else { const rows = dataRows(); if (rows) { const s = currentSource(); downloadCSV(s ? rows.concat([[], [s]]) : rows, `which-countries-${W.state.view}.csv`); } }
     }));
     setTimeout(() => document.addEventListener("click", function off(e) { if (!m.contains(e.target) && e.target !== btn) { m.remove(); document.removeEventListener("click", off); } }), 0);
   }
   function alertMsg(t) { const s = $("#sentence"); if (s) s.textContent = t; }
+  // the map or chart as an SVG file, with its styles written in, for editing in PowerPoint, Inkscape, Illustrator…
+  function downloadSVG() {
+    const svgEl = W.state.view === "map" ? W.mapSVG() : $("#vsvg");
+    if (!svgEl) return;
+    const clone = inlineSVG(svgEl);
+    const vb = (svgEl.getAttribute("viewBox") || `0 0 ${svgEl.clientWidth} ${svgEl.clientHeight}`).split(/[\s,]+/).map(Number);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg"); clone.setAttribute("width", vb[2]); clone.setAttribute("height", vb[3]);
+    if (W.state.view === "map") { const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect"); bg.setAttribute("width", "100%"); bg.setAttribute("height", "100%"); bg.setAttribute("fill", css("--ocean")); clone.insertBefore(bg, clone.firstChild); }
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title"); title.textContent = citation(); clone.insertBefore(title, clone.firstChild);
+    download(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" }), `which-countries-${W.state.view}.svg`);
+  }
+  // every measure (latest figures, or the chosen year) for the countries on the map
+  function allMeasuresRows() {
+    const list = (W.matches && W.matches.length ? W.matches : W.pool()).slice().sort((a, b) => a.name.localeCompare(b.name));
+    const fs = W.FILTERS.filter((f) => !f.target && !f.hidden && f.type !== "bool" && list.some((r) => r[f.key] != null));
+    const cell = (v) => (Array.isArray(v) ? v.join("; ") : typeof v === "boolean" ? (v ? "Yes" : "No") : v ?? "");
+    return [["Country", "ISO code", "Continent", "Region", ...fs.map((f) => f.label)],
+      ...list.map((r) => [r.name, r.iso3, r.region, r.subregion, ...fs.map((f) => cell(r[f.key]))]),
+      [], ["Figures are the latest for each measure" + (W.state.year ? ` (yearly measures: ${W.state.year})` : "") + ". Sources: see Sources & methods on the site."]];
+  }
+  function citation() {
+    const title = W.state.view === "map" ? ($("#sentence")?.textContent || "World map").replace(/Clear all$/, "").trim() : V.title || "Chart";
+    const d = new Date();
+    return `Which Countries? (${d.getFullYear()}). ${title} Data: ${currentSource() || "see Sources & methods"} ${location.href.split("#")[0]} (accessed ${d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}).`;
+  }
 
   // ======================= Link state =======================
   function encode(p) {

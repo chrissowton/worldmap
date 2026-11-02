@@ -136,12 +136,11 @@
       <div class="dsc-body">${tab === "desc" ? `<dl class="dsc-list">${d.out.map((o) => `<dt>${esc(o.h)}</dt><dd>${esc(o.t)}</dd>`).join("")}</dl>
           <p class="hint">Worked out from the data on the map. Check it against the map, then <b>explain</b> it: that's where the marks are.</p>`
         : `<ol class="dsc-frame">${frameHTML(d).map((l) => `<li>${l}</li>`).join("")}</ol><p class="hint">Fill in the gaps using the map and the list. Remember: describe (where, how much, examples with numbers, anomalies) before you explain.</p>`}</div>
-      <div class="dsc-row"><button type="button" class="ghost" id="dscCopy">Copy</button><button type="button" class="ghost" id="dscWs">＋ Worksheet</button><button type="button" class="ghost" id="dscPrint">Coursework map…</button></div>`;
+      <div class="dsc-row"><button type="button" class="ghost" id="dscCopy">Copy</button><button type="button" class="ghost" id="dscPrint">Coursework map…</button></div>`;
     $("#dscX").onclick = close;
     el.querySelectorAll(".dsc-tabs button").forEach((b) => (b.onclick = () => { open.tab = b.dataset.t; openCard(); }));
     const plain = () => (open.tab === "frame" ? frameHTML(d).map((l, i) => `${i + 1}. ${l.replace(/<[^>]+>/g, "")}`) : d.out.map((o) => `${o.h}: ${o.t}`));
     $("#dscCopy").onclick = () => { navigator.clipboard?.writeText(plain().join("\n")); $("#dscCopy").textContent = "Copied ✓"; };
-    $("#dscWs").onclick = () => window.WK?.add({ type: "text", title: open.tab === "frame" ? "Describe the map: writing frame" : `Describing the map${d.what ? `: ${d.what}` : ""}`, list: plain(), source: window.WV?.currentSource?.() || "" });
     $("#dscPrint").onclick = () => { close(); courseworkDialog(); };
   }
   const openCard = () => open();

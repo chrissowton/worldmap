@@ -2110,3 +2110,16 @@ body.no-anim #map, body.no-anim #map * { transition: none !important; }
 .cg-name { margin: 4px 0; }
 .cg-find input { display: block; width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
 .layer-cgrow circle:hover { stroke: #14212b; }
+/* v49: download menu like Our World in Data's */
+.dlmenu .dl-h { margin: 6px 10px 2px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.dlmenu .dl-note { margin: 6px 10px 4px; font-size: 11.5px; color: var(--muted); max-width: 300px; }
+/* v49: quiz maker */
+.dsc.qm { width: min(720px, calc(100vw - 32px)); }
+.qm-row { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.qm-row input { flex: 1 1 260px; min-width: 0; padding: 8px 10px; font: inherit; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.qm-list { margin: 8px 0; padding-left: 26px; max-height: calc(100vh - 420px); overflow: auto; }
+.qm-list li { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.qm-list li > span:first-child { display: inline; }
+.qm-b { float: right; display: inline-flex; gap: 2px; margin-left: 8px; }
+.qm-b .iconbtn { width: 26px; height: 26px; }
+.qz-setbar { margin: 0 0 4px; font-size: 12.5px; color: var(--quiz); }

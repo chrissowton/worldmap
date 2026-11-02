@@ -218,7 +218,7 @@
       <div class="seg stx-tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-t="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</div>
       <div class="stx-ctl">${controls()}</div>
       <div class="stx-body">${res.html}</div>
-      ${res.csv ? `<div class="dsc-row"><button type="button" class="ghost" id="stxCsv">Download the working (CSV, opens in Excel)</button><button type="button" class="ghost" id="stxWs">＋ Worksheet</button></div>` : ""}`;
+      ${res.csv ? `<div class="dsc-row"><button type="button" class="ghost" id="stxCsv">Download the working (CSV, opens in Excel)</button></div>` : ""}`;
     $("#stxX").onclick = close;
     el.querySelectorAll(".stx-tabs button").forEach((b) => (b.onclick = () => { S.tab = b.dataset.t; render(); }));
     const on = (id, fn) => { const x = $("#" + id); if (x) x.onchange = (e) => { fn(e.target); render(); }; };
@@ -231,11 +231,6 @@
     on("stxW", (t) => (S.weight = t.checked));
     if ($("#stxRe")) $("#stxRe").onclick = () => { S.seed++; render(); };
     if ($("#stxCsv")) $("#stxCsv").onclick = () => csvDl(res.csv.concat([[], [window.WV?.currentSource?.() || ""]]), res.name);
-    if ($("#stxWs")) $("#stxWs").onclick = () => {
-      const head = el.querySelector(".stx-res")?.innerText.replace(/\s+/g, " ").trim();
-      const list = [head, ...[...el.querySelectorAll(".stx-body table tr")].slice(0, 32).map((tr) => [...tr.children].map((c) => c.innerText.trim()).join(" | "))].filter(Boolean);
-      window.WK?.add({ type: "text", title: `Statistics: ${TABS.find((t) => t[0] === S.tab)[1]}`, list, source: window.WV?.currentSource?.() || "" });
-    };
   }
   function open(tab) {
     let el = $("#stxCard");

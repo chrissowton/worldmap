@@ -925,8 +925,10 @@
         options: () => countryOptions(c.iso3, near(c, big).slice(0, 2), far(c).slice(0, 1)),
         explain: () => `<b>${esc(c.name)}</b>${qk.offshore ? " (just offshore)" : ""}: ${esc(qk.name)}, ${esc(qk.date)}.`, action: feat("quake", qk),
       }));
+      // named quakes ("2011 Great Tohoku Earthquake, Japan") would give the year away: ask about the country instead
+      const where = /\b(1[89]|20)\d\d\b|earthquake/i.test(qk.name) ? c.name : qk.name.replace(/^near /, "near ");
       addQ(B, `qy:${qk._i}`, "p-quake", () => ({
-        text: `In what year did a magnitude ${qk.quake_mag.toFixed(1)} earthquake strike ${qk.name.replace(/^near /, "near ")}?`, kind: "number", ans: { v: qk.quake_year, key: null, tol: { abs: 0.5 }, year: true },
+        text: `In what year did a magnitude ${qk.quake_mag.toFixed(1)} earthquake strike ${where}?`, kind: "number", ans: { v: qk.quake_year, key: null, tol: { abs: 0.5 }, year: true },
         explain: () => `<b>${qk.quake_year}</b> (${esc(qk.date)}).`, action: feat("quake", qk),
       }));
     }
@@ -1079,7 +1081,27 @@
     }
     return null;
   }
+  // a teacher's quiz (from the quiz maker): a fixed list of questions, played in order
+  function resolve(id) {
+    if (id.startsWith("dyn:")) { const q = window.WQM?.makeDyn(id); return q ? { ...q, id, topic: q.topic || "any" } : null; }
+    bank ||= buildBank();
+    const spec = bank.find((b) => b.id === id);
+    const q = spec && spec.make();
+    return q ? { ...q, id, topic: spec.topic } : null;
+  }
+  function playSet(set) {
+    Q.set = { title: set.title || "Quiz", ids: set.ids.slice(), mc: !!set.mc, i: 0, right: 0, answered: 0 };
+    Q.mode = "open"; Q.keepOpen = true;
+    if (W.state.view !== "map") W.setView("map");
+    const ready = built && builtMode === W.state.mode;
+    renderCard();          // builds the card (which asks the first question) if it isn't there yet
+    if (ready) ask();
+  }
   function nextQuestion() {
+    if (Q.set) {
+      while (Q.set.i < Q.set.ids.length) { const q = resolve(Q.set.ids[Q.set.i++]); if (q) return { ...q, setNo: Q.set.i }; }
+      return null;
+    }
     bank ||= buildBank();
     const rv = dueReview();
     if (rv) return rv;
@@ -1113,6 +1135,7 @@
   }
   function setTopic(id) {
     if (!themeList().some((t) => t.id === id)) return;
+    Q.set = null;
     Q.topics[isPhys() ? "physical" : "human"] = id; store.set("wcq-topics", Q.topics);
     document.querySelectorAll(".qz-topic").forEach((x) => x.setAttribute("aria-checked", String(x.dataset.t === id)));
     if (Q.mode === "open") ask();
@@ -1228,6 +1251,14 @@
     const box = $("#qzQ");
     if (!box) return;
     const q = Q.cur;
+    if (!q && Q.set) {
+      const S = Q.set;
+      box.innerHTML = `<p class="qz-text">🏁 ${esc(S.title)}: finished!</p><p class="qz-verdict">You got <b>${S.right}</b> out of ${S.answered} right.</p>
+        <div class="qz-row"><button type="button" class="primary" id="qzAgain">Try it again</button><button type="button" class="ghost" id="qzLeave">Back to normal questions</button></div>`;
+      $("#qzAgain").onclick = () => playSet(S);
+      $("#qzLeave").onclick = () => { Q.set = null; ask(); };
+      return;
+    }
     if (!q) {
       box.innerHTML = `<p class="qz-text">You've answered every question ${/any$/.test(curTopic()) ? "" : `on ${esc(topicOf(curTopic()).label.toLowerCase())} `}in the bank. Impressive!</p>
         <button type="button" class="primary" id="qzReset">Start this topic again</button>`;
@@ -1239,6 +1270,7 @@
     const nOpts = q._opts.length;
     box.innerHTML = `
       <div class="qz-tag" ${t.g ? `data-g="${t.g}"` : ""}>${esc(/any$/.test(q.topic) ? "Puzzle" : t.label)}</div>
+      ${Q.set ? `<p class="qz-setbar">📝 <b>${esc(Q.set.title)}</b> · question ${q.setNo} of ${Q.set.ids.length} · ${Q.set.right} right so far <button type="button" class="linkbtn" id="qzSetX">Leave this quiz</button></p>` : ""}
       ${q.review ? `<p class="qz-retry">↻ Try this one again</p>` : ""}
       <p class="qz-text">${esc(q.text)}${q.kind === "locate" || q.kind === "country" ? ` <span class="qz-clickhint">${q.kind === "locate" ? "👆 Click it on the map" : "👆 or click it on the map"}</span>` : ""}</p>
       <form id="qzForm" autocomplete="off">
@@ -1264,8 +1296,9 @@
       if (Q.done) return;
       if (always) showOptions(); else { Q.mc = false; Q.picked = null; drawQuestion(); }
     };
+    $("#qzSetX") && ($("#qzSetX").onclick = () => { Q.set = null; ask(); });
     if (q.kind === "locate") return;
-    if (always) showOptions();
+    if (always || Q.set?.mc) showOptions();
     else if (window.matchMedia("(hover: hover)").matches) setTimeout(() => $("#qzIn")?.focus({ preventScroll: true }), 30);
   }
   function showOptions() {
@@ -1302,6 +1335,7 @@
       status = res.status;
     }
     Q.done = true;
+    if (Q.set) { Q.set.answered++; if (status === "right") Q.set.right++; }
     seen.add(q.id);
     store.set("wcq-seen", [...seen].slice(-6000));
     score.asked++;
@@ -1353,5 +1387,5 @@
       if (Q.mode === "open" && !Q.cur) ask();
     };
   }
-  window.WQ = { init, renderCard, askAbout, setTopic, mapClick, hideNames, _draw: () => drawQuestion(), get size() { return bankSize("any"); }, _test: { check, buildBank: () => (bank ||= buildBank()), resolveCountry, parseNumber, numberOptions, nextQuestion, Q, seen } };
+  window.WQ = { init, renderCard, askAbout, setTopic, mapClick, hideNames, playSet, resolve, bankAll: () => (bank ||= buildBank()), numberOptions, topicLabel: (t) => topicOf(THEME_OF[t] || t)?.label || "", get inSet() { return !!Q.set; }, _draw: () => drawQuestion(), get size() { return bankSize("any"); }, _test: { check, buildBank: () => (bank ||= buildBank()), resolveCountry, parseNumber, numberOptions, nextQuestion, Q, seen } };
 })();

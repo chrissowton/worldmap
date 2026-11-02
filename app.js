@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "48";
+  const DATA_VERSION = "49";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -2899,6 +2899,7 @@
   window.WMS?.init();
   window.WST?.init();
   window.WTR?.init();
+  window.WQM?.init();
   window.WX?.init();
   window.WCL?.init();
   window.WCG?.init();

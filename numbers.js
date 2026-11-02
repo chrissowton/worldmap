@@ -107,7 +107,7 @@
           <button type="button" class="ghost sm" id="nhShuffle" title="Pick a different set of facts">🔀 Shuffle</button>
           <button type="button" class="ghost sm" id="nhPng">⬇ Save poster</button>
           <button type="button" class="ghost sm" id="nhPrint">🖨 Print</button>
-          <button type="button" class="ghost sm" id="nhWs" title="Add this poster to your worksheet">＋ Worksheet</button>
+
           <button type="button" class="iconbtn" id="nhClose2" aria-label="Close">×</button>
         </div>
         <p class="nh-help">Type any number to find facts from across the site that come to it, then save or print them as a one-page poster.</p>
@@ -121,7 +121,7 @@
       $("#nhClose2").onclick = close;
       $("#nhPrint").onclick = () => { document.body.classList.add("print-nh"); window.print(); setTimeout(() => document.body.classList.remove("print-nh"), 500); };
       $("#nhPng").onclick = savePNG;
-      $("#nhWs").onclick = () => { const svgEl = $("#nhSVG"); if (svgEl && window.WK) window.WK.addSVG(svgEl, `The number ${Number(st.n.v).toLocaleString("en-GB")}`, "#fbfaf7"); };
+
       document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el.hidden) close(); });
     }
     el.hidden = false;
