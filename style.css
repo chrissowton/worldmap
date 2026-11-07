@@ -2435,3 +2435,137 @@ body.embed #viewwrap { padding-left: 0 !important; padding-right: 0 !important; 
   .mapdock .mapcards { width: 100%; }
   #mapcards > .rgcard, .rgcard { width: 100% !important; max-width: 100% !important; box-sizing: border-box; }
 }
+
+/* ===== v58: the year player ===== */
+/* three fixed rows (controls and year · timeline · one line of information), so the timeline never moves */
+.mapfoot .timebar { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px 4px; border-radius: 12px; flex: 1 1 440px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--line)); box-shadow: 0 1px 4px rgba(20,33,43,.08); }
+.mapfoot .timebar.off { background: var(--surface); border-color: var(--line); box-shadow: none; }
+.timebar .tb-top { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.timebar .tb-top .tyear { font-size: 24px; min-width: 3.4em; line-height: 1; color: var(--accent); }
+.mapfoot .timebar .tyear { font-size: 24px; }
+.timebar.off .tb-top .tyear { color: var(--muted); font-size: 18px; }
+.timebar .tb-acts { margin-left: auto; display: flex; gap: 12px; white-space: nowrap; font-size: 13px; }
+.timebar .tb-acts .linkbtn[hidden] { display: none; }
+.timebar .tslide { display: flex; align-items: center; gap: 8px; min-height: 34px; padding-bottom: 12px; }
+.timebar .trangewrap { position: relative; flex: 1; min-width: 0; display: block; }
+.timebar .tend { font-size: 11.5px; font-weight: 600; color: var(--muted); min-width: 2.6em; text-align: center; }
+/* a thicker timeline, filled up to the year shown, with a big handle */
+#tRange { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer; display: block; }
+#tRange::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--fill, 100%), color-mix(in srgb, var(--accent) 18%, var(--line)) var(--fill, 100%)); }
+#tRange::-moz-range-track { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 18%, var(--line)); }
+#tRange::-moz-range-progress { height: 8px; border-radius: 4px; background: var(--accent); }
+#tRange::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -6px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+#tRange::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+#tRange:disabled { cursor: default; opacity: .5; }
+#tRange:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.timebar .tticks { position: absolute; left: 0; right: 0; top: 22px; height: 12px; pointer-events: none; }
+.timebar .tticks span { position: absolute; transform: translateX(-50%); font-size: 10.5px; color: var(--muted); font-family: var(--mono); }
+.timebar .tticks span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 4px; background: var(--muted); opacity: .6; }
+.timebar .trangewrap .ymarks { top: 1px; }
+/* one line for notes or the averages: always the same height */
+.timebar .tb-info { display: flex; align-items: center; gap: 8px; height: 26px; min-width: 0; overflow: hidden; }
+.timebar .tb-info .tnote { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; color: var(--muted); }
+.timebar .tb-info .tnote[hidden] { display: none; }
+.timebar .tb-info .tavg { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: none; mask-image: linear-gradient(to right, #000 88%, transparent); }
+.timebar .tb-info .tavg::-webkit-scrollbar { display: none; }
+.timebar .tb-info .tavg:not(.many) { mask-image: none; }
+.timebar .tb-info .tavg[hidden] { display: none; }
+.timebar .tb-info .avgchip { flex: none; font-size: 12px; padding: 1px 8px; white-space: nowrap; }
+.timebar .tavg-all { flex: none; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.timebar .tavg-all[hidden] { display: none; }
+.tavgpop { position: absolute; right: 8px; bottom: calc(100% + 8px); z-index: 40; padding: 10px 12px; max-width: min(420px, calc(100vw - 24px)); }
+.tavgpop-h { margin: 0 0 6px; font-weight: 600; font-size: 13px; }
+.tavgpop-h small { font-weight: 400; color: var(--muted); }
+.tavgpop-l { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.mapfoot .timebar { position: relative; }
+@media (max-width: 760px) {
+  .mapfoot .timebar { padding: 5px 8px 3px; flex-basis: 100%; }
+  .timebar .tb-top .tyear { font-size: 21px; min-width: 3em; }
+  .timebar .tb-acts { gap: 10px; font-size: 12px; }
+  .timebar .tb-acts .tswipe { display: none; }
+}
+.mapfoot .timebar { align-items: stretch; justify-content: flex-start; text-align: left; }
+.mapfoot .timebar > * { width: 100%; box-sizing: border-box; }
+.mapfoot { position: relative; z-index: 25; }
+.timebar .tb-info { justify-content: flex-start; }
+.mapfoot .timebar { flex: 1 1 520px; }
+/* the charts' year sliders: the same thicker look */
+#cYear, #chYear { -webkit-appearance: none; appearance: none; height: 20px; background: transparent; cursor: pointer; }
+#cYear::-webkit-slider-runnable-track, #chYear::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+#cYear::-moz-range-track, #chYear::-moz-range-track { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+#cYear::-webkit-slider-thumb, #chYear::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -5px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+#cYear::-moz-range-thumb, #chYear::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); }
+#cYearLab, #cYearRow .vy, #tYearRow .vy { font-size: 20px; font-weight: 700; color: var(--accent); font-family: var(--display); }
+/* the charts' year rows: the slider keeps its room; averages and notes go on a line of their own underneath */
+#cYearRow, #tYearRow { flex-wrap: wrap; row-gap: 4px; }
+#cYearRow .yslide, #tYearRow .yslide { min-width: 180px; flex: 1 1 240px; }
+#cYearRow .tavg, #tYearRow .tavg { order: 9; flex: 1 1 100%; display: flex !important; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: thin; min-height: 24px; }
+#cYearRow .tavg[hidden], #tYearRow .tavg:empty { display: none !important; }
+#cYearRow .avgchip, #tYearRow .avgchip { flex: none; white-space: nowrap; }
+
+/* ===== v59 ===== */
+/* "More on the map": one menu for the extra layers */
+.mapbtns { position: relative; }
+.layersbtn.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); font-weight: 600; }
+.layersmenu { position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 30; width: min(380px, calc(100vw - 32px)); padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; }
+.layersmenu[hidden] { display: none; }
+.mapstage > .mapbtns .layersmenu, .mapbtns:not(.mapdock .mapbtns) .layersmenu { top: calc(100% + 8px); bottom: auto; }
+.mapdock .mapbtns .layersmenu { top: auto; bottom: calc(100% + 8px); }
+.lm-h { margin: 6px 2px 2px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.lm-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 2px 6px; border-bottom: 1px solid var(--line); }
+.lm-row:last-child { border-bottom: 0; }
+.lm-row .mmbtn { position: static !important; box-shadow: none; text-align: left; }
+.lm-row small { color: var(--muted); font-size: 12px; padding-left: 4px; }
+/* the analysis and teaching windows each have their own colour, so several open at once are easy to tell apart */
+.dsc, #factfile, #sbs, #numhunt { --pop: var(--accent); border-top: 5px solid var(--pop) !important; }
+#dscCard, #dchCard { --pop: #2f7fd1; background: color-mix(in srgb, #2f7fd1 7%, var(--surface)); }
+#stxCard { --pop: #7b55c7; background: color-mix(in srgb, #7b55c7 7%, var(--surface)); }
+#ixCard { --pop: #2e9d55; background: color-mix(in srgb, #2e9d55 7%, var(--surface)); }
+#numhunt { --pop: #d9822b; }
+#numhunt.ff-overlay { background: color-mix(in srgb, #d9822b 9%, var(--surface)); }
+#qmCard, #wvCard, #curCard, #tourCard { --pop: #c99a00; background: color-mix(in srgb, #e0b400 8%, var(--surface)); }
+#factfile, #sbs { --pop: #0d5f70; }
+#abCard, #embCard { --pop: #5b6b72; }
+.dsc .dsc-head h2, .dsc .dsc-head h3 { color: color-mix(in srgb, var(--pop) 75%, var(--ink)); }
+#dscCard .stx-res, #stxCard .stx-tabs button[aria-selected="true"] { border-color: var(--pop); }
+/* build your own index: each measure in its group's colour */
+.ix-row { border-radius: 10px; padding: 6px 8px; margin: 4px 0; background: color-mix(in srgb, var(--gc, var(--accent)) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--gc, var(--accent)) 45%, var(--line)); border-left-width: 5px; }
+.ix-row .pickbtn, .ix-row .pk-btn, .ix-row button[data-pick] { background: color-mix(in srgb, var(--gc, var(--accent)) 10%, var(--surface)); }
+/* factfile, side by side and number hunt: windows on top of the map, not the whole screen */
+@media (min-width: 761px) {
+  #factfile.ff-overlay, #sbs.ff-overlay, #numhunt.ff-overlay { inset: auto; top: 70px; left: 50%; transform: translateX(-50%); width: min(1060px, calc(100vw - 40px)); height: calc(100vh - 92px);
+    border-radius: 14px; box-shadow: 0 14px 44px rgba(0,0,0,.3); overflow: hidden; z-index: 88; border: 1px solid var(--line); }
+  #factfile.rsz, #sbs.rsz, #numhunt.rsz { resize: both; }
+  #factfile .ff-bar, #sbs .ff-bar { border-radius: 10px 10px 0 0; }
+}
+.is-fs { transform: none !important; }
+#factfile .fsbtn, #sbs .fsbtn, #numhunt .fsbtn { order: 99; }
+.ff-bar .ff-msg { order: 100; }
+#factfile .fsbtn, #sbs .fsbtn, #numhunt .fsbtn { order: 50; }
+
+/* ===== v60 ===== */
+/* the short sentence for many filters */
+.sentmore { margin-left: 6px; font-weight: 600; white-space: nowrap; }
+/* the list with a column for every filter */
+.rlist.allcols { overflow-x: auto; }
+.allhead, .allrow { display: grid !important; grid-template-columns: 26px 22px minmax(90px, 1fr) auto; align-items: center; gap: 6px; }
+.allhead { grid-template-columns: minmax(138px, 1fr) auto; position: sticky; top: 0; z-index: 2; background: var(--surface); padding: 6px 10px 4px 12px; border-bottom: 1px solid var(--line); font-size: 11px; color: var(--muted); font-weight: 600; }
+.allrow .rk { min-width: 0; }
+.allrow .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fcs { display: grid; grid-template-columns: repeat(var(--nf, 2), 58px); gap: 3px; }
+.fh { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.fc { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; font-size: 11.5px; font-family: var(--mono); padding: 1px 4px; border-radius: 5px; white-space: nowrap; overflow: hidden; }
+.fc i { font-style: normal; font-weight: 700; font-family: var(--sans, inherit); }
+.fc.ok { background: color-mix(in srgb, #2e9d55 12%, var(--surface)); color: var(--ink); }
+.fc.ok i { color: #2e9d55; }
+.fc.no { background: color-mix(in srgb, #d6453d 14%, var(--surface)); color: var(--ink); }
+.fc.no i { color: #d6453d; }
+:root[data-cvd] .fc.no { background: color-mix(in srgb, #e08b00 18%, var(--surface)); } :root[data-cvd] .fc.no i { color: #b36b00; }
+.allrow { grid-template-columns: minmax(80px, 1fr) auto !important; padding-left: 12px; }
+.allrow .rk, .allrow .fl { display: none; }
+.allhead { grid-template-columns: minmax(80px, 1fr) auto; }
+.fcs { grid-template-columns: repeat(var(--nf, 2), 52px); }
+.fc { font-size: 11px; padding: 1px 3px; }
+.rlist.allcols .allhead, .rlist.allcols .allrow { min-width: calc(90px + var(--nf, 2) * 55px); }
+.sentmore + .clear, .sentmore + #clearAll { margin-left: 10px; }

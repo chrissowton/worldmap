@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "57";
+  const DATA_VERSION = "60";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -544,6 +544,7 @@
   function andList(ps) {
     return ps.length === 1 ? ps[0] : ps.slice(0, -1).join(", ") + " and " + ps[ps.length - 1];
   }
+  let sentOpen = false;
   function sentence(n, act) {
     const noun = (k) => (state.territories ? (k === 1 ? "place" : "places") : (k === 1 ? "country" : "countries"));
     const clear = `<button class="clear" id="clearAll" type="button">Clear all</button>`;
@@ -568,7 +569,10 @@
     const timed = act.some((fl) => F[fl.key].time), untimed = act.some((fl) => !F[fl.key].time);
     const when = state.year && timed ? `In <b>${state.year}</b>: ` : "";
     const note = state.year && untimed ? ` <span class="tnote">${timed ? "Filters without yearly data use the latest figures." : `The year slider doesn't change these filters; they use the latest figures.`}</span>` : "";
-    return `${when}Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart} in them` : ""}.${note}${clear}`;
+    // with three or more filters (two on a phone) the full sentence gets long: show a short one that opens up
+    const many = act.length >= 3 || (narrow() && act.length >= 2);
+    if (many && !sentOpen) return `${when}Showing <b>${n} ${noun(n)}</b> that match <b>all ${act.length} filters</b>${cityPart ? `, with ${cityPart} in them` : ""}. <button type="button" class="linkbtn sentmore" id="sentMore" aria-expanded="false">▾ Read them in full</button>${clear}`;
+    return `${when}Showing <b>${n} ${noun(n)}</b> where ${esc(andList(act.map(phrase)))}${cityPart ? `, with ${cityPart} in them` : ""}.${note}${many ? ` <button type="button" class="linkbtn sentmore" id="sentMore" aria-expanded="true">▴ Shorter</button>` : ""}${clear}`;
   }
 
   // ---------- Map ----------
@@ -914,6 +918,7 @@
     renderChips(act);
     $("#sentence").innerHTML = sentence(matches.length, act);
     const ca = $("#clearAll"); if (ca) ca.onclick = clearAll;
+    const sm = $("#sentMore"); if (sm) sm.onclick = () => { sentOpen = !sentOpen; $("#sentence").innerHTML = sentence(matches.length, act); const c2 = $("#clearAll"); if (c2) c2.onclick = clearAll; const s2 = $("#sentMore"); if (s2) { s2.onclick = sm.onclick; s2.focus(); } };
     renderLegend(cs, act);
     renderStarter(act);
     renderZero(act, matches);
@@ -958,11 +963,14 @@
     }
     if (!el.dataset.built) {
       el.dataset.built = "1";
-      el.innerHTML = `<button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("tSpeed") : ""}
-        <div class="tmain"><div class="trow"><span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span><span class="tavg" id="tAvg" aria-live="polite"></span><span class="tnote" id="tNote"></span>
-        <button type="button" class="linkbtn" id="tLatest">Back to latest</button><button type="button" class="linkbtn tswipe" id="tSwipe" title="Compare two years side by side: drag the divider">⇆ Compare two years</button></div>
-        <div class="tslide"><span class="tend num" id="tMin"></span><input type="range" id="tRange" step="1" aria-label="Year"><span class="tend num" id="tMax"></span></div>
-        <p class="tsigtext pop" id="tSigText" hidden></p></div>`;
+      // three fixed rows, so the slider never moves: the controls and the year; the timeline; one line of information
+      el.innerHTML = `<div class="tb-top"><button type="button" class="play" id="tPlay" aria-label="Play through the years">▶</button>${window.WPL ? window.WPL.speedHTML("tSpeed") : ""}
+          <span class="tclock">${CLOCK}</span><span class="tyear num" id="tYear"></span><span class="ysig" id="tSig" hidden></span>
+          <span class="tb-acts"><button type="button" class="linkbtn" id="tLatest">Back to latest</button><button type="button" class="linkbtn tswipe" id="tSwipe" title="Compare two years side by side: drag the divider">⇆ Compare two years</button></span></div>
+        <div class="tslide"><span class="tend num" id="tMin"></span><span class="trangewrap"><input type="range" id="tRange" step="1" aria-label="Year"><span class="tticks" id="tTicks" aria-hidden="true"></span></span><span class="tend num" id="tMax"></span></div>
+        <div class="tb-info"><span class="tnote" id="tNote"></span><span class="tavg" id="tAvg" aria-live="polite"></span><button type="button" class="linkbtn tavg-all" id="tAvgAll" hidden></button></div>
+        <p class="tsigtext pop" id="tSigText" hidden></p>`;
+      $("#tAvgAll").onclick = (e) => { e.stopPropagation(); avgPopup(); };
       const range = $("#tRange");
       range.oninput = () => { stopPlay(); setYear(+range.value); };
       $("#tLatest").onclick = () => { stopPlay(); setYear(null); };
@@ -975,6 +983,17 @@
     range.disabled = !sp; $("#tPlay").disabled = !sp;
     if (sp) { range.min = sp[0]; range.max = sp[1]; range.value = state.year ?? sp[1]; $("#tMin").textContent = sp[0]; $("#tMax").textContent = sp[1]; }
     else { $("#tMin").textContent = ""; $("#tMax").textContent = ""; }
+    // the filled part of the timeline, and a label every ten (or twenty) years
+    const frac = sp && sp[1] > sp[0] ? ((state.year ?? sp[1]) - sp[0]) / (sp[1] - sp[0]) : 1;
+    range.style.setProperty("--fill", (frac * 100).toFixed(2) + "%");
+    {
+      const tk = $("#tTicks");
+      if (sp && sp[1] - sp[0] >= 8) {
+        const step = sp[1] - sp[0] > 70 ? 20 : 10;
+        const ys = d3.range(Math.ceil((sp[0] + 3) / step) * step, sp[1] - 2, step);
+        tk.innerHTML = ys.map((y) => { const f = (y - sp[0]) / (sp[1] - sp[0]); return `<span style="left:calc(${(f * 100).toFixed(2)}% + ${(10 - f * 20).toFixed(1)}px)">${y}</span>`; }).join("");
+      } else tk.innerHTML = "";
+    }
     $("#tYear").textContent = state.year ? state.year : "Latest";
     $("#tNote").textContent = !sp
       ? (state.filters.some((fl) => F[fl.key].time) ? "These filters have no years in common." : "Add a filter marked “yearly” (like population, HDI or democracy) to go back in time.")
@@ -991,14 +1010,36 @@
       if (st) { $("#tSigText").textContent = st.text; $("#tSigText").className = `tsigtext l${st.level}`; $("#tNote").textContent = ""; }
     } else if (window.WPL) { window.WPL.marks(range, new Map()); window.WPL.light($("#tSig"), new Map(), null); $("#tSigText").hidden = true; }
     // the average of each measure being played, and which way it moved
-    const avgKeys = sp && state.year ? [...new Set(state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key).concat(colourKey() && TS[colourKey()] && !CAT_TS[colourKey()] ? [colourKey()] : []))].slice(0, 3) : [];
+    const avgKeys = sp && state.year ? [...new Set((colourKey() && TS[colourKey()] && !CAT_TS[colourKey()] ? [colourKey()] : []).concat(state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key)))] : [];
     const shares = sp && state.year && window.WPL ? shareFilters() : [];
-    $("#tAvg").innerHTML = window.WPL ? avgKeys.map((k) => window.WPL.avgHTML(k, state.year)).join("") + shares.map((sf) => window.WPL.shareHTML(sf.short, sf.label, state.year, sf.share)).join("") : "";
-    $("#tAvg").hidden = !avgKeys.length && !shares.length;
+    // averages: short chips in one line; with more than two, "All" opens the full list
+    const chips = window.WPL ? avgKeys.map((k) => window.WPL.avgHTML(k, state.year, true)).concat(shares.map((sf) => window.WPL.shareHTML(sf.short, sf.label, state.year, sf.share))).filter(Boolean) : [];
+    $("#tAvg").innerHTML = chips.join("");
+    $("#tAvg").hidden = !chips.length;
+    $("#tAvg").classList.toggle("many", chips.length > 2);
+    $("#tAvgAll").hidden = chips.length <= 2;
+    $("#tAvgAll").textContent = `All ${chips.length} ▾`;
+    if (chips.length) $("#tNote").hidden = true; else $("#tNote").hidden = false;
+    if (chips.length > 2) avgPopup(true); else $("#tAvgPop")?.remove();
     $("#tPlay").textContent = playing ? "❚❚" : "▶";
     $("#tPlay").setAttribute("aria-label", playing ? "Pause" : "Play through the years");
     // keep the colour key clear of the year player
     $("#mapfoot")?.classList.toggle("empty", el.hidden && $("#legend").hidden);
+  }
+  // every average for the year being shown, in a list
+  function avgPopup(refresh) {
+    let p = $("#tAvgPop");
+    if (p && !refresh) { p.remove(); return; }
+    if (!p && refresh) return;
+    const fresh = !p;
+    if (fresh) { p = document.createElement("div"); p.id = "tAvgPop"; p.className = "card tavgpop"; }
+    const keys = [...new Set((colourKey() && TS[colourKey()] && !CAT_TS[colourKey()] ? [colourKey()] : []).concat(state.filters.filter((fl) => F[fl.key].time && TS[fl.key] && !CAT_TS[fl.key]).map((fl) => fl.key)))];
+    const shares = window.WPL ? shareFilters() : [];
+    p.innerHTML = `<p class="tavgpop-h">Averages in ${state.year} <small>(the average country; ▲ up, ► about the same, ▼ down on the year before)</small></p>
+      <div class="tavgpop-l">${keys.map((k) => window.WPL.avgHTML(k, state.year)).concat(shares.map((sf) => window.WPL.shareHTML(sf.short, sf.label, state.year, sf.share))).filter(Boolean).join("")}</div>`;
+    if (!fresh) return;
+    $("#timebar").appendChild(p);
+    setTimeout(() => document.addEventListener("click", function off(e) { if (!p.contains(e.target)) { p.remove(); document.removeEventListener("click", off); } }), 0);
   }
   function setYear(y) {
     state.year = y;
@@ -1828,6 +1869,7 @@
         ${combo ? `<p class="note">Combined score: each country's average position across ${esc(rangeAct.map((f) => f.short || f.label).join(", "))}, from 0 (lowest of all countries on every one) to 100 (highest).</p>` : ""}
         <div class="controls">
           <label><input type="checkbox" id="terr" ${state.territories ? "checked" : ""}> Include territories</label>
+          ${act.length >= 2 ? `<label title="A column for each filter, with each country's figure and a ✓ or ✗"><input type="checkbox" id="allCols" ${state.allCols ? "checked" : ""}> Show every filter</label>` : ""}
           <span class="sortctl"><span class="lbl">Sort</span>
             ${sortButtons(!!sf, dir)}
             <select id="sortSel" aria-label="Sort by" data-pick><option value="__name">Name</option>${rangeAct.length >= 2 ? `<option value="__combo" ${combo ? "selected" : ""}>Combined score</option>` : ""}
@@ -1836,8 +1878,9 @@
             ${groupedOptions(state.colourBy)}</select></label>
         </div>
       </div>
-      <div class="rlist">
-        ${list.length ? list.map((r, i) => rowHTML(r, valF, null, combo ? combo.get(r.iso3) : undefined, sf ? i + 1 : null)).join("") : `<p class="empty">${act.length ? "No matches yet." : ""}</p>`}
+      <div class="rlist${state.allCols && act.length >= 2 ? " allcols" : ""}" style="--nf:${act.length}">
+        ${state.allCols && act.length >= 2 ? `<div class="allhead"><span class="nm">Country</span><span class="fcs">${act.map((fl) => `<span class="fh" title="${esc(F[fl.key].label)}">${esc(F[fl.key].short || F[fl.key].label)}</span>`).join("")}</span></div>` : ""}
+        ${list.length ? list.map((r, i) => (state.allCols && act.length >= 2 ? allRowHTML(r, act, sf ? i + 1 : null) : rowHTML(r, valF, null, combo ? combo.get(r.iso3) : undefined, sf ? i + 1 : null))).join("") : `<p class="empty">${act.length ? "No matches yet." : ""}</p>`}
         ${groups.map(([key, list]) => {
           const fl = act.find((x) => x.key === key);
           list.sort((a, b) => a.name.localeCompare(b.name));
@@ -1849,6 +1892,7 @@
       </div>${footHTML()}`;
     el.querySelector(".rlist").scrollTop = scrollTop;
     $("#terr").onchange = (e) => { state.territories = e.target.checked; render(); };
+    if ($("#allCols")) $("#allCols").onchange = (e) => { state.allCols = e.target.checked; render(); };
     $("#sortSel").onchange = (e) => { state.sort = e.target.value; state.sortDir = null; render(); };
     bindSortButtons();
     el.querySelectorAll(".qsort button").forEach((b) => (b.onclick = () => {
@@ -1955,7 +1999,17 @@
     }
     return out;
   }
+  // "Show every filter": one column per filter, with the country's figure and a tick or cross
+  const cellOf = (r, fl) => {
+    const f = F[fl.key], v = r[fl.key], ok = passes(r, fl);
+    const txt = v == null || (Array.isArray(v) && !v.length) ? "–" : f.type === "range" ? fmtShort(f, v) : f.type === "bool" ? (v ? "Yes" : "No") : Array.isArray(v) ? (v.find((x) => fl.values?.includes(x)) || v[0]) : v;
+    return `<span class="fc ${ok ? "ok" : "no"}" title="${esc((f.short || f.label) + ": " + txt + (ok ? " ✓ passes" : " ✗ fails"))}"><i>${ok ? "✓" : "✗"}</i>${esc(String(txt))}</span>`;
+  };
+  function allRowHTML(r, act, pos) {
+    return `<button type="button" class="row allrow" data-iso="${r.iso3}">${pos ? `<span class="rk num">${pos}</span>` : ""}<span class="fl">${r.flag || ""}</span><span class="nm">${esc(r.name)}</span><span class="fcs">${act.map((fl) => cellOf(r, fl)).join("")}</span></button>`;
+  }
   function rowHTML(r, sf, fail, override, pos) {
+    if (state.allCols && lastEval?.act?.length >= 2 && !override) return allRowHTML(r, lastEval.act, pos);
     const val = override !== undefined ? `<span class="val num" title="Combined score">${override ?? "–"}</span>` : sf ? `<span class="val num">${fmtShort(sf, r[sf.key])}</span>` : "";
     const why = fail ? `<span class="why">✕ ${esc(F[fail.key].short || F[fail.key].label)}</span>` : "";
     return `<button type="button" class="row" data-iso="${r.iso3}">${pos ? `<span class="rk num">${pos}</span>` : ""}<span class="fl">${r.flag || ""}</span><span class="nm">${esc(r.name)}</span>${val}${why}</button>`;

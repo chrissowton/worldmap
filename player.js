@@ -102,11 +102,11 @@
       box.className = "ymarks";
       input.parentElement.insertBefore(box, input);
     }
-    const lo = +input.min, hi = +input.max;
+    const lo = +input.min, hi = +input.max, th = input.id === "tRange" ? 20 : 16;  // the handle's width
     box.style.left = input.offsetLeft + "px";
     box.style.width = input.offsetWidth + "px";
     box.innerHTML = [...sig].filter(([y]) => y >= lo && y <= hi && hi > lo)
-      .map(([y, s]) => `<span class="ym l${s.level}" style="left:calc(${((y - lo) / (hi - lo)) * 100}% + ${8 - ((y - lo) / (hi - lo)) * 16}px)" title="${s.text.replace(/"/g, "&quot;")}"></span>`).join("");
+      .map(([y, s]) => `<span class="ym l${s.level}" style="left:calc(${((y - lo) / (hi - lo)) * 100}% + ${th / 2 - ((y - lo) / (hi - lo)) * th}px)" title="${s.text.replace(/"/g, "&quot;")}"></span>`).join("");
   }
   // the light and note for the year being shown
   function light(el, sig, year) {

@@ -129,7 +129,7 @@
       <p class="hint">Choose what matters, give each a weight, and say whether more is better. Each measure is scaled 0–1 (lowest to highest country), then averaged. Like the HDI, but your choice.</p>
       <div class="ix-pre">Start from: ${Object.keys(PRESETS).map((k) => `<button type="button" class="cur-l" data-p="${esc(k)}">${esc(k)}</button>`).join("")}</div>
       <label class="fld">Name <input id="ixName" type="text" maxlength="60" value="${esc(IX.name)}"></label>
-      <div class="ix-parts">${IX.parts.map(([k, w, dir], i) => `<div class="ix-row" data-i="${i}"><select class="stx-sel" data-pick data-r="k">${W.measureOptions(k)}</select>
+      <div class="ix-parts">${IX.parts.map(([k, w, dir], i) => `<div class="ix-row" data-i="${i}" data-g="${W.F[k] ? W.gslug(W.F[k].group) : ""}"><select class="stx-sel" data-pick data-r="k">${W.measureOptions(k)}</select>
         <label>Weight <select class="stx-sel" data-r="w">${[1, 2, 3, 4, 5].map((n) => `<option ${n === w ? "selected" : ""}>${n}</option>`).join("")}</select></label>
         <button type="button" class="ghost ix-dir" data-r="d" title="Click to switch">${dir > 0 ? "↑ Higher is better" : "↓ Lower is better"}</button>
         <button type="button" class="iconbtn" data-r="x" aria-label="Remove" ${IX.parts.length <= 2 ? "disabled" : ""}>×</button></div>`).join("")}</div>

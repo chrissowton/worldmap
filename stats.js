@@ -305,6 +305,13 @@
     let el = $("#stxCard");
     if (!el) { el = document.createElement("div"); el.id = "stxCard"; el.className = "card dsc stx"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Statistics"); document.body.appendChild(el); }
     if (typeof tab === "string") S.tab = tab;
+    // start from the measures last used: the newest number filters (or the measure the map is shaded by)
+    const nums = W.state.filters.filter((fl) => W.F[fl.key]?.type === "range" && !W.F[fl.key].target && !W.F[fl.key].hidden).map((fl) => fl.key);
+    const ck = W.colourKey?.();
+    if (nums.length) { S.a = nums[nums.length - 1]; S.b = nums.length > 1 ? nums[nums.length - 2] : defaultB(S.a); S.lor = S.a; }
+    else if (ck && W.F[ck]?.type === "range") { S.a = ck; S.lor = ck; if (S.b === S.a) S.b = defaultB(S.a); }
+    const cats = W.state.filters.filter((fl) => W.F[fl.key]?.type === "cat" && (W.F[fl.key].order || W.F[fl.key].options || []).length <= 8);
+    if (cats.length) S.group = cats[cats.length - 1].key;
     el.hidden = false; render();
   }
   function close() { const el = $("#stxCard"); if (el) el.hidden = true; }

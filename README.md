@@ -26,7 +26,7 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Live hazards**: this week's earthquakes from USGS (sized by magnitude, coloured by depth) and current GDACS alerts for tropical storms, eruptions, floods, droughts and wildfires, on the map.
 - **Own index**: pick measures, weight them and say whether more is better; see the new ranking, how it differs from the HDI, and colour the map by it.
 - **Compare two years**: a swipe map with one year on the left and another on the right of a divider you drag.
-- **Accessibility**: colour-blind-friendly colours (Map style), the map from the keyboard (arrows move, + and − zoom, N and P step through the countries with a spoken summary, T opens a table), and a sortable table view of the map.
+- **Accessibility**: colour-blind-friendly colours (Map style), the map from the keyboard (arrows move, + and − zoom, N and P step through the countries with a spoken summary, T opens a table of the countries on the map).
 - **Offline and installable**: after the first visit the site works without internet and can be added to a phone or Chromebook home screen (`sw.js`, `manifest.webmanifest`). When you upload a new release, change `VERSION` at the top of `sw.js`.
 - **Yearly data check**: a GitHub Action (`.github/workflows/data-check.yml`) runs `check_data_age.py` every September and opens an issue listing measures whose data is more than two years old.
 - **Climate graphs**: about 4,800 weather stations (WMO 1991–2020 climate normals) on the map, coloured by temperature. Click one for its climate graph (rainfall bars, temperature line with daily highs and lows), key figures and Köppen climate type; compare two places on the same scales; add to the worksheet or download.
@@ -155,7 +155,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `stats.js` | The statistics toolkit: summary statistics, Spearman's rank, chi-squared, Lorenz curve and Gini |
 | `tours.js` | Guided tours, exam topics and the first-visit tour |
 | `explore.js` | Live hazards, your own index, and the two-year swipe map |
-| `access.js` | Learn & share groups, colour-blind colours, keyboard map, table view, offline support |
+| `access.js` | Learn & share groups, colour-blind colours, keyboard map (T opens a table for screen readers), offline support |
 | `sw.js` | Keeps the site working offline |
 | `check_data_age.py` | Lists measures whose data is getting old (run yearly by a GitHub Action) |
 | `climate.js` | Climate graphs and Köppen climate types from the WMO station normals |

@@ -18,7 +18,7 @@
   const GROUPS = [
     ["Analyse", ["dscBtn", "stxBtn", "ixBtn", "nhBtn"]],
     ["Teach", ["qmBtn", "wvBtn", "curBtn", "tourBtn"]],
-    ["Share", ["ffBtn", "sbsBtn", "shareBtn", "dlBtn", "tblBtn"]],
+    ["Share", ["ffBtn", "sbsBtn", "shareBtn", "dlBtn"]],
   ];
   function group() {
     const box = $("#cpLearn");
@@ -139,11 +139,6 @@
   function init() {
     W = window.WC;
     applyCvd();
-    const tools = $("#cpLearn");
-    if (tools) {
-      const b = document.createElement("button"); b.type = "button"; b.id = "tblBtn"; b.className = "cp-tool"; b.title = "Read the map as a table (for screen readers, or to sort the countries)";
-      b.innerHTML = `<span class="cp-ic" aria-hidden="true">▦</span>Table view`; b.onclick = table; tools.appendChild(b);
-    }
     group();
     hookMapStyle();
     keyboard();
