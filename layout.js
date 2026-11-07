@@ -53,7 +53,7 @@
 
   // ---------- Buttons and boxes on the map: all together in the bottom-left corner ----------
   // (on a laptop or bigger; on a phone they stay where they were, at the top)
-  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard"];
+  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard", "#dispCard", "#confCard", "#elecCard"];
   const wide = window.matchMedia("(min-width: 761px)");
   function stack() {
     const stage = $("#mapstage");
@@ -65,6 +65,16 @@
     if (box.parentElement !== dock) dock.prepend(box);
     MAPBOXES.forEach((sel) => { const el = $(sel); if (el && el.parentElement !== box && !el.classList.contains("is-fs")) box.appendChild(el); });
     const btns = $("#mapbtns"), mm = $("#mmBtn"), mmCard = $("#mmCard");
+    // the colour key and the note about unusual years sit in the dock too, just above the buttons
+    const leg = $("#legend"), sig = $("#mapsig");
+    if (wide.matches) {
+      if (leg && leg.parentElement !== dock) { leg.classList.add("card", "dockkey"); dock.insertBefore(leg, btns && btns.parentElement === dock ? btns : null); }
+      if (sig && sig.parentElement !== dock) dock.insertBefore(sig, leg && leg.parentElement === dock ? leg.nextSibling : null);
+      if (btns && btns.parentElement === dock && leg && leg.parentElement === dock && leg.nextSibling !== sig && sig) dock.insertBefore(sig, btns);
+    } else {
+      const foot = $("#mapfoot");
+      if (leg && foot && leg.parentElement !== foot) { leg.classList.remove("card", "dockkey"); foot.prepend(leg); }
+    }
     if (wide.matches) {
       if (btns && btns.parentElement !== dock) dock.appendChild(btns);
       if (btns && mm && mm.parentElement !== btns) btns.appendChild(mm);
@@ -79,12 +89,21 @@
   wide.addEventListener?.("change", () => stack());
 
   // ---------- "More on the map": the extra layers in one menu, grouped ----------
-  // Map style stays as its own button; hazards, climate graphs, city growth and regions go in a menu,
-  // with a line about each, and the button says how many are switched on.
+  // Map style stays as its own button; the layers go in a menu that opens above the button (always on screen),
+  // with a line about each and a fuller explanation on hover. The button says how many are switched on.
   const LAYERS = [
-    ["People and places", [["#rgBtn", "Human development, health, schooling and income for 1,800 regions"], ["#cgBtn", "How the world's cities have grown since 1975, to 2050"]]],
-    ["Planet", [["#climBtn", "Weather stations with climate graphs (1991–2020 averages)"], ["#liveBtn", "This week's earthquakes, storms, floods and eruptions"]]],
+    ["People and places", [
+      ["#rgBtn", "Regions within countries", "Human development, life expectancy, schooling and income for 1,800 regions, for women and men.", "Colours about 1,800 regions in 188 countries (Global Data Lab). See the richest and poorest regions in the world, the countries with the biggest gaps between regions, and the HDI of any region since 1990."],
+      ["#cgBtn", "City growth", "How the world's cities have grown since 1975, with UN projections to 2050.", "About 2,600 cities as circles sized by population, coloured by how fast they grew. Play it to watch megacities appear, and see the fastest-growing cities (UN World Urbanization Prospects 2025)."]]],
+    ["World affairs", [
+      ["#confBtn", "Current conflicts", "Wars and crises around the world, and whether each is getting worse.", "The 27 conflicts followed by the Council on Foreign Relations' Global Conflict Tracker, with a short explainer for each. Red: worsening; orange: unchanging; purple: developing; green: improving."],
+      ["#dispBtn", "Disputed borders and territories", "Kashmir, Western Sahara, Taiwan, Crimea and other places where the border or ruler is disputed.", "Striped areas and markers show 24 disputes, each with a short, neutral explainer of who claims what and why. Borders on the main map are de facto (who controls the land), not a judgement on who is right."],
+      ["#elecBtn", "Elections", "National elections coming up in the next year, and those in the last 12 months.", "Countries with a national election coming up are shaded blue, those that held one in the last year green. Click a country for the date and type of election, with a link for candidates and results."]]],
+    ["Planet", [
+      ["#climBtn", "Climate graphs", "Climate graphs for thousands of weather stations (1991–2020 averages).", "Click a weather station for its climate graph: average temperature and rainfall for each month, its Köppen climate zone, and a comparison with another station."],
+      ["#liveBtn", "Live hazards", "This week's earthquakes, storms, floods and eruptions.", "Earthquakes from the US Geological Survey (the last 7 days) and current disaster alerts (GDACS), updated each time you open it."]]],
   ];
+  const IDS = LAYERS.flatMap(([, it]) => it.map((x) => x[0]));
   function layersMenu() {
     const btns = $("#mapbtns");
     if (!btns || !$("#climBtn") || !$("#liveBtn")) return;
@@ -92,34 +111,50 @@
     if (!lb) {
       lb = document.createElement("button"); lb.type = "button"; lb.id = "layersBtn"; lb.className = "mmbtn layersbtn"; lb.setAttribute("aria-haspopup", "true"); lb.setAttribute("aria-expanded", "false");
       menu = document.createElement("div"); menu.id = "layersMenu"; menu.className = "card layersmenu"; menu.hidden = true; menu.setAttribute("role", "menu");
-      lb.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; lb.setAttribute("aria-expanded", String(!menu.hidden)); if (!menu.hidden) fillMenu(); };
-      document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target) && e.target !== lb) { menu.hidden = true; lb.setAttribute("aria-expanded", "false"); } });
-      menu.addEventListener("click", (e) => { if (e.target.closest(".lm-row button")) setTimeout(() => { menu.hidden = true; lb.setAttribute("aria-expanded", "false"); }, 80); });
-      btns.appendChild(lb); btns.appendChild(menu);
+      const close = () => { menu.hidden = true; lb.setAttribute("aria-expanded", "false"); };
+      lb.onclick = (e) => { e.stopPropagation(); if (menu.hidden) { menu.hidden = false; lb.setAttribute("aria-expanded", "true"); fillMenu(); placeMenu(); } else close(); };
+      document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target) && e.target !== lb) close(); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) close(); });
+      window.addEventListener("resize", () => { if (!menu.hidden) placeMenu(); });
+      // a click on a layer switches it on or off; the menu closes so the map can be seen
+      menu.addEventListener("click", (e) => { if (e.target.closest(".lm-row button")) setTimeout(close, 120); });
+      btns.appendChild(lb);
+      document.body.appendChild(menu);   // on the page itself, so it is never cut off by the map
     }
-    // the layer buttons live in the menu
     const phys = W?.state?.mode === "physical";
-    const groups = phys ? LAYERS.slice().reverse() : LAYERS;
+    const groups = phys ? [LAYERS[2], LAYERS[1], LAYERS[0]] : LAYERS;
     if (menu.dataset.mode !== (phys ? "p" : "h")) {
       menu.dataset.mode = phys ? "p" : "h";
-      menu.innerHTML = groups.map(([g, items]) => `<p class="lm-h">${g}</p>${items.map(([sel, d]) => `<div class="lm-row" data-sel="${sel}"><small>${d}</small></div>`).join("")}`).join("") +
-        `<p class="lm-h">Map style</p><div class="lm-row"><button type="button" class="mmbtn" id="lmStyle">🎨 ${phys ? "Background and features: landforms, biomes, rivers, volcanoes…" : "Colours, change over time, two measures"}</button></div>`;
-      menu.querySelector("#lmStyle").onclick = () => { menu.hidden = true; $("#mmBtn")?.click(); };
+      menu.innerHTML = `<p class="lm-top">Add to the map <small>Hover over any of these for more</small></p>` + groups.map(([g, items]) => `<p class="lm-h">${g}</p>${items.map(([sel, , d, more]) => `<div class="lm-row" data-sel="${sel}" title="${more.replace(/"/g, "&quot;")}"><small>${d}</small></div>`).join("")}`).join("") +
+        `<p class="lm-h">Map style</p><div class="lm-row" title="${phys ? "Change what the background shows: landforms (the big shapes of the land), biomes, Köppen climate zones or tectonic plates, and which features are drawn: rivers, lakes, volcanoes, earthquakes and more." : "Colour the map by your filters (the default), by change over time between two years, or by two measures at once; or draw countries as circles sized by population."}"><button type="button" class="mmbtn" id="lmStyle">🎨 Map style</button><small>${phys ? "Background (landforms, biomes, climate zones, plates) and features: rivers, volcanoes…" : "Colour by your filters, by change over time, or by two measures at once."}</small></div>`;
+      menu.querySelector("#lmStyle").onclick = () => { setTimeout(() => $("#mmBtn")?.click(), 150); };
     }
-    menu.querySelectorAll(".lm-row[data-sel]").forEach((row) => { const b = $(row.dataset.sel); if (b && b.parentElement !== row) row.prepend(b); });
+    menu.querySelectorAll(".lm-row[data-sel]").forEach((row) => { const b = $(row.dataset.sel); if (b && b.parentElement !== row) { row.prepend(b); b.title = row.title; } });
     // keep Map style first, then the menu button
     const mm = $("#mmBtn");
     if (mm && mm.parentElement === btns && btns.firstElementChild !== mm) btns.prepend(mm);
     if (lb.previousElementSibling !== mm && mm?.parentElement === btns) mm.after(lb);
     fillMenu();
   }
+  // open above the button if there is room, otherwise below; never off the screen
+  function placeMenu() {
+    const lb = $("#layersBtn"), menu = $("#layersMenu");
+    if (!lb || !menu || menu.hidden) return;
+    const r = lb.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
+    const w = Math.min(400, vw - 16);
+    menu.style.width = w + "px";
+    menu.style.left = Math.max(8, Math.min(r.left, vw - w - 8)) + "px";
+    const above = r.top - 16, below = vh - r.bottom - 16;
+    if (above >= below) { menu.style.top = ""; menu.style.bottom = (vh - r.top + 8) + "px"; menu.style.maxHeight = above + "px"; }
+    else { menu.style.bottom = ""; menu.style.top = (r.bottom + 8) + "px"; menu.style.maxHeight = below + "px"; }
+  }
   function fillMenu() {
     const lb = $("#layersBtn"); if (!lb) return;
-    const on = ["#rgBtn", "#cgBtn", "#climBtn", "#liveBtn"].map((s) => $(s)).filter((b) => b?.getAttribute("aria-pressed") === "true");
+    const on = IDS.map((s) => $(s)).filter((b) => b?.getAttribute("aria-pressed") === "true");
     const txt = `🗂️ More on the map${on.length ? ` (${on.length} on)` : ""} ▾`;
     if (lb.textContent !== txt) lb.textContent = txt;
     lb.classList.toggle("on", on.length > 0);
-    lb.title = on.length ? `Showing: ${on.map((b) => b.textContent.replace(/^\W+\s*/, "")).join(", ")}` : "Regions within countries, city growth, climate graphs and live hazards";
+    lb.title = on.length ? `Showing: ${on.map((b) => b.textContent.replace(/^\W+\s*/, "")).join(", ")}` : "Regions, city growth, conflicts, disputed borders, elections, climate graphs and live hazards";
   }
 
   // ---------- Closing the side columns ----------

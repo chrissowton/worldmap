@@ -85,7 +85,7 @@
   }
   function downloadMeasure(key) {
     const f = W.F[key], S = (window.SOURCES || {})[f.source] || {};
-    const pool = W.rows.filter((r) => r.sovereign || W.state.territories).sort((a, b) => a.name.localeCompare(b.name));
+    const pool = W.rows.filter((r) => W.inPool(r)).sort((a, b) => a.name.localeCompare(b.name));
     let rows;
     const ts = W.TS[key];
     if (ts && !W.CAT_TS?.[key]) {

@@ -122,7 +122,7 @@
   }
   function groups() {
     const t = V.trend;
-    const base = W.rows.filter((r) => r.sovereign || W.state.territories);
+    const base = W.rows.filter((r) => W.inPool(r));
     const out = [];
     const ms = H.matchSet();
     if (t.world) out.push({ id: "world", name: "World", isos: base.map((r) => r.iso3), colour: H.css("--ink"), minN: 20, world: true });
@@ -643,7 +643,7 @@
     const t = V.trend, key = t.key, f = F[key], mode = t.agg;
     const ys = yearsFor(key);
     const ms = H.matchSet(), pins = pinsList();
-    const base = W.rows.filter((r) => r.sovereign || W.state.territories).map((r) => r.iso3);
+    const base = W.rows.filter((r) => W.inPool(r)).map((r) => r.iso3);
     const world = ys.map((y) => agg(key, base, y, mode, 20));
     const byCountries = t.mby === "countries" || (t.mby !== "cont" && ((ms && ms.size <= 30) || pins.length));
     let panels;
@@ -810,7 +810,7 @@
   function drawArea() {
     const t = V.trend, key = t.key, f = F[key];
     const ys = yearsFor(key);
-    const base = W.rows.filter((r) => r.sovereign || W.state.territories);
+    const base = W.rows.filter((r) => W.inPool(r));
     const pct = !!t.share;
     // each continent's total, kept only in years every continent has one
     const cs = H.CONTINENTS.map((c) => ({ c, vals: ys.map((y) => agg(key, base.filter((r) => r.region === c).map((r) => r.iso3), y, "total", 5)) }));

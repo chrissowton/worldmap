@@ -464,7 +464,7 @@
     let count = null;
     fs.forEach((fl) => { if (fl.slice) fl._others = fs; });
     if (fs.length) {
-      const pool = W.rows.filter((r) => r.sovereign || W.state.territories);
+      const pool = W.rows.filter((r) => W.inPool(r));
       count = pool.filter((r) => fs.every((fl) => W.passes(r, fl))).length;
     }
     const sug = suggest(p.unknown);

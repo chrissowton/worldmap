@@ -1258,6 +1258,9 @@ window.FILTERS = [
 ];
 
 window.SOURCES = {
+  cfrgct: { name: "Council on Foreign Relations, Global Conflict Tracker", url: "https://www.cfr.org/global-conflict-tracker", licence: "Status as published; explanations written for this site" },
+  elect: { name: "National electoral calendars (Wikipedia), checked against national electoral commissions where possible", url: "https://en.wikipedia.org/wiki/2026_national_electoral_calendar", licence: "CC BY-SA 4.0" },
+  nedisp: { name: "Natural Earth, breakaway and disputed areas (1:50m)", url: "https://www.naturalearthdata.com/", licence: "Public domain" },
   gapmincm: { name: "Gapminder, Income Mountains v2 (2018)", url: "https://www.gapminder.org/data/documentation/income-mountains-dataset/", licence: "CC BY 4.0" },
   unppp: { name: "UN World Population Prospects 2024, probabilistic projections", url: "https://population.un.org/wpp/", licence: "CC BY 3.0 IGO" },
   gdl: { name: "Global Data Lab, Subnational Human Development Database (Smits & Permanyer 2019, Scientific Data 6:190038)", url: "https://globaldatalab.org/shdi/", licence: "Free to use with credit" },

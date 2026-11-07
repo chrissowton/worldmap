@@ -98,7 +98,7 @@
     const vs = [];
     for (const r of W.rows) {
       const s = TS[key]?.[r.iso3];
-      if (s && (r.sovereign || W.state.territories)) for (const v of s) if (v != null && (!positive || v > 0)) vs.push(v);
+      if (s && (W.inPool(r))) for (const v of s) if (v != null && (!positive || v > 0)) vs.push(v);
     }
     return d3.extent(vs);
   }
@@ -114,7 +114,7 @@
   }
   const yearsOpts = (from, to, sel, latestLabel) => (latestLabel ? `<option value="">${latestLabel}</option>` : "") +
     d3.range(to, from - 1, -1).map((y) => `<option value="${y}" ${y === sel ? "selected" : ""}>${y}</option>`).join("");
-  const countryOptions = () => W.rows.filter((r) => r.sovereign || W.state.territories).sort((a, b) => a.name.localeCompare(b.name)).map((r) => `<option value="${esc(r.name)}"></option>`).join("");
+  const countryOptions = () => W.rows.filter((r) => W.inPool(r)).sort((a, b) => a.name.localeCompare(b.name)).map((r) => `<option value="${esc(r.name)}"></option>`).join("");
   const findCountry = (name) => { const q = name.trim().toLowerCase(); return W.rows.find((r) => r.name.toLowerCase() === q) || W.rows.find((r) => r.name.toLowerCase().startsWith(q)); };
 
   // ---------- Tooltip inside the chart area ----------

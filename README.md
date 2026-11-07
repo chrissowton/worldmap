@@ -35,6 +35,7 @@ It's a static website: no server, no database, no accounts. All the data is in a
 - **Population futures**: UN projections to 2100 for population, fertility, life expectancy, median age, natural increase and migration, playable on the year slider.
 - **Hazards, food, water and footprint**: WorldRiskIndex, disaster deaths and displacement, warming since 1940, Global Hunger Index, calories, water use, tree cover loss, ecological footprint, urbanisation to 2050, aid and debt.
 - **Politics and society**: Corruption Perceptions Index (2012–2025), press freedom (RSF 2026), deaths in armed conflicts, girls married before 15, births outside marriage, and mismanaged plastic waste; tourism updated to 2024 and energy production updated.
+- **World affairs** (More on the map): current conflicts, disputed borders and territories, and elections, from `affairs.json` (edit it to keep them up to date) and `disputes_geo.json`.
 - **Income mountains** (Gapminder): how many people live on each income level, by region, 1800–2040.
 - **Projection ranges**: the UN's 80% and 95% ranges shaded on projections of population, life expectancy and fertility.
 - **Regions within countries**: the 🗺️ Regions button colours about 1,800 regions in 188 countries (Global Data Lab): the HDI for every year from 1990, and life expectancy, schooling, income and gender measures, for women and men.
@@ -206,6 +207,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `regions.js`, `regions_data.json`, `regions_geo.json`, `make_regions.py` | Regions within countries: the map layer and card, the data, the region shapes, and the script that builds them from the Global Data Lab downloads |
 | `mountains.json`, `make_mountains.py` | Income mountains (from Gapminder's Excel file) |
 | `ranges_pop.json`, `ranges_e0.json`, `ranges_tfr.json`, `make_projections.py` | The UN's projection ranges for population, life expectancy and fertility |
+| `affairs.js`, `affairs.json`, `disputes_geo.json` | World affairs layers: conflicts, disputes, elections. `affairs.json` holds the facts and the date they were checked |
 | `whatsnew.html` | What's new |
 | `learn.js` | Worldview quiz, Describe for charts, and notes on charts and maps |
 | `about.js` | “About this data” for every chart and the map, and embed mode (`?embed=1`) |
