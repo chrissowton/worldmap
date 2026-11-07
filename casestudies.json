@@ -1,0 +1,686 @@
+{
+ "notes": "Case studies used in GCSE and A-level geography (AQA, Edexcel, OCR, Eduqas, WJEC, SQA, CCEA), with key facts. Figures are rounded and some (especially death tolls) vary between sources: check your exam board's textbook for the figures it expects.",
+ "topics": {
+  "tect": "Tectonic hazards",
+  "weather": "Weather and climate hazards",
+  "cities": "Cities",
+  "eco": "Ecosystems and environments",
+  "dev": "Development and resources",
+  "uk": "UK physical landscapes"
+ },
+ "items": [
+  {
+   "id": "nepal2015",
+   "name": "Nepal (Gorkha) earthquake",
+   "topic": "tect",
+   "iso": "NPL",
+   "at": [
+    84.7,
+    28.2
+   ],
+   "date": "25 April 2015",
+   "facts": [
+    "Magnitude 7.8, at a destructive (collision) margin where the Indian Plate pushes into the Eurasian Plate",
+    "Nearly 9,000 people killed",
+    "Hundreds of thousands of homes destroyed; avalanches on Everest; landslides cut off mountain villages",
+    "Low-income country: slow rescue, dependent on international aid"
+   ],
+   "text": "The classic low-income-country earthquake case study. Compare it with a high-income example such as Christchurch or Tōhoku (Japan).",
+   "links": [
+    [
+     "Nepal on the map",
+     "s=NPL"
+    ],
+    [
+     "Earthquakes on the physical map",
+     "m=p&f=quake_mag:7~9.5"
+    ]
+   ]
+  },
+  {
+   "id": "tohoku2011",
+   "name": "Tōhoku earthquake and tsunami, Japan",
+   "topic": "tect",
+   "iso": "JPN",
+   "at": [
+    142.4,
+    38.3
+   ],
+   "date": "11 March 2011",
+   "facts": [
+    "Magnitude 9.0–9.1, at a destructive (subduction) margin off Japan's east coast",
+    "Tsunami waves up to about 40 m high",
+    "About 18,000 people killed or missing, most by the tsunami",
+    "Meltdowns at the Fukushima Daiichi nuclear plant; over 150,000 people evacuated"
+   ],
+   "text": "A high-income country with the world's best earthquake preparation, still overwhelmed by the tsunami: a key example of how wealth reduces, but cannot remove, risk.",
+   "links": [
+    [
+     "Japan on the map",
+     "s=JPN"
+    ]
+   ]
+  },
+  {
+   "id": "haiti2010",
+   "name": "Haiti earthquake",
+   "topic": "tect",
+   "iso": "HTI",
+   "at": [
+    -72.5,
+    18.45
+   ],
+   "date": "12 January 2010",
+   "facts": [
+    "Magnitude 7.0, shallow, close to the capital Port-au-Prince",
+    "Estimates of deaths range from about 100,000 to over 300,000",
+    "About 1.5 million people made homeless",
+    "Poorly built housing, weak government and poverty made the impact far worse"
+   ],
+   "text": "Often compared with the stronger Chile earthquake of the same year, which killed far fewer people: the difference was mainly wealth and preparation.",
+   "links": [
+    [
+     "Haiti on the map",
+     "s=HTI"
+    ]
+   ]
+  },
+  {
+   "id": "christchurch2011",
+   "name": "Christchurch earthquake, New Zealand",
+   "topic": "tect",
+   "iso": "NZL",
+   "at": [
+    172.7,
+    -43.6
+   ],
+   "date": "22 February 2011",
+   "facts": [
+    "Magnitude 6.2, very shallow and close to the city centre",
+    "185 people killed",
+    "Liquefaction damaged large parts of the eastern suburbs",
+    "Much of the city centre had to be demolished and rebuilt"
+   ],
+   "text": "A high-income-country example: strong building codes and emergency services, but very high economic costs.",
+   "links": [
+    [
+     "New Zealand on the map",
+     "s=NZL"
+    ]
+   ]
+  },
+  {
+   "id": "tsunami2004",
+   "name": "Indian Ocean (Boxing Day) tsunami",
+   "topic": "tect",
+   "iso": "IDN",
+   "at": [
+    95.9,
+    3.3
+   ],
+   "date": "26 December 2004",
+   "facts": [
+    "Caused by a magnitude 9.1 earthquake off Sumatra, Indonesia",
+    "About 230,000 people killed in 14 countries, worst in Aceh (Indonesia), Sri Lanka, India and Thailand",
+    "There was no tsunami warning system in the Indian Ocean; one was set up afterwards"
+   ],
+   "text": "The deadliest tsunami recorded, and the reason the Indian Ocean now has a warning system.",
+   "links": [
+    [
+     "Indonesia on the map",
+     "s=IDN"
+    ]
+   ]
+  },
+  {
+   "id": "sulawesi2018",
+   "name": "Sulawesi earthquake and tsunami, Indonesia",
+   "topic": "tect",
+   "iso": "IDN",
+   "at": [
+    119.85,
+    -0.9
+   ],
+   "date": "28 September 2018",
+   "facts": [
+    "Magnitude 7.5 near the city of Palu",
+    "A tsunami and widespread liquefaction, where whole neighbourhoods slid away",
+    "More than 4,000 people killed"
+   ],
+   "text": "A recent example showing liquefaction and a tsunami in a narrow bay, where warnings failed to reach people in time.",
+   "links": [
+    [
+     "Indonesia on the map",
+     "s=IDN"
+    ]
+   ]
+  },
+  {
+   "id": "turkey2023",
+   "name": "Turkey–Syria earthquakes",
+   "topic": "tect",
+   "iso": "TUR",
+   "at": [
+    37.0,
+    37.2
+   ],
+   "date": "6 February 2023",
+   "facts": [
+    "Magnitude 7.8 and 7.5 earthquakes on the same day, on the East Anatolian Fault",
+    "More than 55,000 people killed in Turkey and Syria",
+    "Many buildings collapsed despite building codes, raising questions about how well they were enforced",
+    "In Syria, war made rescue and aid much harder"
+   ],
+   "text": "One of the deadliest earthquakes of the century, and a powerful example of how governance affects disaster risk.",
+   "links": [
+    [
+     "Turkey on the map",
+     "s=TUR"
+    ],
+    [
+     "Syria on the map",
+     "s=SYR"
+    ]
+   ]
+  },
+  {
+   "id": "eyjaf2010",
+   "name": "Eyjafjallajökull eruption, Iceland",
+   "topic": "tect",
+   "iso": "ISL",
+   "at": [
+    -19.6,
+    63.6
+   ],
+   "date": "March–May 2010",
+   "facts": [
+    "An eruption under an ice cap on the Mid-Atlantic Ridge, a constructive margin",
+    "Its ash cloud closed most of Europe's airspace for about a week",
+    "About 100,000 flights cancelled",
+    "No one was killed: local farms and roads were affected by flooding and ash"
+   ],
+   "text": "A small eruption with a huge global impact, through air travel and trade: useful for 'global interconnections'.",
+   "links": [
+    [
+     "Iceland on the map",
+     "s=ISL"
+    ]
+   ]
+  },
+  {
+   "id": "haiyan2013",
+   "name": "Typhoon Haiyan, Philippines",
+   "topic": "weather",
+   "iso": "PHL",
+   "at": [
+    125.0,
+    11.2
+   ],
+   "date": "8 November 2013",
+   "facts": [
+    "One of the strongest tropical storms ever to reach land, with winds of about 300 km/h",
+    "A storm surge of about 5 m flooded the city of Tacloban",
+    "About 6,300 people killed",
+    "About 4 million people forced from their homes"
+   ],
+   "text": "The standard tropical storm case study for a lower-income country.",
+   "links": [
+    [
+     "The Philippines on the map",
+     "s=PHL"
+    ]
+   ]
+  },
+  {
+   "id": "katrina2005",
+   "name": "Hurricane Katrina, United States",
+   "topic": "weather",
+   "iso": "USA",
+   "at": [
+    -90.1,
+    29.95
+   ],
+   "date": "29 August 2005",
+   "facts": [
+    "Flood defences (levees) failed and about 80% of New Orleans flooded",
+    "About 1,800 people killed",
+    "One of the costliest disasters in US history, about $125 billion",
+    "Poorer, mostly Black neighbourhoods were hit hardest and recovered slowest"
+   ],
+   "text": "A high-income-country example that shows inequality inside a rich country.",
+   "links": [
+    [
+     "The United States on the map",
+     "s=USA"
+    ]
+   ]
+  },
+  {
+   "id": "idai2019",
+   "name": "Cyclone Idai, Mozambique, Zimbabwe and Malawi",
+   "topic": "weather",
+   "iso": "MOZ",
+   "at": [
+    34.85,
+    -19.8
+   ],
+   "date": "March 2019",
+   "facts": [
+    "Hit the port city of Beira, Mozambique, then caused huge floods inland",
+    "More than 1,300 people killed",
+    "About 3 million people affected; cholera broke out afterwards"
+   ],
+   "text": "A recent African tropical storm case study, linked to the debate on climate change and warmer seas.",
+   "links": [
+    [
+     "Mozambique on the map",
+     "s=MOZ"
+    ]
+   ]
+  },
+  {
+   "id": "pakistan2022",
+   "name": "Pakistan floods",
+   "topic": "weather",
+   "iso": "PAK",
+   "at": [
+    68.4,
+    26.5
+   ],
+   "date": "June–October 2022",
+   "facts": [
+    "Extreme monsoon rain and melting glaciers flooded about a third of the country at the peak",
+    "About 1,700 people killed and 33 million people affected",
+    "Damage and losses of about $30 billion"
+   ],
+   "text": "A case study often used for climate change and its unequal effects: Pakistan produces under 1% of the world's carbon emissions.",
+   "links": [
+    [
+     "Pakistan on the map",
+     "s=PAK"
+    ],
+    [
+     "CO₂ per person",
+     "c=co2_per_capita"
+    ]
+   ]
+  },
+  {
+   "id": "blacksummer",
+   "name": "Australia's 'Black Summer' bushfires",
+   "topic": "weather",
+   "iso": "AUS",
+   "at": [
+    149.5,
+    -35.5
+   ],
+   "date": "2019–2020",
+   "facts": [
+    "About 19 million hectares burned, mainly in New South Wales and Victoria",
+    "33 people killed directly by the fires; smoke affected the health of millions",
+    "About 3 billion animals killed or displaced",
+    "Followed Australia's hottest and driest year on record"
+   ],
+   "text": "Used for extreme weather, climate change and wildfire risk in a high-income country.",
+   "links": [
+    [
+     "Australia on the map",
+     "s=AUS"
+    ]
+   ]
+  },
+  {
+   "id": "somerset2014",
+   "name": "Somerset Levels floods, England",
+   "topic": "uk",
+   "iso": "GBR",
+   "at": [
+    -2.85,
+    51.05
+   ],
+   "date": "Winter 2013–14",
+   "facts": [
+    "The wettest January in southern England in records going back to 1766",
+    "Large areas of low-lying farmland were under water for weeks",
+    "About 600 homes flooded; villages such as Muchelney were cut off",
+    "Afterwards, rivers were dredged and a 20-year flood action plan was made"
+   ],
+   "text": "The key UK flood case study, often used for the debate on dredging and managing rivers.",
+   "links": [
+    [
+     "The United Kingdom on the map",
+     "s=GBR"
+    ]
+   ]
+  },
+  {
+   "id": "boscastle2004",
+   "name": "Boscastle flash flood, Cornwall",
+   "topic": "uk",
+   "iso": "GBR",
+   "at": [
+    -4.69,
+    50.69
+   ],
+   "date": "16 August 2004",
+   "facts": [
+    "About 75 mm of rain fell in two hours on a small, steep drainage basin",
+    "A wall of water swept through the village, carrying cars into the sea",
+    "About 100 people rescued by helicopter; no one was killed",
+    "A new flood defence scheme widened and deepened the river channel"
+   ],
+   "text": "A small, steep river basin with fast run-off: a classic UK example of a flash flood.",
+   "links": [
+    [
+     "The United Kingdom on the map",
+     "s=GBR"
+    ]
+   ]
+  },
+  {
+   "id": "holderness",
+   "name": "Holderness coast, Yorkshire",
+   "topic": "uk",
+   "iso": "GBR",
+   "at": [
+    -0.05,
+    53.8
+   ],
+   "date": "Ongoing",
+   "facts": [
+    "One of the fastest-eroding coastlines in Europe: about 2 m a year on average",
+    "Soft boulder clay cliffs are easily eroded by powerful North Sea waves",
+    "Towns such as Mappleton and Hornsea are protected by sea walls and rock groynes",
+    "Protecting one place can increase erosion further along the coast"
+   ],
+   "text": "The standard UK coastal erosion and management case study.",
+   "links": [
+    [
+     "The United Kingdom on the map",
+     "s=GBR"
+    ]
+   ]
+  },
+  {
+   "id": "london",
+   "name": "London",
+   "topic": "cities",
+   "iso": "GBR",
+   "at": [
+    -0.12,
+    51.51
+   ],
+   "date": "",
+   "facts": [
+    "About 9 million people, the UK's largest city by far",
+    "A world city: a global centre of finance, culture and transport",
+    "Regeneration: the 2012 Olympic Park at Stratford, Canary Wharf and the Docklands",
+    "Challenges: housing costs, inequality and air quality"
+   ],
+   "text": "A UK major city case study (AQA and others also use Bristol, Liverpool, Birmingham, Manchester or Glasgow).",
+   "links": [
+    [
+     "The United Kingdom on the map",
+     "s=GBR"
+    ]
+   ]
+  },
+  {
+   "id": "rio",
+   "name": "Rio de Janeiro, Brazil",
+   "topic": "cities",
+   "iso": "BRA",
+   "at": [
+    -43.2,
+    -22.9
+   ],
+   "date": "",
+   "facts": [
+    "About 13 million people in the metropolitan area",
+    "Around a fifth of the city's people live in favelas (informal settlements)",
+    "Favela Bairro and other schemes upgraded housing, roads and services",
+    "Hosted the 2014 World Cup final and the 2016 Olympics"
+   ],
+   "text": "The most widely used case study of a growing city in a newly emerging economy.",
+   "links": [
+    [
+     "Brazil on the map",
+     "s=BRA"
+    ],
+    [
+     "Living in towns and cities",
+     "c=urban_pct"
+    ]
+   ]
+  },
+  {
+   "id": "lagos",
+   "name": "Lagos, Nigeria",
+   "topic": "cities",
+   "iso": "NGA",
+   "at": [
+    3.4,
+    6.45
+   ],
+   "date": "",
+   "facts": [
+    "One of the largest and fastest-growing cities in Africa",
+    "Many people live in informal settlements such as Makoko, partly built on stilts over the lagoon",
+    "Big projects such as Eko Atlantic, a new city built on land reclaimed from the sea",
+    "Challenges: traffic, flooding, waste and inequality"
+   ],
+   "text": "Often used alongside the Nigeria newly-emerging-economy case study.",
+   "links": [
+    [
+     "Nigeria on the map",
+     "s=NGA"
+    ]
+   ]
+  },
+  {
+   "id": "mumbai",
+   "name": "Mumbai, India",
+   "topic": "cities",
+   "iso": "IND",
+   "at": [
+    72.88,
+    19.07
+   ],
+   "date": "",
+   "facts": [
+    "About 20 million people in the metropolitan area; India's financial centre",
+    "Dharavi: one of Asia's largest informal settlements, home to perhaps a million people, with thousands of small businesses",
+    "Schemes to redevelop Dharavi are controversial"
+   ],
+   "text": "A city in a newly emerging economy with extremes of wealth and poverty side by side.",
+   "links": [
+    [
+     "India on the map",
+     "s=IND"
+    ]
+   ]
+  },
+  {
+   "id": "amazon",
+   "name": "The Amazon rainforest",
+   "topic": "eco",
+   "iso": "BRA",
+   "at": [
+    -60.0,
+    -4.0
+   ],
+   "date": "",
+   "facts": [
+    "The world's largest tropical rainforest, about 60% of it in Brazil",
+    "Roughly a fifth of it has been cleared since 1970, for cattle ranching, soya, logging, mining and roads",
+    "Deforestation fell sharply after 2004, rose again, and is now falling again",
+    "Home to hundreds of indigenous groups and about 10% of the world's known species"
+   ],
+   "text": "The standard tropical rainforest case study (AQA also offers Malaysia).",
+   "links": [
+    [
+     "Brazil on the map",
+     "s=BRA"
+    ],
+    [
+     "Forest cover",
+     "c=forest_pct"
+    ]
+   ]
+  },
+  {
+   "id": "malaysia",
+   "name": "Malaysia's rainforests",
+   "topic": "eco",
+   "iso": "MYS",
+   "at": [
+    113.5,
+    2.5
+   ],
+   "date": "",
+   "facts": [
+    "Large areas of Borneo (Sabah and Sarawak) have been cleared for palm oil plantations and logging",
+    "Malaysia and Indonesia produce most of the world's palm oil",
+    "Home to orangutans, now endangered"
+   ],
+   "text": "The alternative AQA tropical rainforest case study.",
+   "links": [
+    [
+     "Malaysia on the map",
+     "s=MYS"
+    ]
+   ]
+  },
+  {
+   "id": "thar",
+   "name": "The Thar Desert, India and Pakistan",
+   "topic": "eco",
+   "iso": "IND",
+   "at": [
+    71.5,
+    27.0
+   ],
+   "date": "",
+   "facts": [
+    "One of the most densely populated deserts in the world",
+    "Opportunities: farming with irrigation (the Indira Gandhi Canal), mining, energy and tourism",
+    "Challenges: extreme heat, little water, and poor access"
+   ],
+   "text": "The hot desert case study for the 'challenges and opportunities' question (AQA also offers the Sahara).",
+   "links": [
+    [
+     "India on the map",
+     "s=IND"
+    ]
+   ]
+  },
+  {
+   "id": "alaska",
+   "name": "Alaska",
+   "topic": "eco",
+   "iso": "USA",
+   "at": [
+    -149.5,
+    64.5
+   ],
+   "date": "",
+   "facts": [
+    "A cold environment with permafrost, tundra and boreal forest",
+    "Opportunities: oil (the Trans-Alaska Pipeline), fishing, mining and tourism",
+    "Challenges: extreme cold, building on permafrost and inaccessibility",
+    "Climate change is warming the Arctic about four times faster than the world average"
+   ],
+   "text": "The cold environment case study (AQA also offers Svalbard).",
+   "links": [
+    [
+     "The United States on the map",
+     "s=USA"
+    ]
+   ]
+  },
+  {
+   "id": "nigeria",
+   "name": "Nigeria: a newly emerging economy",
+   "topic": "dev",
+   "iso": "NGA",
+   "at": [
+    8.0,
+    9.5
+   ],
+   "date": "",
+   "facts": [
+    "Africa's most populous country and one of its largest economies",
+    "Oil from the Niger Delta is the biggest export; oil spills have damaged the delta",
+    "Growing services, film (Nollywood), telecoms and manufacturing",
+    "Large gaps in wealth between the south and north"
+   ],
+   "text": "The AQA case study of a newly emerging economy. Explore its development with the filters.",
+   "links": [
+    [
+     "Nigeria on the map",
+     "s=NGA"
+    ],
+    [
+     "GDP per person",
+     "c=gdp_per_capita"
+    ]
+   ]
+  },
+  {
+   "id": "aral",
+   "name": "The Aral Sea, Kazakhstan and Uzbekistan",
+   "topic": "dev",
+   "iso": "KAZ",
+   "at": [
+    60.0,
+    45.0
+   ],
+   "date": "1960s to today",
+   "facts": [
+    "Once the world's fourth-largest lake",
+    "Rivers feeding it were diverted to irrigate cotton from the 1960s",
+    "It has lost about 90% of its water; fishing ports are now in the desert",
+    "A dam (2005) has helped the northern part recover"
+   ],
+   "text": "One of the world's worst environmental disasters caused by water management: used for water security.",
+   "links": [
+    [
+     "Kazakhstan on the map",
+     "s=KAZ"
+    ],
+    [
+     "Water stress",
+     "c=water_stress"
+    ]
+   ]
+  },
+  {
+   "id": "threegorges",
+   "name": "Three Gorges Dam, China",
+   "topic": "dev",
+   "iso": "CHN",
+   "at": [
+    111.0,
+    30.82
+   ],
+   "date": "Completed 2006–2012",
+   "facts": [
+    "The world's largest power station by capacity, 22.5 GW",
+    "Controls flooding on the Yangtze and lets large ships reach Chongqing",
+    "About 1.3 million people were moved from their homes",
+    "Concerns about landslides, silt and river ecosystems"
+   ],
+   "text": "A large-scale water and energy project, with clear costs and benefits.",
+   "links": [
+    [
+     "China on the map",
+     "s=CHN"
+    ],
+    [
+     "Electricity from hydropower",
+     "c=hydro_elec_pct"
+    ]
+   ]
+  }
+ ]
+}

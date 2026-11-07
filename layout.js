@@ -53,7 +53,7 @@
 
   // ---------- Buttons and boxes on the map: all together in the bottom-left corner ----------
   // (on a laptop or bigger; on a phone they stay where they were, at the top)
-  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard", "#dispCard", "#confCard", "#elecCard"];
+  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard", "#dispCard", "#confCard", "#elecCard", "#csCard", "#shipCard"];
   const wide = window.matchMedia("(min-width: 761px)");
   function stack() {
     const stage = $("#mapstage");
@@ -88,6 +88,31 @@
   }
   wide.addEventListener?.("change", () => stack());
 
+  // ---------- When two or more boxes are open on the map, they become tabs: one shown at a time ----------
+  let activeCard = null, lastShown = [];
+  function tabs() {
+    const box = $("#mapcards");
+    if (!box) return;
+    const shown = [...box.children].filter((c) => c.classList.contains("card") && !c.hidden && c.id !== "mmCard");
+    const ids = shown.map((c) => c.id);
+    const fresh = ids.find((id) => !lastShown.includes(id));
+    if (fresh) activeCard = fresh;
+    if (!ids.includes(activeCard)) activeCard = ids[ids.length - 1] || null;
+    lastShown = ids;
+    let bar = $("#mapcardtabs");
+    if (shown.length < 2) { shown.forEach((c) => c.classList.remove("tab-off")); if (bar) bar.hidden = true; return; }
+    if (!bar) { bar = document.createElement("div"); bar.id = "mapcardtabs"; bar.className = "mapcardtabs"; bar.setAttribute("role", "tablist"); }
+    if (bar.parentElement !== box || box.firstElementChild !== bar) box.prepend(bar);
+    bar.hidden = false;
+    const title = (c) => (c.querySelector(".dsc-head h3, .dsc-head h2")?.textContent || c.id).trim();
+    const html = shown.map((c) => `<button type="button" role="tab" data-card="${c.id}" aria-selected="${c.id === activeCard}" title="${title(c).replace(/"/g, "&quot;")}">${title(c).replace(/^(\S+)\s.*$/u, "$1") === title(c) ? title(c) : title(c).split(" ").slice(0, 3).join(" ")}</button>`).join("");
+    if (bar.innerHTML !== html) {
+      bar.innerHTML = html;
+      bar.querySelectorAll("[data-card]").forEach((b) => (b.onclick = () => { activeCard = b.dataset.card; tabs(); }));
+    }
+    shown.forEach((c) => c.classList.toggle("tab-off", c.id !== activeCard));
+  }
+
   // ---------- "More on the map": the extra layers in one menu, grouped ----------
   // Map style stays as its own button; the layers go in a menu that opens above the button (always on screen),
   // with a line about each and a fuller explanation on hover. The button says how many are switched on.
@@ -99,6 +124,10 @@
       ["#confBtn", "Current conflicts", "Wars and crises around the world, and whether each is getting worse.", "The 27 conflicts followed by the Council on Foreign Relations' Global Conflict Tracker, with a short explainer for each. Red: worsening; orange: unchanging; purple: developing; green: improving."],
       ["#dispBtn", "Disputed borders and territories", "Kashmir, Western Sahara, Taiwan, Crimea and other places where the border or ruler is disputed.", "Striped areas and markers show 24 disputes, each with a short, neutral explainer of who claims what and why. Borders on the main map are de facto (who controls the land), not a judgement on who is right."],
       ["#elecBtn", "Elections", "National elections coming up in the next year, and those in the last 12 months.", "Countries with a national election coming up are shaded blue, those that held one in the last year green. Click a country for the date and type of election, with a link for candidates and results."]]],
+    ["Global links", [
+      ["#shipBtn", "Shipping lanes and chokepoints", "The world's main shipping routes, the narrow straits and canals they depend on, and the busiest ports.", "About 80% of world trade goes by sea. See the main shipping lanes, the chokepoints (Suez, Panama, Hormuz, Malacca, Bab-el-Mandeb, Dover and more) with an explainer for each, and the busiest container ports."]]],
+    ["Teaching", [
+      ["#csBtn", "Case studies", "About 30 GCSE and A-level case studies: earthquakes, storms, floods, cities, ecosystems and UK landscapes.", "Pins for the case studies used by the exam boards (Nepal 2015, Typhoon Haiyan, the Somerset Levels, Rio, Mumbai, the Amazon, Holderness and more), each with key facts and links to the right maps. Step through them with the arrows."]]],
     ["Planet", [
       ["#climBtn", "Climate graphs", "Climate graphs for thousands of weather stations (1991–2020 averages).", "Click a weather station for its climate graph: average temperature and rainfall for each month, its Köppen climate zone, and a comparison with another station."],
       ["#liveBtn", "Live hazards", "This week's earthquakes, storms, floods and eruptions.", "Earthquakes from the US Geological Survey (the last 7 days) and current disaster alerts (GDACS), updated each time you open it."]]],
@@ -122,10 +151,11 @@
       document.body.appendChild(menu);   // on the page itself, so it is never cut off by the map
     }
     const phys = W?.state?.mode === "physical";
-    const groups = phys ? [LAYERS[2], LAYERS[1], LAYERS[0]] : LAYERS;
+    // a library: each theme folds open; the Physical map lists Planet first
+    const groups = phys ? [LAYERS[4], LAYERS[3], LAYERS[0], LAYERS[1], LAYERS[2]] : LAYERS;
     if (menu.dataset.mode !== (phys ? "p" : "h")) {
       menu.dataset.mode = phys ? "p" : "h";
-      menu.innerHTML = `<p class="lm-top">Add to the map <small>Hover over any of these for more</small></p>` + groups.map(([g, items]) => `<p class="lm-h">${g}</p>${items.map(([sel, , d, more]) => `<div class="lm-row" data-sel="${sel}" title="${more.replace(/"/g, "&quot;")}"><small>${d}</small></div>`).join("")}`).join("") +
+      menu.innerHTML = `<p class="lm-top">Add to the map <small>Open a theme · hover for more</small></p><div class="lm-on" id="lmOn"></div><p class="lm-busy" id="lmBusy" hidden>That's quite a lot on the map at once: you may want to switch one off.</p>` + groups.map(([g, items]) => `<details class="lm-g" data-g="${g}"><summary>${g} <small>${items.map(([, n]) => n).join(" · ")}</small></summary>${items.map(([sel, , d, more]) => `<div class="lm-row" data-sel="${sel}" title="${more.replace(/"/g, "&quot;")}"><small>${d}</small></div>`).join("")}</details>`).join("") +
         `<p class="lm-h">Map style</p><div class="lm-row" title="${phys ? "Change what the background shows: landforms (the big shapes of the land), biomes, Köppen climate zones or tectonic plates, and which features are drawn: rivers, lakes, volcanoes, earthquakes and more." : "Colour the map by your filters (the default), by change over time between two years, or by two measures at once; or draw countries as circles sized by population."}"><button type="button" class="mmbtn" id="lmStyle">🎨 Map style</button><small>${phys ? "Background (landforms, biomes, climate zones, plates) and features: rivers, volcanoes…" : "Colour by your filters, by change over time, or by two measures at once."}</small></div>`;
       menu.querySelector("#lmStyle").onclick = () => { setTimeout(() => $("#mmBtn")?.click(), 150); };
     }
@@ -151,6 +181,21 @@
   function fillMenu() {
     const lb = $("#layersBtn"); if (!lb) return;
     const on = IDS.map((s) => $(s)).filter((b) => b?.getAttribute("aria-pressed") === "true");
+    // what's switched on, at the top of the menu (click to switch off); the themes holding them open
+    const menu = $("#layersMenu");
+    if (menu) {
+      const box = menu.querySelector("#lmOn");
+      if (box) {
+        const html = on.length ? `<span>On now:</span>${on.map((b) => `<button type="button" class="lm-off" data-off="#${b.id}" title="Switch off">${b.textContent.replace(/ ✓$/, "")} ×</button>`).join("")}` : "";
+        if (box.innerHTML !== html) { box.innerHTML = html; box.querySelectorAll("[data-off]").forEach((x) => (x.onclick = (e) => { e.stopPropagation(); $(x.dataset.off)?.click(); })); }
+      }
+      const busy = menu.querySelector("#lmBusy"); if (busy) busy.hidden = on.length < 3;
+      if (!menu.dataset.opened && !menu.hidden) {
+        menu.dataset.opened = "1";
+        menu.querySelectorAll("details.lm-g").forEach((d, i) => { d.open = i === 0 || on.some((b) => d.contains(b)); });
+      }
+      if (menu.hidden) delete menu.dataset.opened;
+    }
     const txt = `🗂️ More on the map${on.length ? ` (${on.length} on)` : ""} ▾`;
     if (lb.textContent !== txt) lb.textContent = txt;
     lb.classList.toggle("on", on.length > 0);
@@ -197,13 +242,13 @@
   }
 
   let queued = false;
-  const tick = () => { queued = false; enhance(); stack(); layersMenu(); placeToggles(); };
+  const tick = () => { queued = false; enhance(); stack(); tabs(); layersMenu(); placeToggles(); };
   function init() {
     W = window.WC;
     makeToggles();
     mapDownload();
     tick();
-    new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(tick); } }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
+    new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(tick); } }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-pressed", "hidden"] });
     window.addEventListener("resize", placeToggles);
   }
   window.WLY = { init, setFS };

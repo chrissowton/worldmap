@@ -1258,6 +1258,7 @@ window.FILTERS = [
 ];
 
 window.SOURCES = {
+  lanes: { name: "Benden, P. (2022), Global Shipping Lanes (traced from the CIA's Map of the World's Oceans), doi:10.5281/zenodo.6361763", url: "https://github.com/newzealandpaul/Shipping-Lanes", licence: "CC BY 4.0" },
   cfrgct: { name: "Council on Foreign Relations, Global Conflict Tracker", url: "https://www.cfr.org/global-conflict-tracker", licence: "Status as published; explanations written for this site" },
   elect: { name: "National electoral calendars (Wikipedia), checked against national electoral commissions where possible", url: "https://en.wikipedia.org/wiki/2026_national_electoral_calendar", licence: "CC BY-SA 4.0" },
   nedisp: { name: "Natural Earth, breakaway and disputed areas (1:50m)", url: "https://www.naturalearthdata.com/", licence: "Public domain" },

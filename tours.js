@@ -132,8 +132,10 @@
       <label class="fld">Exam board and level <select id="curB" class="stx-sel">${BOARDS.map((b) => `<option ${b === board ? "selected" : ""}>${b}</option>`).join("")}</select></label>
       <div class="cur-list">${units.map((u) => `<section class="cur-u"><h3>${esc(u.n)}</h3><p class="hint">${esc(board)}: ${esc(u.b[board])}</p>
         <div class="cur-links">${u.l.map((l) => { const q = linkQS(l); return q ? `<button type="button" class="cur-l" data-q="${esc(q)}">${esc(l.t)}</button>` : ""; }).join("")}</div></section>`).join("")}</div>
+      <p class="cur-cs"><button type="button" class="ghost" id="curCS">📍 Show the case studies on the map</button> Earthquakes, storms, floods, cities, ecosystems and UK landscapes, with key facts.</p>
       <p class="hint">Unit names follow the current specifications. Each button opens a map to start from: change it, describe it, or add it to a tour.</p>`;
     $("#curX").onclick = () => (el.hidden = true);
+    $("#curCS").onclick = () => { el.hidden = true; if (W.state.view !== "map") W.setView("map"); window.WPN?.toggle("cs", true); };
     $("#curB").onchange = (e) => { store.set("wc-board", e.target.value); curriculum(); };
     el.querySelectorAll(".cur-l").forEach((b) => (b.onclick = () => { W.applyQS(b.dataset.q); el.querySelectorAll(".cur-l").forEach((x) => x.classList.toggle("on", x === b)); }));
   }
