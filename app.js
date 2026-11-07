@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "62";
+  const DATA_VERSION = "63";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -637,7 +637,7 @@
     gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
-    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw(); window.WAF?.draw();
+    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw(); window.WAF?.zoomed();
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
     window.WP?.zoomed(e.transform);
@@ -984,7 +984,11 @@
       el.dataset.k = fl.key;
       if (added.includes(fl.key) && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) el.classList.add("spin-in");
       const clock = F[fl.key].time ? (state.year ? `<span class="yr">${CLOCK}${state.year}</span>` : `<span class="yclock" title="Has yearly data">${CLOCK}</span>`) : "";
-      el.innerHTML = `<button type="button" class="lab">${esc(chipLabel(fl))}${clock}</button><button type="button" class="x" aria-label="Remove ${esc(F[fl.key].label)}">×</button>`;
+      const nNums = state.filters.filter((x) => F[x.key].type === "range" && !F[x.key].target && isActive(x)).length;
+      const isCol = colourKey() === fl.key;
+      const colBtn = nNums >= 2 && F[fl.key].type === "range" && !F[fl.key].target ? `<button type="button" class="ccol${isCol ? " on" : ""}" aria-pressed="${isCol}" title="${isCol ? "The map is coloured by this filter" : "Colour the map by this filter"}" aria-label="Colour the map by ${esc(F[fl.key].label)}">🎨</button>` : "";
+      el.innerHTML = `<button type="button" class="lab">${esc(chipLabel(fl))}${clock}</button>${colBtn}<button type="button" class="x" aria-label="Remove ${esc(F[fl.key].label)}">×</button>`;
+      if (colBtn) el.querySelector(".ccol").onclick = (e) => { e.stopPropagation(); state.colourBy = fl.key; render(); };
       el.querySelector(".lab").onclick = () => { state.open = state.open === fl.key ? null : fl.key; render(); };
       el.querySelector(".x").onclick = () => removeFilter(fl.key);
       box.appendChild(el);
@@ -1469,8 +1473,8 @@
     let h = state.popSized ? `<div class="lrow"><span class="sw city"></span>Circles sized by population</div>` : "";
     if (cs) {
       h += `<div class="lrow lkeyh"><span>Colours: <b>${esc(cs.f.label)}</b>${state.year && cs.f.time ? `, ${state.year}` : ""}</span></div>` + rampHTML(cs);
-      const others = act.filter((fl) => fl.key !== cs.f.key && F[fl.key].type === "range");
-      if (others.length) h += `<div class="lrow lothers"><span class="lo-h">Colour by another filter:</span>${others.map((fl) => `<button type="button" class="lo-b" data-ck="${esc(fl.key)}" title="Colour the map by ${esc(F[fl.key].label)}">${esc(chipLabel(fl))}</button>`).join("")}</div>`;
+      const nums = act.filter((fl) => F[fl.key].type === "range");
+      if (nums.length >= 2 || (nums.length === 1 && nums[0].key !== cs.f.key)) h += `<div class="lrow lothers" role="radiogroup" aria-label="Which filter colours the map"><span class="lo-h">Colour the map by:</span>${nums.map((fl) => `<button type="button" role="radio" class="lo-b${fl.key === cs.f.key ? " on" : ""}" aria-checked="${fl.key === cs.f.key}" data-ck="${esc(fl.key)}" title="Colour the map by ${esc(F[fl.key].label)}">${fl.key === cs.f.key ? "● " : "○ "}${esc(F[fl.key].short || F[fl.key].label)}</button>`).join("")}</div>`;
     } else if (act.length) {
       h += `<div class="lrow"><span class="sw" style="background:var(--match)"></span>Matches every filter</div>`;
     }

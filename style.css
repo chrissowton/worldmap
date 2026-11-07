@@ -2650,3 +2650,18 @@ body.embed #viewwrap { padding-left: 0 !important; padding-right: 0 !important; 
 .el-sw.next { background: #2f7fd1; } .el-sw.past { background: #2e9d55; opacity: .7; }
 .aff-src { margin-top: 6px; }
 #layersMenu.layersmenu { box-sizing: border-box; }
+
+/* ===== v63 ===== */
+.aff-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 2px; font-size: 12px; color: var(--muted); }
+.aff-nav .ghost { font-size: 12.5px; padding: 4px 10px; }
+.aff-nav .ghost:disabled { opacity: .35; }
+.aff-list li.on { font-weight: 700; background: color-mix(in srgb, var(--accent) 10%, transparent); }
+/* choosing which filter colours the map */
+.lo-b.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface)); font-weight: 600; }
+.chip .ccol { border: 0; background: none; padding: 2px 3px; font-size: 12px; opacity: .35; filter: grayscale(1); cursor: pointer; }
+.chip .ccol:hover { opacity: .8; filter: none; }
+.chip .ccol.on { opacity: 1; filter: none; }
+/* the dock's containers must not catch the mouse: only the cards and buttons themselves */
+.mapdock > .mapcards, .mapdock > .mapbtns { pointer-events: none !important; width: fit-content; max-width: 100%; }
+.mapdock > .mapcards > *, .mapdock > .mapbtns > * { pointer-events: auto; }
+.mapdock > .mapcards { align-items: flex-start; }

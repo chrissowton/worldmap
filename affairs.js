@@ -48,6 +48,14 @@
       p.append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 6).attr("stroke", "#7b55c7").attr("stroke-width", 2.2);
     }
   }
+  // while zooming and panning, only the markers need resizing: the shapes scale with the map
+  function zoomed() {
+    if (!W) return;
+    const k = W.k || 1;
+    ["disputes", "conflicts"].forEach((n) => W.layer(n).selectAll(n === "disputes" ? "g.dsp-m" : "g.cf").attr("transform", (p) => (p?.xy ? `translate(${p.xy[0]},${p.xy[1]}) scale(${1 / k})` : null)));
+  }
+  let drawnFor = "", dispFor = "";
+  const sig = (x) => `${x}|${W.state.view}|${W.state.mode}|${document.querySelector("#map")?.getAttribute("viewBox")}`;
   function draw() {
     if (!W) return;
     const map = W.state.view === "map";
@@ -57,7 +65,8 @@
       const g = W.layer("elections");
       const show = L.elec.on && A && map;
       g.style("display", show ? null : "none");
-      if (show) {
+      if (show && drawnFor !== sig("e")) {
+        drawnFor = sig("e");
         const E = elections(), col = new Map();
         E.past.forEach((e) => { if (!col.has(e.iso)) col.set(e.iso, ["past", e]); });
         E.next.forEach((e) => col.set(e.iso, ["next", e]));
@@ -66,7 +75,7 @@
           .style("fill", (f) => (col.get(f.rec.iso3)[0] === "next" ? "#2f7fd1" : "#2e9d55")).style("fill-opacity", (f) => (col.get(f.rec.iso3)[0] === "next" ? 0.72 : 0.55))
           .attr("vector-effect", "non-scaling-stroke")
           .attr("data-base", (f) => { const [w, e] = col.get(f.rec.iso3); return `${f.rec.name}: ${e.type}, ${dateText(e.date)}${w === "next" ? " (coming up)" : ""}`; })
-          .on("click", (ev, f) => { ev.stopPropagation(); L.elec.pick = f.rec.iso3; card("elec"); });
+          .on("click", (ev, f) => { ev.stopPropagation(); L.elec.pick = f.rec.iso3; L.elec.date = col.get(f.rec.iso3)[1].date; card("elec"); });
       }
     }
     // disputed areas: hatched shapes, and a marker for each dispute
@@ -74,7 +83,8 @@
       const g = W.layer("disputes");
       const show = L.disp.on && A && map;
       g.style("display", show ? null : "none");
-      if (show) {
+      if (show && dispFor !== sig("d") + L.disp.pick) {
+        dispFor = sig("d") + L.disp.pick;
         defs();
         const of = new Map(); A.disputes.forEach((d) => d.codes.forEach((c) => of.set(c, d)));
         g.selectAll("path").data(DG.filter((f) => of.has(f.properties.BRK_A3)), (f) => f.properties.BRK_A3).join("path").attr("class", "dsp-a").attr("d", W.geoPath()).style("fill", "url(#dispHatch)")
@@ -120,16 +130,21 @@
     $(`#${kind}Btn`)?.setAttribute("aria-pressed", String(S.on));
     if (el.hidden) { draw(); return; }
     let body = "";
+    // ◀ ▶ through them: places from west to east, elections in date order
+    const nav = (i, n, lw, le) => `<div class="aff-nav"><button type="button" class="ghost" data-step="-1" ${i <= 0 ? "disabled" : ""}>◀ ${lw}</button><span>${i + 1} of ${n}</span><button type="button" class="ghost" data-step="1" ${i >= n - 1 ? "disabled" : ""}>${le} ▶</button></div>`;
+    const byLon = (arr) => arr.map((x, i) => [x, i]).sort((a, b) => a[0].at[0] - b[0].at[0]);
     if (kind === "disp") {
       const d = A.disputes.find((x) => x.id === S.pick);
-      body = d ? `<div class="aff-one"><h4>${esc(d.name)}</h4><p class="aff-who">${esc(d.who)}</p><p>${esc(d.text)}</p>
+      const order = byLon(A.disputes).map(([x]) => x.id), di = order.indexOf(S.pick);
+      body = d ? `${nav(di, order.length, "West", "East")}<div class="aff-one"><h4>${esc(d.name)}</h4><p class="aff-who">${esc(d.who)}</p><p>${esc(d.text)}</p>
           <p class="aff-links"><a href="${wiki(d.name)}" target="_blank" rel="noopener">Read more on Wikipedia ↗</a> · <button type="button" class="linkbtn" data-back>All disputes</button></p></div>`
         : `<p class="hint">Places where countries disagree about who should rule, or where the border runs. Striped: the disputed land; <b>?</b> click for an explainer.</p>
           <ul class="aff-list">${A.disputes.map((x) => `<li><button type="button" class="linkbtn" data-d="${x.id}">${esc(x.name)}</button> <small>${esc(x.who)}</small></li>`).join("")}</ul>`;
     } else if (kind === "conf") {
       const c = A.conflicts[S.pick];
       const order = ["Worsening", "Developing", "Unchanging", "Improving"];
-      body = c ? `<div class="aff-one"><h4>${esc(c.name)}</h4><p class="aff-who"><span class="cf-st" style="--cf:${STATUS[c.status]}">${esc(c.status)}</span> ${esc(c.type)}</p><p>${esc(c.text)}</p>
+      const corder = byLon(A.conflicts).map(([, i]) => i), ci = corder.indexOf(S.pick);
+      body = c ? `${nav(ci, corder.length, "West", "East")}<div class="aff-one"><h4>${esc(c.name)}</h4><p class="aff-who"><span class="cf-st" style="--cf:${STATUS[c.status]}">${esc(c.status)}</span> ${esc(c.type)}</p><p>${esc(c.text)}</p>
           <p class="aff-links"><a href="https://www.cfr.org/global-conflict-tracker" target="_blank" rel="noopener">Global Conflict Tracker ↗</a> · <a href="${wiki(c.name)}" target="_blank" rel="noopener">Wikipedia ↗</a> · <button type="button" class="linkbtn" data-back>All conflicts</button></p></div>`
         : `<p class="hint">The ${A.conflicts.length} conflicts followed by the Council on Foreign Relations' Global Conflict Tracker. Colour: is it getting worse?</p>
           <p class="aff-key">${order.map((s) => `<span class="cf-st" style="--cf:${STATUS[s]}">${s}</span>`).join(" ")}</p>
@@ -137,8 +152,10 @@
     } else {
       const E = elections();
       const pick = S.pick && A.elections.filter(([iso]) => iso === S.pick);
-      const row = (e) => `<li><span class="el-date">${esc(dateText(e.date))}</span> <button type="button" class="linkbtn" data-e="${e.iso}">${flag(e.iso)} ${esc(name(e.iso))}</button> <small>${esc(e.type)}</small></li>`;
-      body = pick ? `<div class="aff-one"><h4>${flag(S.pick)} ${esc(name(S.pick))}</h4><ul class="aff-list">${pick.map(([iso, date, type]) => `<li><span class="el-date">${esc(dateText(date))}</span> ${esc(type)} <a href="${wiki(`${date.slice(0, 4)} ${name(iso)} election`)}" target="_blank" rel="noopener">↗</a></li>`).join("")}</ul>
+      const chron = E.past.slice().reverse().concat(E.next);
+      const ei = S.pick ? chron.findIndex((e) => e.iso === S.pick && (!S.date || e.date === S.date)) : -1;
+      const row = (e) => `<li><span class="el-date">${esc(dateText(e.date))}</span> <button type="button" class="linkbtn" data-e="${e.iso}" data-date="${e.date}">${flag(e.iso)} ${esc(name(e.iso))}</button> <small>${esc(e.type)}</small></li>`;
+      body = pick ? `${ei >= 0 ? nav(ei, chron.length, "Earlier", "Later") : ""}<div class="aff-one"><h4>${flag(S.pick)} ${esc(name(S.pick))}</h4><ul class="aff-list">${pick.map(([iso, date, type]) => `<li class="${date === S.date ? "on" : ""}"><span class="el-date">${esc(dateText(date))}</span> ${esc(type)} <a href="${wiki(`${date.slice(0, 4)} ${name(iso)} election`)}" target="_blank" rel="noopener">↗</a></li>`).join("")}</ul>
           <p class="aff-links"><button type="button" class="linkbtn" data-back>All elections</button></p></div>`
         : `<div class="seg cg-tabs"><button type="button" role="radio" data-t="next" aria-checked="${S.tab === "next"}">Coming up (${E.next.length})</button><button type="button" role="radio" data-t="past" aria-checked="${S.tab === "past"}">Last 12 months (${E.past.length})</button></div>
           <p class="aff-key"><span class="el-sw next"></span>Coming up <span class="el-sw past"></span>In the last year</p>
@@ -148,10 +165,17 @@
     el.innerHTML = `<div class="dsc-head"><h3>${title}</h3><button type="button" class="iconbtn" data-x aria-label="Close">×</button></div>${body}
       <p class="hint aff-src">Last checked ${esc(dateText(A.checked))}.${kind === "disp" ? " Shapes: Natural Earth." : kind === "conf" ? " Source: Council on Foreign Relations, Global Conflict Tracker." : " Source: national electoral calendars (Wikipedia)."} Explanations are short summaries: read more before relying on them.</p>`;
     el.querySelector("[data-x]").onclick = () => toggle(kind, false);
-    el.querySelectorAll("[data-back]").forEach((b) => (b.onclick = () => { S.pick = null; card(kind); }));
+    el.querySelectorAll("[data-back]").forEach((b) => (b.onclick = () => { S.pick = null; S.date = null; card(kind); }));
+    el.querySelectorAll("[data-step]").forEach((b) => (b.onclick = () => {
+      const st = +b.dataset.step;
+      if (kind === "disp") { const o = byLon(A.disputes).map(([x]) => x.id); S.pick = o[o.indexOf(S.pick) + st]; const d = A.disputes.find((x) => x.id === S.pick); zoomTo(d.at, 4); }
+      else if (kind === "conf") { const o = byLon(A.conflicts).map(([, i]) => i); S.pick = o[o.indexOf(S.pick) + st]; zoomTo(A.conflicts[S.pick].at, 3); }
+      else { const E2 = elections(), ch = E2.past.slice().reverse().concat(E2.next); const i = ch.findIndex((e) => e.iso === S.pick && (!S.date || e.date === S.date)); const e = ch[i + st]; if (e) { S.pick = e.iso; S.date = e.date; W.zoomToCountry?.(e.iso); } }
+      card(kind);
+    }));
     el.querySelectorAll("[data-d]").forEach((b) => (b.onclick = () => { S.pick = b.dataset.d; const d = A.disputes.find((x) => x.id === S.pick); zoomTo(d.at, 4); card(kind); }));
     el.querySelectorAll("[data-c]").forEach((b) => (b.onclick = () => { S.pick = +b.dataset.c; const c = A.conflicts[S.pick]; zoomTo(c.at, 3); card(kind); }));
-    el.querySelectorAll("[data-e]").forEach((b) => (b.onclick = () => { S.pick = b.dataset.e; W.zoomToCountry?.(S.pick); card(kind); }));
+    el.querySelectorAll("[data-e]").forEach((b) => (b.onclick = () => { S.pick = b.dataset.e; S.date = b.dataset.date || null; W.zoomToCountry?.(S.pick); card(kind); }));
     el.querySelectorAll(".cg-tabs button").forEach((b) => (b.onclick = () => { S.tab = b.dataset.t; card(kind); }));
     draw();
   }
@@ -181,7 +205,7 @@
     });
   }
   window.WAF = {
-    init, draw: () => draw(),
+    init, draw: () => draw(), zoomed,
     refresh: () => { if (!A) return; Object.keys(L).forEach((k) => { if (L[k].on) card(k); }); draw(); },
     _L: L,
   };
