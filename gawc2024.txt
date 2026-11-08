@@ -1,0 +1,10 @@
+Alpha++: London, New York
+Alpha+: Hong Kong, Beijing, Singapore, Shanghai, Paris, Dubai, Tokyo, Sydney
+Alpha: Seoul, Milan, Toronto, Frankfurt, Chicago, Jakarta, Sao Paulo, Mexico City, Mumbai, Madrid, Warsaw, Guangzhou, Istanbul, Amsterdam, Bangkok, Los Angeles, Kuala Lumpur
+Alpha-: Luxembourg, Taipei, Shenzhen, Brussels, Zurich, Buenos Aires, Melbourne, San Francisco, Riyadh, Santiago, Düsseldorf, Stockholm, Washington DC, Vienna, Lisbon, Munich, Dublin, Houston, Berlin, Johannesburg, Boston, New Delhi
+Beta+: Bogota, Ho Chi Minh City, Rome, Bangalore, Budapest, Athens, Hamburg, Doha, Chengdu, Miami, Tianjin, Dallas, Atlanta (GA), Auckland, Barcelona, Hangzhou, Bucharest, Lima, Montreal, Prague
+Beta: Chongqing, Tel Aviv, Brisbane, Cairo, Hanoi, Nanjing, Oslo, Perth, Abu Dhabi, Copenhagen, Manama, Wuhan, Manila, Xiamen, Nairobi, Kiev, Geneva, Jinan, Calgary, Zhengzhou, Shenyang, Dalian, Suzhou
+Beta-: Qingdao, Casablanca, Changsha, Beirut, Port Louis, Denver, Lagos, Belgrade, Montevideo, Vancouver, Seattle, Manchester, Sofia, Bratislava, Rio de Janeiro, Lyon, Xi’an, Helsinki, Kunming, Zagreb, Nicosia, Karachi, Caracas, Hefei, Stuttgart, Panama City, Chennai, Philadelphia
+Gamma+: Tunis, Fuzhou, Guatemala City, Hyderabad, Cape Town, Dhaka, Porto, Austin, San Diego, Minneapolis, Antwerp, Almaty, Amman, Santo Domingo, Rotterdam, Adelaide, Lahore, Colombo, Taiyuan, Kuwait City
+Gamma: Monterrey, Osaka, Haikou, Tbilisi, Tampa, Tirana, Quito, Nashville, Islamabad, Kampala, San Salvador, Muscat, Phnom Penh, Birmingham (UK), Pune, Ningbo, Harbin, San Jose (CA), Bologna, San José (Costa Rica), Ahmedabad, Bristol, Tegucigalpa, Riga, Detroit
+Gamma-: Poznan, Labuan, Charlotte, Pittsburgh, Valencia (Spain), Edinburgh, Jeddah, Turin, Katowice, Baku, Penang, Dar es Salaam, Wellington, Managua, Cleveland, Nanchang, Changchun, Cali, St Louis, Ljubljana, Baltimore, Bilbao, Marseille, Surabaya, Accra

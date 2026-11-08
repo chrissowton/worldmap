@@ -218,6 +218,7 @@ Every file sits at the top level, so the repository can be uploaded through GitH
 | `earth.js`, `platemotion.json`, `make_platemotion.cjs` | Plate movement, ocean currents, night-time lights, forest loss |
 | `world.js`, `cables.json`, `heritage.json`, `make_v66.py` | Undersea cables, World Heritage Sites, critical minerals |
 | `make_projections_climate.py`, `make_country_regions.cjs`, `climproj.json` | Climate projections by country, from the IPCC AR6 Atlas regional CMIP6 data (github.com/IPCC-WG1/Atlas): run the .cjs first, then the .py |
+| `people.js`, `migrants.json`, `gawc.json`, `make_migrants.py`, `make_gawc.py`, `gawc2024.txt` | Migration routes (IOM Missing Migrants Project) and world cities (GaWC 2024) |
 | `starters.js` | Lesson starter questions for each layer in More on the map |
 | `globe.js`, `bri.json`, `seaice.json`, `colonies.json`, `make_bri.py`, `make_co2.py`, `make_seaice.py`, `make_colonies.py` | China's overseas lending, shared rivers, fires now, Arctic sea ice, colonial history; consumption and historical CO₂ |
 | `whatsnew.html` | What's new |

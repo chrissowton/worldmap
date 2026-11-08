@@ -53,7 +53,7 @@
 
   // ---------- Buttons and boxes on the map: all together in the bottom-left corner ----------
   // (on a laptop or bigger; on a phone they stay where they were, at the top)
-  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard", "#dispCard", "#confCard", "#elecCard", "#csCard", "#shipCard", "#cycCard", "#protCard", "#pmCard", "#curCard", "#nightCard", "#forestCard", "#cabCard", "#whsCard", "#minCard", "#briCard", "#waterCard", "#firesCard", "#iceCard", "#colCard"];
+  const MAPBOXES = ["#liveCard", "#cgCard", "#climCard", "#rgCard", "#dispCard", "#confCard", "#elecCard", "#csCard", "#shipCard", "#cycCard", "#protCard", "#pmCard", "#ocnCard", "#nightCard", "#forestCard", "#cabCard", "#whsCard", "#minCard", "#briCard", "#waterCard", "#firesCard", "#iceCard", "#colCard", "#migCard", "#wcCard", "#tradeCard"];
   const wide = window.matchMedia("(min-width: 761px)");
   function stack() {
     const stage = $("#mapstage");
@@ -119,6 +119,7 @@
   const LAYERS = [
     ["People and places", [
       ["#rgBtn", "Regions within countries", "Human development, life expectancy, schooling and income for 1,800 regions, for women and men.", "Colours about 1,800 regions in 188 countries (Global Data Lab). See the richest and poorest regions in the world, the countries with the biggest gaps between regions, and the HDI of any region since 1990."],
+      ["#migBtn", "Migration routes", "The main routes migrants take, and the 70,000 people who died or went missing on them since 2014.", "Arrows for 15 routes, from the Central Mediterranean and the English Channel to the Darién Gap and the Horn of Africa, each explained, with IOM's Missing Migrants Project records of where people died, 2014–2024."],
       ["#nightBtn", "Night-time lights", "The Earth at night from space: where people live, and who has electricity.", "NASA's Black Marble image of the world's lights, drawn onto this map, with places to look at: the two Koreas, the Nile, gas flares in Nigeria, the dark Amazon and more."],
       ["#whsBtn", "World Heritage Sites", "All 1,273 UNESCO World Heritage Sites.", "Every cultural, natural and mixed World Heritage Site as a dot. Filter by type, search for a site or country, and click one for its details and UNESCO page."],
       ["#cgBtn", "City growth", "How the world's cities have grown since 1975, with UN projections to 2050.", "About 2,600 cities as circles sized by population, coloured by how fast they grew. Play it to watch megacities appear, and see the fastest-growing cities (UN World Urbanization Prospects 2025)."]]],
@@ -128,6 +129,7 @@
       ["#colBtn", "Colonial history", "Which European power ruled each of today's countries, any year from 1500 to 2000.", "Press play to watch the empires of Britain, France, Spain, Portugal, the Netherlands, Belgium, Germany and Italy grow and break up, with the colonial history of each country (COLDAT)."],
       ["#elecBtn", "Elections", "National elections coming up in the next year, and those in the last 12 months.", "Countries with a national election coming up are shaded blue, those that held one in the last year green. Click a country for the date and type of election, with a link for candidates and results."]]],
     ["Global links", [
+      ["#wcBtn", "World cities", "The GaWC 2024 ranking of world cities: Alpha, Beta and Gamma.", "190 cities ranked by how well they connect to the world economy through banks, law, accounting, advertising and consultancy firms, from London and New York (Alpha++) to Gamma cities."],
       ["#cabBtn", "Undersea cables", "The internet's submarine cables, who owns them, and where they crowd together.", "About 600 cables in service and 100 planned (TeleGeography, 2026). Click one for its owners and the countries it links; see the cables part-owned by Google, Meta, Amazon and Microsoft, and the straits where many cables squeeze through."],
       ["#briBtn", "China's overseas lending", "About 9,300 projects China paid for abroad, 2000–2021: the Belt and Road and more.", "Roads, railways, ports, power stations, mines, hospitals and schools financed by China (AidData), sized by cost and coloured by type. Filter by type or since the Belt and Road began in 2013, see the countries receiving most, and click a project for details."],
       ["#minBtn", "Critical minerals", "Who mines the lithium, cobalt, rare earths, nickel, copper, graphite and platinum the world needs for clean energy.", "Countries shaded by their share of world mining of each mineral, with what it is used for and the issues around it (child labour, export bans, China's control of refining)."],
@@ -137,7 +139,7 @@
     ["Planet", [
       ["#iceBtn", "Arctic sea ice", "How much ice is left on the Arctic Ocean each September, from 1980 to 2026.", "The outline of the sea ice at its smallest each year (1980, 1990, 2000, 2007, 2012, 2020, 2026), with any year as an outline to compare, and a chart of every September since 1979 (NSIDC)."],
       ["#pmBtn", "Plate movement", "Which way each tectonic plate moves, how fast, and what happens at its edges.", "Arrows show each plate's direction and speed (2 to 10 cm a year), and arrows along the boundaries show plates moving apart, together or sliding past each other, from the PB2002 model."],
-      ["#curBtn", "Ocean currents", "The main warm and cold surface currents and the gyres they make.", "Flowing lines for 27 currents, from the Gulf Stream and North Atlantic Drift to the Humboldt and Benguela, each explained: how they affect climate, deserts, fog and fishing."],
+      ["#ocnBtn", "Ocean currents", "The main warm and cold surface currents and the gyres they make.", "Flowing lines for 27 currents, from the Gulf Stream and North Atlantic Drift to the Humboldt and Benguela, each explained: how they affect climate, deserts, fog and fishing."],
       ["#waterBtn", "Water: shared rivers", "Rivers that cross borders, where countries argue (or cooperate) over water.", "The Nile and Ethiopia's dam, the Mekong, the Indus, the Colorado, the Aral Sea and more, each explained, with examples of sharing that works; plus water stress for every country."],
       ["#forestBtn", "Forest loss", "Where forests are being cleared, and why.", "Hotspots of deforestation (the Amazon's arc of deforestation, the Chaco, Borneo, the Congo Basin, the cocoa belt…) with the causes, and the countries losing the most tree cover."],
       ["#cycBtn", "Cyclone tracks", "The path of every hurricane, typhoon and cyclone of category 3 or more since 1980.", "About 1,100 storms from the IBTrACS archive, coloured by strength. Choose a decade, a strength or an ocean; see the strongest; click a track to follow a storm and see how it grew and faded (Katrina, Haiyan, Idai, Melissa…)."],
@@ -154,13 +156,19 @@
     if (!lb) {
       lb = document.createElement("button"); lb.type = "button"; lb.id = "layersBtn"; lb.className = "mmbtn layersbtn"; lb.setAttribute("aria-haspopup", "true"); lb.setAttribute("aria-expanded", "false");
       menu = document.createElement("div"); menu.id = "layersMenu"; menu.className = "card layersmenu"; menu.hidden = true; menu.setAttribute("role", "menu");
-      const close = () => { menu.hidden = true; lb.setAttribute("aria-expanded", "false"); };
+      const docked = () => menu.classList.contains("docked");
+      const close = () => { if (docked()) return; menu.hidden = true; lb.setAttribute("aria-expanded", "false"); };
       lb.onclick = (e) => { e.stopPropagation(); if (menu.hidden) { menu.hidden = false; lb.setAttribute("aria-expanded", "true"); fillMenu(); placeMenu(); if (window.matchMedia("(pointer: fine)").matches) menu.querySelector("#lmQ")?.focus({ preventScroll: true }); } else close(); };
-      document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target) && e.target !== lb) close(); });
+      document.addEventListener("click", (e) => { if (!menu.hidden && !docked() && !menu.contains(e.target) && e.target !== lb) close(); });
       document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) close(); });
-      window.addEventListener("resize", () => { if (!menu.hidden) placeMenu(); });
+      window.addEventListener("resize", () => { dock(); if (!menu.hidden) placeMenu(); });
       // a click on a layer switches it on or off; the menu closes so the map can be seen
-      menu.addEventListener("click", (e) => { if (e.target.closest(".lm-row button:not(.lm-star)") || e.target.closest(".lm-fav button")) setTimeout(close, 120); });
+      // in the left-hand column the list stays open; a layer switched on from another view goes back to the map
+      menu.addEventListener("click", (e) => {
+        if (!(e.target.closest(".lm-row button:not(.lm-star)") || e.target.closest(".lm-fav button"))) return;
+        if (docked()) { if (W && W.state.view !== "map") setTimeout(() => W.setView?.("map"), 0); return; }
+        setTimeout(close, 120);
+      });
       btns.appendChild(lb);
       document.body.appendChild(menu);   // on the page itself, so it is never cut off by the map
     }
@@ -169,7 +177,7 @@
     const groups = phys ? [LAYERS[4], LAYERS[3], LAYERS[0], LAYERS[1], LAYERS[2]] : LAYERS;
     if (menu.dataset.mode !== (phys ? "p" : "h")) {
       menu.dataset.mode = phys ? "p" : "h";
-      menu.innerHTML = `<p class="lm-top">Add to the map <small>Open a theme · hover for more · ☆ to keep a favourite at the top</small></p><input type="search" id="lmQ" class="lm-q" placeholder="Find a layer: ice, war, trade, storms…" aria-label="Find a layer"><div class="lm-fav" id="lmFav"></div><p class="lm-none" id="lmNone" hidden>No layer matches. Try another word.</p><div class="lm-on" id="lmOn"></div><p class="lm-busy" id="lmBusy" hidden>That's quite a lot on the map at once: you may want to switch one off.</p>` + groups.map(([g, items]) => `<details class="lm-g" data-g="${g}"><summary>${g} <small>${items.map(([, n]) => n).join(" · ")}</small></summary>${items.map(([sel, n, d, more]) => `<div class="lm-row" data-sel="${sel}" data-find="${(n + " " + d + " " + more).toLowerCase().replace(/"/g, "")}" title="${more.replace(/"/g, "&quot;")}"><small>${d}</small><button type="button" class="lm-star" data-star="${sel}" aria-pressed="false" aria-label="Keep ${n} at the top of this menu">☆</button></div>`).join("")}</details>`).join("") +
+      menu.innerHTML = `<p class="lm-top">Add to the map <small>Open a theme · hover for more · ☆ to keep a favourite at the top</small></p><input type="search" id="lmQ" class="lm-q" placeholder="Find a layer: ice, war, trade, storms…" aria-label="Find a layer"><div class="lm-fav" id="lmFav"></div><p class="lm-none" id="lmNone" hidden>No layer matches. Try another word.</p><div class="lm-on" id="lmOn"></div><p class="lm-busy" id="lmBusy" hidden>That's quite a lot on the map at once: you may want to switch one off.</p>` + groups.map(([g, items]) => `<details class="lm-g" data-g="${g}"><summary>${g}<span class="lg-n" hidden></span> <small>${items.map(([, n]) => n).join(" · ")}</small></summary>${items.map(([sel, n, d, more]) => `<div class="lm-row" data-sel="${sel}" data-find="${(n + " " + d + " " + more).toLowerCase().replace(/"/g, "")}" title="${more.replace(/"/g, "&quot;")}"><small>${d}</small><button type="button" class="lm-star" data-star="${sel}" aria-pressed="false" aria-label="Keep ${n} at the top of this menu">☆</button></div>`).join("")}</details>`).join("") +
         `<p class="lm-h">Map style</p><div class="lm-row" title="${phys ? "Change what the background shows: landforms (the big shapes of the land), biomes, Köppen climate zones or tectonic plates, and which features are drawn: rivers, lakes, volcanoes, earthquakes and more." : "Colour the map by your filters (the default), by change over time between two years, or by two measures at once; or draw countries as circles sized by population."}"><button type="button" class="mmbtn" id="lmStyle">🎨 Map style</button><small>${phys ? "Background (landforms, biomes, climate zones, plates) and features: rivers, volcanoes…" : "Colour by your filters, by change over time, or by two measures at once."}</small></div>`;
       menu.querySelector("#lmStyle").onclick = () => { setTimeout(() => $("#mmBtn")?.click(), 150); };
       // search: show only the layers whose name or description has every word typed
@@ -198,12 +206,26 @@
     const mm = $("#mmBtn");
     if (mm && mm.parentElement === btns && btns.firstElementChild !== mm) btns.prepend(mm);
     if (lb.previousElementSibling !== mm && mm?.parentElement === btns) mm.after(lb);
+    dock();
     fillMenu();
+  }
+  // on wide screens the layers live in the left-hand column (section 3); on phones, or with the column closed,
+  // they open from the "More on the map" button on the map
+  function dock() {
+    const menu = $("#layersMenu"), lb = $("#layersBtn"), host = $("#cpLayers");
+    if (!menu || !lb || !host) return;
+    const want = !window.matchMedia("(max-width: 760px)").matches && !cpOff;
+    if (want && menu.parentElement !== host) { host.appendChild(menu); menu.removeAttribute("role"); delete menu.dataset.opened; }
+    if (!want && menu.parentElement !== document.body) { document.body.appendChild(menu); menu.setAttribute("role", "menu"); menu.hidden = true; ["top", "bottom", "left", "width", "maxHeight"].forEach((k) => (menu.style[k] = "")); }
+    menu.classList.toggle("docked", want);
+    if (want) menu.hidden = false;
+    lb.hidden = want;
+    host.closest(".cp-sec")?.toggleAttribute("hidden", !want);
   }
   // open above the button if there is room, otherwise below; never off the screen
   function placeMenu() {
     const lb = $("#layersBtn"), menu = $("#layersMenu");
-    if (!lb || !menu || menu.hidden) return;
+    if (!lb || !menu || menu.hidden || menu.classList.contains("docked")) return;
     const r = lb.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
     const w = Math.min(400, vw - 16);
     menu.style.width = w + "px";
@@ -234,8 +256,12 @@
       }
       if (!menu.dataset.opened && !menu.hidden) {
         menu.dataset.opened = "1";
-        menu.querySelectorAll("details.lm-g").forEach((d, i) => { d.open = i === 0 || on.some((b) => d.contains(b)); });
+        const dk = menu.classList.contains("docked");
+        menu.querySelectorAll("details.lm-g").forEach((d, i) => { d.open = (!dk && i === 0) || on.some((b) => d.contains(b)); });
       }
+      menu.querySelectorAll("details.lm-g").forEach((d) => { const n = on.filter((b) => d.contains(b)).length, el = d.querySelector(".lg-n"); if (el) { el.hidden = !n; el.textContent = n; } });
+      const cnt = $("#cpLayCount");
+      if (cnt) { cnt.hidden = !on.length; cnt.textContent = on.length; cnt.title = `${on.length} switched on`; }
       if (menu.hidden) delete menu.dataset.opened;
     }
     const txt = `🗂️ More on the map${on.length ? ` (${on.length} on)` : ""} ▾`;
@@ -253,6 +279,7 @@
     if (a) { a.innerHTML = cpOff ? "<span>›</span><small>Panel</small>" : "<span>‹</span>"; a.title = cpOff ? "Show the control panel" : "Hide the control panel (more room for the map)"; a.setAttribute("aria-expanded", String(!cpOff)); }
     if (b) { b.innerHTML = resOff ? "<span>‹</span><small>Detailed data view</small>" : "<span>›</span>"; b.title = resOff ? "Show the detailed data: every country's figures, in a list you can sort" : "Hide the detailed data view (more room for the map)"; b.setAttribute("aria-expanded", String(!resOff)); }
     placeToggles();
+    dock();
   }
   function placeToggles() {
     const b = $("#resToggle"), res = $("#results");

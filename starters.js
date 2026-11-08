@@ -15,7 +15,7 @@
     cycCard: ["Describe the distribution of tropical cyclones.", "Explain why tropical cyclones do not form on the equator.", "Compare the number of category 4 and 5 storms in the 1980s and the 2020s. What might explain the difference?"],
     protCard: ["How close is the UK to protecting 30% of its land and 30% of its sea?", "Evaluate the benefits and costs of a national park for the people who live in or near it.", "Why are marine reserves harder to protect than reserves on land?"],
     pmCard: ["Find a place where plates move apart and a place where they move together.", "Explain why Iceland has volcanoes and Japan has both volcanoes and big earthquakes.", "Which plate moves fastest? Suggest what is happening at its edges."],
-    curCard: ["Explain how the Gulf Stream and North Atlantic Drift affect the UK's climate.", "Why are there deserts on the west coasts of South America and southern Africa?", "Explain how El Niño affects fishing in Peru."],
+    ocnCard: ["Explain how the Gulf Stream and North Atlantic Drift affect the UK's climate.", "Why are there deserts on the west coasts of South America and southern Africa?", "Explain how El Niño affects fishing in Peru."],
     nightCard: ["Describe the difference between North and South Korea at night. What does it tell you?", "What can night-time lights tell us about development, and what can't they?", "Find three places where the lights follow a river, a coast or a railway. Explain why."],
     forestCard: ["Describe the distribution of the deforestation hotspots.", "Choose one hotspot: explain the causes and who benefits.", "Evaluate two ways of reducing deforestation (for example protected areas, or not buying products from cleared land)."],
     cabCard: ["Describe the pattern of the world's undersea cables. Which areas have fewest?", "Why is a country with only one cable vulnerable?", "Big tech companies now own many new cables. Why might that matter?"],
@@ -25,6 +25,9 @@
     waterCard: ["Why do countries upstream and downstream on a river often disagree?", "Choose one river: explain the views of the different countries that share it.", "Suggest how water could be shared fairly. Use the cooperation examples."],
     firesCard: ["Describe where most fires are burning today.", "Explain why the pattern of fires changes through the year.", "What is the difference between farmers' fires and wildfires, and why are wildfires increasing?"],
     iceCard: ["By how much has September sea ice shrunk since 1980?", "Explain how melting ice can speed up warming (the albedo feedback).", "Who might gain and who might lose from an ice-free Arctic?"],
+    migCard: ["Describe the distribution of deaths and disappearances of migrants. Which route is deadliest?", "Explain the push and pull factors behind one route.", "Why might the real number of deaths be higher than the number recorded?"],
+    wcCard: ["Describe the distribution of Alpha world cities. Which continents have few?", "Why are London and New York the most connected world cities?", "Compare the number of world cities in China in 2024 with what you might expect in 2000. What does this show about globalisation?"],
+    tradeCard: ["Which countries are the top trade partners for most of the world?", "Play the years: how has China's role in world trade changed since 2000?", "Why might depending on one main trade partner be risky for a country?"],
     colCard: ["When did most African countries gain independence? Use the slider.", "How might colonial history help explain borders, languages and trade links today?", "Compare the size of the British and French empires in 1914 and in 1960."],
   };
   const open = {};

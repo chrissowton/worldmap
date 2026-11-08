@@ -12,12 +12,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=70">
+<link rel="stylesheet" href="style.css?v=71">
 <!-- start downloading the main data straight away, while the scripts load -->
-<link rel="preload" href="countries.json?v=70" as="fetch" crossorigin="anonymous">
-<link rel="preload" href="world-50m.json?v=70" as="fetch" crossorigin="anonymous">
-<link rel="preload" href="timeseries.json?v=70" as="fetch" crossorigin="anonymous">
-<link rel="preload" href="physical.json?v=70" as="fetch" crossorigin="anonymous">
+<link rel="preload" href="countries.json?v=71" as="fetch" crossorigin="anonymous">
+<link rel="preload" href="world-50m.json?v=71" as="fetch" crossorigin="anonymous">
+<link rel="preload" href="timeseries.json?v=71" as="fetch" crossorigin="anonymous">
+<link rel="preload" href="physical.json?v=71" as="fetch" crossorigin="anonymous">
 <link rel="canonical" href="https://chrissowton.github.io/worldmap/">
 <meta property="og:title" content="Which Countries? An interactive world map for geography">
 <meta property="og:description" content="Free maps, charts and data for every country: filter by any of 300+ measures, compare, rank, watch change over time, and explore 1,800 regions.">
@@ -63,8 +63,12 @@
       <button type="button" role="tab" data-v="insights" aria-selected="false"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5 8l1.5-1.6L8 7.6 9.4 5.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Insights</button>
     </div>
     </section>
+    <section class="cp-sec" data-s="layers" aria-labelledby="cpM" hidden>
+      <h2 id="cpM" class="cp-h"><span class="cp-n">3</span>Add to the map<span id="cpLayCount" class="cp-count" hidden></span></h2>
+      <div id="cpLayers" class="cp-layers"></div>
+    </section>
     <section class="cp-sec" data-s="learn" aria-labelledby="cpL">
-      <h2 id="cpL" class="cp-h"><span class="cp-n">3</span>Learn &amp; share</h2>
+      <h2 id="cpL" class="cp-h"><span class="cp-n">4</span>Learn &amp; share</h2>
       <div id="cpLearn" class="cp-tools">
         <button id="ffBtn" class="cp-tool" type="button" title="Print or download a country factfile"><span class="cp-ic" aria-hidden="true">📄</span>Factfile</button>
         <button type="button" id="sbsBtn" class="cp-tool" title="Compare two or three countries side by side"><span class="cp-ic" aria-hidden="true">⇄</span>Side by side</button>
@@ -128,38 +132,39 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-<script src="filters.js?v=70"></script>
-<script src="glossary.js?v=70"></script>
-<script src="links.js?v=70"></script>
-<script src="player.js?v=70"></script>
-<script src="picker.js?v=70"></script>
-<script src="physical.js?v=70"></script>
-<script src="views.js?v=70"></script>
-<script src="charts.js?v=70"></script>
-<script src="insights.js?v=70"></script>
-<script src="quiz.js?v=70"></script>
-<script src="app.js?v=70"></script>
-<script src="ask.js?v=70"></script>
-<script src="factfile.js?v=70"></script>
-<script src="numbers.js?v=70"></script>
-<script src="mapskills.js?v=70"></script>
-<script src="stats.js?v=70"></script>
-<script src="tours.js?v=70"></script>
-<script src="quizmaker.js?v=70"></script>
-<script src="explore.js?v=70"></script>
-<script src="access.js?v=70"></script>
-<script src="climate.js?v=70"></script>
-<script src="citygrowth.js?v=70"></script>
-<script src="layout.js?v=70"></script>
-<script src="about.js?v=70"></script>
-<script src="learn.js?v=70"></script>
-<script src="regions.js?v=70"></script>
-<script src="affairs.js?v=70"></script>
-<script src="pins.js?v=70"></script>
-<script src="planet.js?v=70"></script>
-<script src="earth.js?v=70"></script>
-<script src="world.js?v=70"></script>
-<script src="globe.js?v=70"></script>
-<script src="starters.js?v=70"></script>
+<script src="filters.js?v=71"></script>
+<script src="glossary.js?v=71"></script>
+<script src="links.js?v=71"></script>
+<script src="player.js?v=71"></script>
+<script src="picker.js?v=71"></script>
+<script src="physical.js?v=71"></script>
+<script src="views.js?v=71"></script>
+<script src="charts.js?v=71"></script>
+<script src="insights.js?v=71"></script>
+<script src="quiz.js?v=71"></script>
+<script src="app.js?v=71"></script>
+<script src="ask.js?v=71"></script>
+<script src="factfile.js?v=71"></script>
+<script src="numbers.js?v=71"></script>
+<script src="mapskills.js?v=71"></script>
+<script src="stats.js?v=71"></script>
+<script src="tours.js?v=71"></script>
+<script src="quizmaker.js?v=71"></script>
+<script src="explore.js?v=71"></script>
+<script src="access.js?v=71"></script>
+<script src="climate.js?v=71"></script>
+<script src="citygrowth.js?v=71"></script>
+<script src="layout.js?v=71"></script>
+<script src="about.js?v=71"></script>
+<script src="learn.js?v=71"></script>
+<script src="regions.js?v=71"></script>
+<script src="affairs.js?v=71"></script>
+<script src="pins.js?v=71"></script>
+<script src="planet.js?v=71"></script>
+<script src="earth.js?v=71"></script>
+<script src="world.js?v=71"></script>
+<script src="globe.js?v=71"></script>
+<script src="people.js?v=71"></script>
+<script src="starters.js?v=71"></script>
 </body>
 </html>

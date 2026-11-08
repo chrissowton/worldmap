@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "70";
+  const DATA_VERSION = "71";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -640,7 +640,7 @@
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
     drawCities();
-    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw(); window.WRG?.layout(); window.WAF?.draw(); window.WPN?.draw(); window.WPT?.draw(); window.WEA?.draw(); window.WGL?.draw(); window.WGB?.draw();
+    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw(); window.WRG?.layout(); window.WAF?.draw(); window.WPN?.draw(); window.WPT?.draw(); window.WEA?.draw(); window.WGL?.draw(); window.WGB?.draw(); window.WMG?.draw();
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
@@ -648,7 +648,7 @@
     gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
-    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw(); window.WAF?.zoomed(); window.WPN?.zoomed(); window.WPT?.zoomed(); window.WEA?.zoomed(); window.WGL?.zoomed(); window.WGB?.zoomed();
+    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw(); window.WAF?.zoomed(); window.WPN?.zoomed(); window.WPT?.zoomed(); window.WEA?.zoomed(); window.WGL?.zoomed(); window.WGB?.zoomed(); window.WMG?.zoomed();
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
     window.WP?.zoomed(e.transform);
@@ -937,7 +937,7 @@
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
     if (state.view !== "map") window.WV?.render();
-    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh(); window.WRG?.refresh(); window.WAF?.refresh(); window.WPN?.refresh(); window.WPT?.refresh(); window.WEA?.refresh(); window.WGL?.refresh(); window.WGB?.refresh();
+    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh(); window.WRG?.refresh(); window.WAF?.refresh(); window.WPN?.refresh(); window.WPT?.refresh(); window.WEA?.refresh(); window.WGL?.refresh(); window.WGB?.refresh(); window.WMG?.refresh();
     const chartList = state.view !== "map" && window.WV_H?.V?.list;
     if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
     document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
@@ -2877,14 +2877,14 @@
   // ---------- About ----------
   function openAbout() {
     const el = $("#about");
-    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl", "gapmincm", "unppp", "cfrgct", "nedisp", "elect", "lanes", "ibtracs", "pb2002", "blackmarble", "usgsmin", "aiddata", "firms", "nsidc");
+    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl", "gapmincm", "unppp", "cfrgct", "nedisp", "elect", "lanes", "ibtracs", "pb2002", "blackmarble", "usgsmin", "aiddata", "firms", "nsidc", "iommmp");
     el.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="aboutH">
       <button type="button" class="iconbtn close" id="aboutClose" aria-label="Close">×</button>
       <h2 id="aboutH">About Which Countries?</h2>
       <p>An open-source map for asking questions about the world. Every filter shows where its data comes from and what year it describes. Measures like “democracy” depend on who defines them, so each filter names its definition.</p>
       <p>Countries match when they pass <b>every</b> filter. City filters show cities on the map, inside the countries that match. Each end of a slider means “no limit”. Within a list filter, such as languages, ticking several options matches countries that have <b>any</b> of them. Countries with no data for a filter don’t match it.</p>
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Used for</th><th>Licence</th></tr></thead><tbody>
-      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || ({ gdl: "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions", gapmincm: "Income mountains (Charts)", unppp: "The shaded ranges on population projections", cfrgct: "Current conflicts (More on the map)", nedisp: "Disputed borders and territories (More on the map)", elect: "Elections (More on the map)", lanes: "Shipping lanes (More on the map)", ibtracs: "Cyclone tracks (More on the map)", pb2002: "Plate movement (More on the map)", blackmarble: "Night-time lights (More on the map)", usgsmin: "Critical minerals (More on the map)", aiddata: "China's overseas lending (More on the map)", firms: "Fires now (More on the map)", nsidc: "Arctic sea ice (More on the map)" }[k] || "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
+      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || ({ gdl: "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions", gapmincm: "Income mountains (Charts)", unppp: "The shaded ranges on population projections", cfrgct: "Current conflicts (More on the map)", nedisp: "Disputed borders and territories (More on the map)", elect: "Elections (More on the map)", lanes: "Shipping lanes (More on the map)", ibtracs: "Cyclone tracks (More on the map)", pb2002: "Plate movement (More on the map)", blackmarble: "Night-time lights (More on the map)", usgsmin: "Critical minerals (More on the map)", aiddata: "China's overseas lending (More on the map)", firms: "Fires now (More on the map)", nsidc: "Arctic sea ice (More on the map)", iommmp: "Migration routes (map layers)" }[k] || "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
       </tbody></table></div>
       <p>Borders follow Natural Earth’s default view. Disputed areas such as Somaliland and Northern Cyprus take the data of the internationally recognised state; Kosovo, Taiwan and Palestine have their own entries.</p>
     </div>`;
@@ -3057,6 +3057,7 @@
   window.WEA?.init();
   window.WGL?.init();
   window.WGB?.init();
+  window.WMG?.init();
   window.WSQ?.init();
   window.WLY?.init();
   window.WAB?.init();

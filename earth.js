@@ -247,7 +247,7 @@
   const measureQS = (key) => { const f = W.F[key]; return f ? `f=${key}:${f.dmin}~${f.dmax}&c=${key}` : ""; };
 
   // ---------- Cards ----------
-  const IDS = { plates: ["pmCard", "pmBtn"], cur: ["curCard", "curBtn"], night: ["nightCard", "nightBtn"], forest: ["forestCard", "forestBtn"] };
+  const IDS = { plates: ["pmCard", "pmBtn"], cur: ["ocnCard", "ocnBtn"], night: ["nightCard", "nightBtn"], forest: ["forestCard", "forestBtn"] };
   function order(which) {
     if (which === "plates") return PM.plates.filter((p) => p[2] >= 1e6).map((p) => p[0]);
     if (which === "cur") return CUR.map((c, i) => [c, i]).filter(([c]) => P.cur.kind === "" || String(c[1]) === P.cur.kind).sort((a, b) => a[0][2][0][0] - b[0][2][0][0]).map(([, i]) => i);
@@ -366,7 +366,7 @@
     W = window.WC;
     let box = $("#mapbtns");
     if (!box) { box = document.createElement("div"); box.id = "mapbtns"; box.className = "mapbtns"; $("#mapstage").appendChild(box); }
-    [["plates", "pmBtn", "🧭 Plate movement"], ["cur", "curBtn", "🌊 Ocean currents"], ["night", "nightBtn", "🌃 Night-time lights"], ["forest", "forestBtn", "🪓 Forest loss"]].forEach(([k, id, t]) => {
+    [["plates", "pmBtn", "🧭 Plate movement"], ["cur", "ocnBtn", "🌊 Ocean currents"], ["night", "nightBtn", "🌃 Night-time lights"], ["forest", "forestBtn", "🪓 Forest loss"]].forEach(([k, id, t]) => {
       const b = document.createElement("button");
       b.type = "button"; b.id = id; b.className = "mmbtn"; b.setAttribute("aria-pressed", "false"); b.textContent = t;
       b.onclick = () => toggle(k);

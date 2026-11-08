@@ -2107,6 +2107,8 @@ Object.assign(window.SOURCES, {
   pb2002: { name: "Bird, P. (2003), An updated digital model of plate boundaries, G-cubed 4(3), 1027 (PB2002), via Ahlenius/Nordpil", url: "https://github.com/fraxen/tectonicplates", licence: "ODC-By 1.0" },
   blackmarble: { name: "NASA Earth Observatory, Black Marble 2016 (Suomi NPP VIIRS), via NASA GIBS", url: "https://earthobservatory.nasa.gov/features/NightLights", licence: "Public domain (NASA)" },
   ipccatlas: { name: "IPCC AR6 WGI Atlas (Iturbide and others, 2022): CMIP6 projections averaged over the reference regions", url: "https://github.com/IPCC-WG1/Atlas", licence: "CC BY 4.0" },
+  iommmp: { name: "IOM, Missing Migrants Project (2014–2024), via yotkadata/missing-migrants", url: "https://missingmigrants.iom.int/", licence: "Free to use with attribution (IOM)" },
+  gawc: { name: "GaWC, The World According to GaWC 2024 (Loughborough University and KU Leuven)", url: "https://gawc.lboro.ac.uk/gawc-worlds/the-world-according-to-gawc/world-cities-2024/", licence: "Free to use with attribution" },
   coldat: { name: "Becker, B. (2019), Introducing COLDAT: The Colonial Dates Dataset, Harvard Dataverse", url: "https://colsoc.uni-bremen.de/post/introducing-coldat-the-colonial-dates-dataset", licence: "CC0 1.0" },
   nsidc: { name: "Fetterer, F. and others, Sea Ice Index, Version 4 (G02135), NSIDC", url: "https://nsidc.org/data/g02135", licence: "Free to use with citation (NSIDC)" },
   aiddata: { name: "AidData, Geospatial Global Chinese Development Finance Dataset v3.0 (Goodman and others, 2024); locations © OpenStreetMap contributors", url: "https://github.com/aiddata/gcdf-geospatial-data", licence: "ODC-By 1.0; locations ODbL" },
@@ -2176,6 +2178,9 @@ Object.assign(window.SOURCES, {
     (b) => `${b} of tree cover was lost`, "deforestation forest loss trees logging rainforest amazon", { scale: "log" });
   x("tree_loss_pct", "Environment", "Tree cover lost, % of the country", "Tree loss (% of land)", "gfw", "pct",
     "Tree cover lost during the year as a share of the country's land area, so big and small countries can be compared.", (b) => `${b} of the land lost its tree cover`, "deforestation forest loss rate", { step: 0.01, clip: true });
+  x("gawc_cities", "Global links", "World cities (GaWC)", "World cities", "gawc", "count",
+    "How many of the country's cities are on the GaWC 2024 list of world cities (Alpha, Beta or Gamma): cities that link the country to the world economy through banks, law, accounting, advertising and consultancy firms. See them in the map layers → World cities.",
+    (b) => `it has ${b} world cities`, "world cities global cities gawc globalisation alpha beta gamma", { year: null, yearText: "2024" });
   x("cables_intl", "Technology", "International undersea cables", "Undersea cables", "cables", "count",
     "Submarine internet cables in service that link the country to another country (TeleGeography, 2026). Countries with only one cable can be cut off if it breaks, as Tonga was in 2022.",
     (b) => `${b} international undersea cables land`, "submarine cables internet connectivity undersea fibre data", { clip: true });

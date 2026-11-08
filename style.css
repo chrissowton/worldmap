@@ -2854,3 +2854,60 @@ body.embed #viewwrap { padding-left: 0 !important; padding-right: 0 !important; 
 /* v69: on phones, map boxes take less than half the map, so the layer can still be seen above them */
 @media (max-width: 760px) { .mapdock .mapcards > .card { max-height: 38vh !important; } }
 .layersbtn { white-space: nowrap; }
+/* v71: map layers in the left-hand column */
+.cp-sec[hidden] { display: none !important; }
+#layersMenu.docked { position: static !important; box-shadow: none !important; border: 0 !important; background: none !important; padding: 0 !important; max-height: none !important; width: auto !important; overflow: visible !important; z-index: auto; }
+#layersMenu.docked .lm-top { display: none; }
+#layersMenu.docked .lm-q { margin-top: 0; }
+#layersMenu.docked .lm-g { border: 0; background: none; margin: 0; padding: 0; border-radius: 8px; }
+#layersMenu.docked .lm-g summary { display: flex; align-items: center; gap: 9px; padding: 7px 8px; font-size: 13.5px; font-weight: 500; border-radius: 8px; }
+#layersMenu.docked .lm-g summary:hover { background: var(--bg); }
+#layersMenu.docked .lm-g summary::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--lg, var(--accent)); flex: none; }
+#layersMenu.docked .lm-g summary::after { content: "›"; margin-left: auto; font-size: 15px; color: var(--muted); transition: transform .15s; }
+#layersMenu.docked .lm-g[open] summary::after { transform: rotate(90deg); color: var(--accent); }
+#layersMenu.docked .lm-g summary small { display: none; }
+#layersMenu.docked .lm-g summary .lg-n { background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-size: 11px; font-weight: 700; padding: 0 7px; }
+#layersMenu.docked .lm-g[open] { background: color-mix(in srgb, var(--lg, var(--accent)) 6%, var(--surface)); padding-bottom: 4px; }
+#layersMenu.docked .lm-row { flex-direction: row; align-items: center; padding: 1px 4px 1px 14px; border: 0; gap: 4px; }
+#layersMenu.docked .lm-row small { display: none; }
+#layersMenu.docked .lm-row .mmbtn { flex: 1; min-width: 0; border: 0; background: none; padding: 6px 6px; font-size: 13px; border-radius: 7px; display: flex; align-items: center; gap: 6px; white-space: normal; line-height: 1.25; }
+#layersMenu.docked .lm-row .mmbtn:hover { background: var(--bg); }
+#layersMenu.docked .lm-row .mmbtn::after { content: ""; margin-left: auto; flex: none; width: 26px; height: 15px; border-radius: 999px; background: var(--line); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+  background-image: radial-gradient(circle at 7.5px 7.5px, #fff 5.5px, transparent 6px); transition: background .15s; }
+#layersMenu.docked .lm-row .mmbtn[aria-pressed="true"] { font-weight: 600; }
+#layersMenu.docked .lm-row .mmbtn[aria-pressed="true"]::after { background-color: var(--accent); background-image: radial-gradient(circle at 18.5px 7.5px, #fff 5.5px, transparent 6px); }
+#layersMenu.docked .lm-star { position: static; padding: 2px 3px; font-size: 14px; opacity: .55; }
+#layersMenu.docked .lm-row:hover .lm-star, #layersMenu.docked .lm-star[aria-pressed="true"] { opacity: 1; }
+#layersMenu.docked .lm-h { margin: 8px 0 2px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+#layersMenu.docked .lm-row:has(#lmStyle) { padding-left: 0; }
+#layersMenu.docked #lmStyle::after { display: none; }
+.lm-g[data-g="People and places"] { --lg: #d9822b; } .lm-g[data-g="World affairs"] { --lg: #c0392b; } .lm-g[data-g="Global links"] { --lg: #1f7fbf; }
+.lm-g[data-g="Teaching"] { --lg: #0d5f70; } .lm-g[data-g="Planet"] { --lg: #2e8b47; }
+/* v71: migration routes */
+#map .layer-migration circle.mm { fill: #b3261e; fill-opacity: .45; stroke: #fff; stroke-width: .6px; }
+#map .layer-migration g.mr { cursor: pointer; }
+#map .layer-migration path.mr-hit { fill: none; stroke: transparent; stroke-width: 12px; }
+#map .layer-migration path.mr-l { fill: none; stroke: #14212b; stroke-width: 2.4px; stroke-dasharray: 7 4; stroke-linecap: round; pointer-events: none; }
+#map .layer-migration path.mr-h { fill: #14212b; pointer-events: none; }
+#map .layer-migration g.mr:hover path.mr-l, #map .layer-migration g.mr.on path.mr-l { stroke: #7b55c7; stroke-width: 4px; }
+#map .layer-migration g.mr.on path.mr-h { fill: #7b55c7; }
+#map .layer-migration g.mr.dim { opacity: .35; }
+.mm-bars i { background: linear-gradient(#b3261e, #e57373) !important; }
+/* world cities */
+#map .layer-worldcities g.wc { cursor: pointer; }
+#map .layer-worldcities g.wc circle { stroke: #fff; stroke-width: 1.5px; fill-opacity: .9; }
+#map .layer-worldcities g.wc.on circle { stroke: #14212b; stroke-width: 2.5px; }
+#map .layer-worldcities g.wc text { font: 700 11px var(--sans, sans-serif); fill: #14212b; paint-order: stroke; stroke: #fff; stroke-width: 3px; pointer-events: none; }
+.wc-list { list-style: none; padding: 0; margin: 6px 0; font-size: 12.5px; line-height: 1.6; }
+.wc-list li { margin: 4px 0; }
+/* trade partners */
+#map .layer-trade path.tp { stroke: #fff; stroke-width: .5px; fill-opacity: .85; cursor: pointer; }
+#map .layer-trade path.tp.on { stroke: #14212b; stroke-width: 2px; }
+#map .layer-trade path.tl { fill: none; stroke: #14212b; stroke-width: 2.5px; stroke-dasharray: 6 3; pointer-events: none; }
+.tr-list { list-style: none; padding: 0; margin: 6px 0; font-size: 13px; }
+.tr-list li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.tr-list i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.tr-list small { color: var(--muted); }
+.mapbtns > .mmbtn { white-space: nowrap; }
+@media (min-width: 761px) { .cp-sec[data-s="layers"] { background: var(--tint-foot); } }
+#layersMenu.docked .lm-q { background: var(--surface); }
