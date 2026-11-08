@@ -103,7 +103,7 @@
         : `<p class="hint">About 80% of the world's trade goes by sea. Lines: the main shipping lanes (thicker = busier). <b>!</b> Chokepoints: narrow straits and canals that much of the world's trade must pass through. ◆ The busiest container ports.</p>
           <p class="aff-key"><span class="ln-sw major"></span>Major lane <span class="ln-sw middle"></span>Busy <span class="ln-sw minor"></span>Other</p>
           <ul class="aff-list">${order.map((i) => `<li><span class="ch-dot">!</span><button type="button" class="linkbtn" data-c="${i}">${esc(SH.chokepoints[i].name)}</button></li>`).join("")}</ul>`;
-      src = "Shipping lanes: Benden (2022), Global Shipping Lanes, CC BY 4.0. Chokepoints and ports: written for this site; figures are approximate.";
+      src = "Shipping lanes: Benden (2022), Global Shipping Lanes, CC BY 4.0. Chokepoints and ports: written for this site, checked November 2026; figures are approximate.";
     }
     el.innerHTML = `<div class="dsc-head"><h3>${head}</h3><button type="button" class="iconbtn" data-x aria-label="Close">×</button></div>${body}<p class="hint aff-src">${src}</p>`;
     el.querySelector("[data-x]").onclick = () => toggle(kind, false);

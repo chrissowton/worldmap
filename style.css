@@ -2716,3 +2716,141 @@ body.embed #viewwrap { padding-left: 0 !important; padding-right: 0 !important; 
 .ln-sw { display: inline-block; width: 18px; height: 0; border-top: 3px solid #1d6fd1; vertical-align: middle; }
 .ln-sw.middle { border-top-width: 2px; opacity: .7; } .ln-sw.minor { border-top: 1px dashed #1d6fd1; }
 .ch-dot { display: inline-flex; width: 14px; height: 14px; border-radius: 50%; background: #e8a317; color: #fff; font-size: 10px; font-weight: 800; align-items: center; justify-content: center; flex: none; }
+/* v65: cyclone tracks */
+#map .layer-cyclones path.cyc { fill: none; stroke-width: 1.5px; stroke-opacity: .7; stroke-linecap: round; cursor: pointer; }
+#map .layer-cyclones path.cyc:hover { stroke-width: 3px; stroke-opacity: 1; }
+#map .layer-cyclones path.cyc.dim { stroke-opacity: .18; }
+#map .layer-cyclones path.cyc-seg { fill: none; stroke-width: 4px; stroke-linecap: round; pointer-events: none; }
+#map .layer-cyclones circle.cyc-dot { stroke: #fff; stroke-width: 1.2px; }
+.cyc-key { display: flex; flex-wrap: wrap; gap: 4px 9px; align-items: center; font-size: 11.5px; margin: 6px 0; }
+.cyc-key span { display: inline-flex; align-items: center; gap: 3px; }
+.cyc-key i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.cyc-key small { color: var(--muted); }
+.cyc-basin { font: inherit; font-size: 12px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.cyc-n { font-size: 12.5px; margin: 4px 0; }
+.cyc-bars { display: flex; align-items: flex-end; gap: 3px; height: 70px; margin: 4px 0 2px; }
+.cyc-bars span { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+.cyc-bars i { display: block; width: 100%; background: linear-gradient(#9b3fc4, #d93a3a); border-radius: 3px 3px 0 0; min-height: 2px; }
+.cyc-bars small { font-size: 10px; color: var(--muted); }
+/* v65: protected areas */
+#map .layer-protected g.pa { cursor: pointer; }
+#map .layer-protected g.pa circle { fill: #2e8b47; stroke: #fff; stroke-width: 2px; }
+#map .layer-protected g.pa.sea circle { fill: #1f7fbf; }
+#map .layer-protected g.pa text { font: 800 10px var(--sans, sans-serif); fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+#map .layer-protected g.pa.on circle { stroke: #14212b; stroke-width: 2.8px; }
+.pa-dot { display: inline-flex; width: 15px; height: 15px; border-radius: 50%; background: #2e8b47; color: #fff; font-size: 9px; font-weight: 800; align-items: center; justify-content: center; flex: none; }
+.pa-dot.sea { background: #1f7fbf; }
+/* v66: plate movement */
+#map .layer-platemotion g.pm { cursor: pointer; }
+#map .layer-platemotion g.pm path { fill: #5b2a86; fill-opacity: .82; stroke: #fff; stroke-width: .8px; }
+#map .layer-platemotion g.pm.on path { fill: #d12f7a; fill-opacity: 1; }
+#map .layer-platemotion g.pm.dim path { fill-opacity: .3; }
+#map .layer-platemotion g.pb path { fill: none; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round; }
+#map .layer-platemotion g.pb-apart path { stroke: #e0662c; }
+#map .layer-platemotion g.pb-together path { stroke: #2f5fd1; }
+#map .layer-platemotion g.pb-past path { stroke: #2e9d55; }
+.pm-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; margin: 6px 0; }
+.pm-key span { display: inline-flex; align-items: center; gap: 4px; }
+.pm-k { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
+.pm-k.a { background: #e0662c; } .pm-k.t { background: #2f5fd1; } .pm-k.p { background: #2e9d55; }
+/* ocean currents */
+#map .layer-currents g.cur { cursor: pointer; }
+#map .layer-currents path.cur-hit { fill: none; stroke: transparent; stroke-width: 12px; }
+#map .layer-currents path.cur-l { fill: none; stroke: #2f6fd1; stroke-width: 2.6px; stroke-linecap: round; stroke-dasharray: 9 5; animation: curflow 1.6s linear infinite; pointer-events: none; }
+#map .layer-currents g.cur.warm path.cur-l { stroke: #d8432b; }
+#map .layer-currents path.cur-h { fill: #2f6fd1; pointer-events: none; }
+#map .layer-currents g.cur.warm path.cur-h { fill: #d8432b; }
+#map .layer-currents g.cur:hover path.cur-l, #map .layer-currents g.cur.on path.cur-l { stroke-width: 4.5px; }
+#map .layer-currents g.cur.dim { opacity: .3; }
+@keyframes curflow { to { stroke-dashoffset: -14; } }
+@media (prefers-reduced-motion: reduce) { #map .layer-currents path.cur-l { animation: none; } }
+/* night lights */
+#map .layer-night image { pointer-events: none; }
+.nl-blend { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin: 8px 0 4px; }
+.nl-blend input { flex: 1; }
+.hint.warn { color: #b3261e; }
+/* forest loss */
+#map .layer-forest g.fh { cursor: pointer; }
+#map .layer-forest g.fh circle { fill: #b5651d; fill-opacity: .25; stroke: #b5651d; stroke-width: 1.5px; }
+#map .layer-forest g.fh circle.c { fill-opacity: 1; stroke: #fff; }
+#map .layer-forest g.fh.on circle { stroke: #14212b; stroke-width: 2.5px; }
+.fl-top { margin: 4px 0; padding-left: 22px; font-size: 13px; }
+.fl-top small { color: var(--muted); }
+/* undersea cables */
+#map .layer-cables path.cab { fill: none; stroke: #0f8a9a; stroke-width: 1.3px; stroke-opacity: .75; cursor: pointer; }
+#map .layer-cables path.cab:hover { stroke-width: 3px; stroke-opacity: 1; }
+#map .layer-cables path.cab.planned { stroke: #e08b00; stroke-dasharray: 4 3; }
+#map .layer-cables path.cab.big { stroke: #c2410c; }
+#map .layer-cables path.cab.dim { stroke-opacity: .2; }
+#map .layer-cables path.cab.on { stroke: #d12f7a; stroke-width: 3.5px; stroke-opacity: 1; }
+#map .layer-cables circle.lp { fill: #0b4f59; stroke: #fff; stroke-width: 1px; }
+.cyc-key i.dash { background: repeating-linear-gradient(90deg, #e08b00 0 4px, transparent 4px 7px); }
+/* world heritage */
+#map .layer-heritage circle.wh { stroke: #fff; stroke-width: 1px; cursor: pointer; }
+#map .layer-heritage circle.wh.on { stroke: #14212b; stroke-width: 2px; }
+.wh-dg { display: flex; align-items: center; gap: 6px; font-size: 12.5px; margin: 4px 0; }
+.wh-q { width: 100%; font: inherit; font-size: 13px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); margin: 4px 0; }
+/* critical minerals */
+#map .layer-minerals path.mn-c { stroke: #fff; stroke-width: .6px; }
+.mn-list { list-style: none; padding: 0; margin: 6px 0; font-size: 13px; }
+.mn-list li { display: grid; grid-template-columns: minmax(110px, 1.2fr) 2fr 38px; gap: 6px; align-items: center; padding: 2px 0; }
+.mn-list li.on { font-weight: 700; }
+.mn-bar { height: 8px; background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 4px; overflow: hidden; }
+.mn-bar i { display: block; height: 100%; background: linear-gradient(90deg, #f0a35c, #a3410d); }
+.mn-list small { text-align: right; color: var(--muted); }
+/* v67: China's overseas lending */
+#map .layer-bri circle.br { fill-opacity: .72; stroke: #fff; stroke-width: .6px; cursor: pointer; }
+#map .layer-bri circle.br:hover { fill-opacity: 1; stroke: #14212b; }
+#map .layer-bri circle.br.on { fill-opacity: 1; stroke: #14212b; stroke-width: 2px; }
+/* shared rivers */
+#map .layer-water g.rv { cursor: pointer; }
+#map .layer-water g.rv path { fill: #d23b3b; stroke: #fff; stroke-width: 1.5px; }
+#map .layer-water g.rv.coop path { fill: #2e9d55; }
+#map .layer-water g.rv.on path { stroke: #14212b; stroke-width: 2.5px; }
+/* fires now */
+#map .layer-fires circle.fi { fill: #ff5a1f; fill-opacity: .75; stroke: #ffd36b; stroke-width: .6px; }
+/* v68: Arctic sea ice */
+#map .layer-seaice path.ice-a { fill: #e8f4fb; fill-opacity: .92; stroke: #6aaed6; stroke-width: 1px; }
+#map .layer-seaice path.ice-b { fill: none; stroke: #e08b00; stroke-width: 2px; stroke-dasharray: 5 3; }
+.ice-ch { width: 100%; height: auto; margin: 2px 0 4px; }
+.ice-ch .g { stroke: var(--line); }
+.ice-ch text { font-size: 9px; fill: var(--muted); }
+.ice-ch .l { fill: none; stroke: #2f6fd1; stroke-width: 1.8px; }
+.ice-ch .c1 { fill: #6aaed6; stroke: #1d4f91; stroke-width: 1.5px; }
+.ice-ch .c2 { fill: #fff; stroke: #1d4f91; stroke-width: 1.5px; }
+/* colonial history */
+#map .layer-colonial path { stroke: #fff; stroke-width: .6px; fill-opacity: .85; cursor: pointer; }
+#map .layer-colonial path.on { stroke: #14212b; stroke-width: 2px; }
+.col-yr { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.col-yr input { flex: 1; }
+.col-yr b { font-size: 18px; min-width: 44px; text-align: right; }
+.col-play { min-width: 34px; }
+.ice-polar { width: 100%; max-width: 300px; display: block; margin: 6px auto; }
+.ice-polar .sea { fill: #0f3554; }
+.ice-polar .gr { fill: none; stroke: rgba(255,255,255,.15); stroke-width: .6px; }
+.ice-polar .land path { fill: #8a9a86; stroke: #0f3554; stroke-width: .4px; }
+.ice-polar .ia { fill: #f2f9ff; stroke: #9cc8e8; stroke-width: .6px; }
+.ice-polar .ib { fill: none; stroke: #ffb648; stroke-width: 1.6px; stroke-dasharray: 4 2.5; }
+.ice-polar .np { font-size: 9px; fill: #9cc8e8; }
+/* v69: finding layers */
+.lm-q { width: 100%; font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); margin: 4px 0 6px; }
+.lm-none { font-size: 12.5px; color: var(--muted); margin: 4px 2px; }
+.lm-none[hidden], .lm-g[hidden], .lm-row[hidden] { display: none; }
+.lm-fav { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+.lm-fav:empty { display: none; }
+.lm-fv { border: 1px solid #e0a000; background: color-mix(in srgb, #e0a000 10%, var(--surface)); border-radius: 999px; padding: 2px 9px; font-size: 12px; color: var(--ink); cursor: pointer; }
+.lm-fv.on { background: color-mix(in srgb, #e0a000 30%, var(--surface)); font-weight: 600; }
+.lm-row { position: relative; }
+.lm-star { position: absolute; top: 4px; right: 2px; border: 0; background: none; font-size: 15px; line-height: 1; color: #c99400; cursor: pointer; padding: 2px 4px; }
+.lm-star[aria-pressed="true"] { color: #e0a000; }
+.lm-star:focus-visible { outline: 2px solid var(--accent); border-radius: 4px; }
+.lm-row small { padding-right: 24px; }
+/* lesson starters */
+.lq { margin: 8px 0 4px; border: 1px solid color-mix(in srgb, #e0a000 45%, var(--line)); border-radius: 10px; background: color-mix(in srgb, #e0a000 6%, var(--surface)); padding: 0 10px; }
+.lq summary { cursor: pointer; font-weight: 700; font-size: 13px; padding: 7px 0; }
+.lq ol { margin: 0 0 6px; padding-left: 20px; font-size: 13px; line-height: 1.45; }
+.lq li { margin: 3px 0; }
+.lq-copy { font-size: 12px; padding: 3px 10px; margin-bottom: 8px; }
+/* v69: on phones, map boxes take less than half the map, so the layer can still be seen above them */
+@media (max-width: 760px) { .mapdock .mapcards > .card { max-height: 38vh !important; } }
+.layersbtn { white-space: nowrap; }

@@ -2,7 +2,7 @@
    The site's own files and its data are kept in the browser after the first visit, so it opens quickly and works
    without internet. Each visit checks for newer files in the background ("stale while revalidate").
    Change VERSION when you upload a new release, so old copies are cleared. */
-const VERSION = "wc-v64";
+const VERSION = "wc-v70";
 const CORE = ["./", "index.html", "style.css", "manifest.webmanifest", "icon-192.png", "TwemojiCountryFlags.woff2"];
 
 self.addEventListener("install", (e) => {
@@ -16,7 +16,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   // live feeds (earthquakes, alerts) are never kept
-  if (/usgs\.gov|gdacs\.org/.test(url.hostname)) return;
+  if (/usgs\.gov|gdacs\.org|nasa\.gov/.test(url.hostname)) return;
   const sameSite = url.origin === location.origin;
   const library = /cdnjs\.cloudflare\.com|fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net/.test(url.hostname);
   if (!sameSite && !library) return;

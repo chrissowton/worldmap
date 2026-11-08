@@ -4,7 +4,7 @@
 
   // ---------- Load data ----------
   // ?v= makes browsers fetch fresh data after the site is updated (raise it in index.html too)
-  const DATA_VERSION = "64";
+  const DATA_VERSION = "70";
   // the single-file version carries its data compressed, and unpacks it first
   if (window.__READY__) await window.__READY__;
   const loadJSON = (url) => fetch(url + "?v=" + DATA_VERSION).then((r) => { if (!r.ok) throw new Error(url); return r.json(); });
@@ -51,8 +51,12 @@
   const TS_SPAN = {};
   for (const [key, s] of Object.entries(TS)) {
     // survey measures count a country while its last survey still stands (up to 8 years)
-    const has = SURVEY_KEYS.has(key) ? (arr, i) => arr.slice(Math.max(0, i - 8), i + 1).some((v) => v != null) : (arr, i) => arr[i] != null;
-    const counts = TS_YEARS.map((_, i) => Object.values(s).filter((arr) => has(arr, i)).length);
+    // (one pass over each country's figures: much faster than checking every year separately)
+    const look = SURVEY_KEYS.has(key) ? 8 : 0, n = TS_YEARS.length, counts = new Array(n).fill(0);
+    for (const arr of Object.values(s)) {
+      let until = -1;
+      for (let i = 0; i < n; i++) { if (arr[i] != null) until = i + look; if (i <= until) counts[i]++; }
+    }
     const first = counts.findIndex((n) => n >= 20), last = counts.length - 1 - [...counts].reverse().findIndex((n) => n >= 20);
     // don't run past the last real figure, except to carry a recent survey on to the present (2025)
     let lastReal = -1;
@@ -63,9 +67,11 @@
   const TS_EXT = {};
   for (const [key, s] of Object.entries(TS)) {
     if (CAT_TS[key]) continue;
-    const all = Object.values(s).flat().filter((v) => typeof v === "number" && (key === "refugees_hosted" || key === "refugees_from" ? v > 0 : true));
     // the full span across every year and country, so a colour means the same value in every year of the player
-    TS_EXT[key] = d3.extent(all);
+    const pos = key === "refugees_hosted" || key === "refugees_from";
+    let lo = Infinity, hi = -Infinity;
+    for (const arr of Object.values(s)) for (const v of arr) if (typeof v === "number" && (!pos || v > 0)) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    TS_EXT[key] = lo <= hi ? [lo, hi] : [undefined, undefined];
   }
   const span = (key) => TS_SPAN[key === "democracy" ? "regime" : key] || null;
   const timeFrom = (key) => span(key)?.[0] ?? null;
@@ -142,6 +148,8 @@
       case "mag": return v.toFixed(1);
       case "mmyr": return (Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v)) + " mm/yr";
       case "year": return String(Math.round(v));
+      case "gt": return (a < 10 ? +v.toFixed(2) : a < 100 ? +v.toFixed(1) : d3.format(",")(Math.round(v))) + " bn t";
+      case "pctpm": return (v > 0 ? "+" : v < 0 ? "−" : "") + (Math.abs(v) < 10 ? +Math.abs(v).toFixed(1) : Math.round(Math.abs(v))) + "%";
       case "mt": return (a < 10 ? +v.toFixed(1) : d3.format(",")(Math.round(v))) + " Mt";
       case "degc": return v.toFixed(3) + "°C";
       case "twh": return compact(v) + " TWh";
@@ -600,8 +608,11 @@
 
   let mapTopPad = 0, mapLeftPad = 0, mapBottomPad = 0;
   const narrow = () => window.matchMedia("(max-width: 760px)").matches;
+  let laidOut = "";
+  const layoutKey = () => { const b = $("#mapstage").getBoundingClientRect(); return `${Math.round(b.width)}x${Math.round(b.height)}|${mapTopPad}|${mapLeftPad}|${mapBottomPad}`; };
   function layout() {
     const box = $("#mapstage").getBoundingClientRect();
+    laidOut = layoutKey();
     const w = Math.max(320, box.width), h = Math.max(240, box.height);
     svg.attr("viewBox", `0 0 ${w} ${h}`);
     citySize = Math.max(0.45, Math.min(1, w / 1100));
@@ -629,7 +640,7 @@
     zoom.extent([[0, 0], [w, h]]).translateExtent([[-w * 0.2, -h * 0.2], [w * 1.2, h * 1.2]]);
     drawDots();
     drawCities();
-    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw(); window.WRG?.layout(); window.WAF?.draw(); window.WPN?.draw();
+    window.WX?.layout(); window.WCL?.draw(); window.WCG?.draw(); window.WRG?.layout(); window.WAF?.draw(); window.WPN?.draw(); window.WPT?.draw(); window.WEA?.draw(); window.WGL?.draw(); window.WGB?.draw();
   }
   const zoom = d3.zoom().scaleExtent([1, 40]).on("zoom", (e) => {
     k = e.transform.k;
@@ -637,7 +648,7 @@
     gLabels.selectAll("circle").attr("r", (d) => (d.c?.city_capital ? 3 : 2.2) / k);
     scheduleLabels();
     gRoot.attr("transform", e.transform);
-    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw(); window.WAF?.zoomed(); window.WPN?.zoomed();
+    window.WX?.zoomed(e.transform.k); window.WCL?.draw(); window.WCG?.draw(); window.WAF?.zoomed(); window.WPN?.zoomed(); window.WPT?.zoomed(); window.WEA?.zoomed(); window.WGL?.zoomed(); window.WGB?.zoomed();
     gDots.selectAll("circle").attr("r", 4.2 / k);
     gCities.selectAll("circle").attr("r", (d) => cityR(d) / k);
     window.WP?.zoomed(e.transform);
@@ -926,7 +937,7 @@
     renderZero(act, matches);
     if (!opts.keepEditor) { if (state.open) renderEditor(); else $("#editor").hidden = true; }
     if (state.view !== "map") window.WV?.render();
-    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh(); window.WRG?.refresh(); window.WAF?.refresh(); window.WPN?.refresh();
+    window.WMS?.refresh(); window.WST?.refresh(); window.WX?.refresh(); window.WCL?.draw(); window.WCG?.refresh(); window.WRG?.refresh(); window.WAF?.refresh(); window.WPN?.refresh(); window.WPT?.refresh(); window.WEA?.refresh(); window.WGL?.refresh(); window.WGB?.refresh();
     const chartList = state.view !== "map" && window.WV_H?.V?.list;
     if (state.selected) renderDetail(); else if (chartList) renderChartList(); else renderResults(matches, act, res);
     document.body.classList.toggle("pane-hidden", state.view !== "map" && !!state.paneHidden);
@@ -2110,7 +2121,7 @@
       <p class="sub">On track or achieved for <b>${r.sdg_on_track} of ${r.sdg_measured}</b> goals with data${r.sdg_achieved ? ` (${r.sdg_achieved} already achieved)` : ""}. Tap a goal to see why.</p>
       <div class="sdggrid">${tiles}</div>${detail}
       <p class="sdgkey">${window.SDG_STATUS.map(([n, c], i) => `<span><span class="sdgs" style="background:${c}">${SDG_ICON[i]}</span>${n}</span>`).join("")}</p>
-      <p class="sub sdgnote">Worked out on this site from the speed of change since 2015 (the SDSN's method, simplified). Goals 12, 14 and 17 aren't tracked: there isn't good yearly data for every country.</p>`;
+      <p class="sub sdgnote">Worked out on this site from the speed of change since 2015 (the SDSN's method, simplified). Goals 12 and 17 aren't tracked: there isn't good yearly data for every country. Goal 14 is for countries with a coast.</p>`;
   }
   function bindSdg(el) {
     el.querySelectorAll(".sdgt[data-n]").forEach((b) => (b.onclick = () => {
@@ -2866,14 +2877,14 @@
   // ---------- About ----------
   function openAbout() {
     const el = $("#about");
-    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl", "gapmincm", "unppp", "cfrgct", "nedisp", "elect", "lanes");
+    const used = [...new Set(FILTERS.map((f) => f.source).filter((k) => window.SOURCES[k]))].concat("boundaries", "gdl", "gapmincm", "unppp", "cfrgct", "nedisp", "elect", "lanes", "ibtracs", "pb2002", "blackmarble", "usgsmin", "aiddata", "firms", "nsidc");
     el.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="aboutH">
       <button type="button" class="iconbtn close" id="aboutClose" aria-label="Close">×</button>
       <h2 id="aboutH">About Which Countries?</h2>
       <p>An open-source map for asking questions about the world. Every filter shows where its data comes from and what year it describes. Measures like “democracy” depend on who defines them, so each filter names its definition.</p>
       <p>Countries match when they pass <b>every</b> filter. City filters show cities on the map, inside the countries that match. Each end of a slider means “no limit”. Within a list filter, such as languages, ticking several options matches countries that have <b>any</b> of them. Countries with no data for a filter don’t match it.</p>
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Used for</th><th>Licence</th></tr></thead><tbody>
-      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || ({ gdl: "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions", gapmincm: "Income mountains (Charts)", unppp: "The shaded ranges on population projections", cfrgct: "Current conflicts (More on the map)", nedisp: "Disputed borders and territories (More on the map)", elect: "Elections (More on the map)", lanes: "Shipping lanes (More on the map)" }[k] || "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
+      ${used.map((k) => { const s = window.SOURCES[k]; const fs = FILTERS.filter((f) => f.source === k).map((f) => f.label); return `<tr><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(fs.join(", ") || ({ gdl: "Regions within countries: the HDI, life expectancy, schooling, income and gender measures for 1,800 regions", gapmincm: "Income mountains (Charts)", unppp: "The shaded ranges on population projections", cfrgct: "Current conflicts (More on the map)", nedisp: "Disputed borders and territories (More on the map)", elect: "Elections (More on the map)", lanes: "Shipping lanes (More on the map)", ibtracs: "Cyclone tracks (More on the map)", pb2002: "Plate movement (More on the map)", blackmarble: "Night-time lights (More on the map)", usgsmin: "Critical minerals (More on the map)", aiddata: "China's overseas lending (More on the map)", firms: "Fires now (More on the map)", nsidc: "Arctic sea ice (More on the map)" }[k] || "Country shapes"))}</td><td>${esc(s.licence)}</td></tr>`; }).join("")}
       </tbody></table></div>
       <p>Borders follow Natural Earth’s default view. Disputed areas such as Somaliland and Northern Cyprus take the data of the internationally recognised state; Kosovo, Taiwan and Palestine have their own entries.</p>
     </div>`;
@@ -2985,7 +2996,7 @@
     panBy: (dx, dy) => { const t = d3.zoomTransform(svg.node()); svg.transition().duration(200).call(zoom.translateBy, dx / t.k, dy / t.k); },
     resetZoom: () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity),
     zoomToCountry: (iso) => zoomToCountry(iso),
-    project: (lon, lat) => projection([lon, lat]), geoPath: () => path, landNode: () => gLand.node(), get k() { return d3.zoomTransform(svg.node()).k; },
+    project: (lon, lat) => projection([lon, lat]), invert: (x, y) => projection.invert([x, y]), geoPath: () => path, landNode: () => gLand.node(), get k() { return d3.zoomTransform(svg.node()).k; },
     layer: (name) => { let g = gRoot.select(`g.layer-${name}`); if (g.empty()) g = gRoot.append("g").attr("class", `layer-${name}`); return g; },
     zoomToPoint: (lon, lat, k = 4) => { const [x, y] = projection([lon, lat]); const vb = svg.attr("viewBox").split(" ").map(Number); svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(vb[2] / 2 - x * k, vb[3] / 2 - y * k).scale(k)); },
     // a measure made on the page (e.g. your own index)
@@ -3042,12 +3053,24 @@
   window.WRG?.init();
   window.WAF?.init();
   window.WPN?.init();
+  window.WPT?.init();
+  window.WEA?.init();
+  window.WGL?.init();
+  window.WGB?.init();
+  window.WSQ?.init();
   window.WLY?.init();
   window.WAB?.init();
   window.WA?.init();
 
   // ---------- Go ----------
-  new ResizeObserver(() => { layout(); floatChanged?.(); }).observe($("#mapstage"));
+  // (the observer also fires once at the start; skip the work when nothing has actually changed size)
+  new ResizeObserver(() => { if (layoutKey() !== laidOut) layout(); floatChanged?.(); }).observe($("#mapstage"));
+  // watch the boxes from More on the map (made later by layout.js) so the map can make room for them on phones
+  (function watchCards(n) {
+    const mc = $("#mapcards");
+    if (mc) new ResizeObserver(() => floatChanged()).observe(mc);
+    else if (n < 60) setTimeout(() => watchCards(n + 1), 1000);
+  })(0);
 
   // ---------- Cards that can be moved and resized: the quiz card and the filter editor ----------
   // Drag them by their title; drag the bottom-right corner to resize; double-click the title to put them back.
@@ -3061,7 +3084,10 @@
       // the card may cover the Southern Ocean (about 60px) but not much more
       // if the card has been moved, the map only makes room when the card is still low down
       const moved = open && st.classList.contains("moved"), sh = stage.offsetHeight;
-      const bp = !open ? 0 : moved ? (st.offsetTop > sh * 0.45 ? Math.max(0, sh - st.offsetTop - 60) : 0) : Math.max(0, st.offsetHeight + 12 - 60);
+      let bp = !open ? 0 : moved ? (st.offsetTop > sh * 0.45 ? Math.max(0, sh - st.offsetTop - 60) : 0) : Math.max(0, st.offsetHeight + 12 - 60);
+      // on a phone, a box from More on the map sits over the lower part of the map: move the world up above it
+      const mc = $("#mapcards");
+      if (narrow() && mc && mc.offsetHeight > 40 && state.view === "map") bp = Math.max(bp, Math.min(sh * 0.55, mc.offsetHeight + 8));
       if (Math.abs(bp - mapBottomPad) > 6) { mapBottomPad = bp; layout(); }
       if (!open) return;
       const W0 = stage.offsetWidth, w = st.offsetWidth;

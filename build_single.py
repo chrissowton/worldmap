@@ -45,6 +45,9 @@ def main():
     mountains = read("mountains.json")
     affairs, disputesgeo = read("affairs.json"), read("disputes_geo.json")
     cases, shipping, lanes = read("casestudies.json"), read("shipping.json"), read("lanes.json")
+    cyclones = read("cyclones.json")
+    platemotion, cablesj, heritage = read("platemotion.json"), read("cables.json"), read("heritage.json")
+    bri, seaice, colonies = read("bri.json"), read("seaice.json"), read("colonies.json")
     rpop, re0, rtfr = read("ranges_pop.json"), read("ranges_e0.json"), read("ranges_tfr.json")
     scripts = "\n".join(f'<script src="{u}"></script>' for u in cdn)
     # the data goes in gzip-compressed (as base64 text) and the page unpacks it with the browser's DecompressionStream:
@@ -52,7 +55,7 @@ def main():
     import gzip
     blobs = {"COUNTRIES": data, "WORLD": world, "CITIES": cities, "FLOWS": flows, "TIMESERIES": timeseries, "FEATURES": features,
              "PYRAMIDS": pyramids, "PHYSICAL": physical, "RFLOWS": rflows,
-             "CLIMATE": climate, "MIGRATION": migration, "CITIESGROWTH": citiesgrowth, "REGIONSGEO": regionsgeo, "REGIONSDATA": regionsdata, "MOUNTAINS": mountains, "RANGESPOP": rpop, "RANGESE0": re0, "RANGESTFR": rtfr, "AFFAIRS": affairs, "DISPUTESGEO": disputesgeo, "CASESTUDIES": cases, "SHIPPING": shipping, "LANES": lanes}
+             "CLIMATE": climate, "MIGRATION": migration, "CITIESGROWTH": citiesgrowth, "REGIONSGEO": regionsgeo, "REGIONSDATA": regionsdata, "MOUNTAINS": mountains, "RANGESPOP": rpop, "RANGESE0": re0, "RANGESTFR": rtfr, "AFFAIRS": affairs, "DISPUTESGEO": disputesgeo, "CASESTUDIES": cases, "SHIPPING": shipping, "LANES": lanes, "CYCLONES": cyclones, "PLATEMOTION": platemotion, "CABLES": cablesj, "HERITAGE": heritage, "BRI": bri, "SEAICE": seaice, "COLONIES": colonies}
     packed = ",".join(f'{k}:"{base64.b64encode(gzip.compress(v.encode("utf-8"), 9)).decode()}"' for k, v in blobs.items())
     unpack = (
         "<script>window.__READY__=(async()=>{const P={" + packed + "};"
@@ -61,7 +64,7 @@ def main():
     )
     inline = (
         unpack +
-        f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>\n<script>{read('numbers.js')}</script>\n<script>{read('mapskills.js')}</script>\n<script>{read('stats.js')}</script>\n<script>{read('tours.js')}</script>\n<script>{read('quizmaker.js')}</script>\n<script>{read('explore.js')}</script>\n<script>{read('access.js')}</script>\n<script>{read('climate.js')}</script>\n<script>{read('citygrowth.js')}</script>\n<script>{read('layout.js')}</script>\n<script>{read('about.js')}</script>\n<script>{read('learn.js')}</script>\n<script>{read('regions.js')}</script>\n<script>{read('affairs.js')}</script>\n<script>{read('pins.js')}</script>"
+        f"<script>{read('filters.js')}</script>\n<script>{read('glossary.js')}</script>\n<script>{read('links.js')}</script>\n<script>{read('player.js')}</script>\n<script>{read('picker.js')}</script>\n<script>{read('physical.js')}</script>\n<script>{read('views.js')}</script>\n<script>{read('charts.js')}</script>\n<script>{read('insights.js')}</script>\n<script>{read('quiz.js')}</script>\n<script>{read('app.js')}</script>\n<script>{read('ask.js')}</script>\n<script>{read('factfile.js')}</script>\n<script>{read('numbers.js')}</script>\n<script>{read('mapskills.js')}</script>\n<script>{read('stats.js')}</script>\n<script>{read('tours.js')}</script>\n<script>{read('quizmaker.js')}</script>\n<script>{read('explore.js')}</script>\n<script>{read('access.js')}</script>\n<script>{read('climate.js')}</script>\n<script>{read('citygrowth.js')}</script>\n<script>{read('layout.js')}</script>\n<script>{read('about.js')}</script>\n<script>{read('learn.js')}</script>\n<script>{read('regions.js')}</script>\n<script>{read('affairs.js')}</script>\n<script>{read('pins.js')}</script>\n<script>{read('planet.js')}</script>\n<script>{read('earth.js')}</script>\n<script>{read('world.js')}</script>\n<script>{read('globe.js')}</script>\n<script>{read('starters.js')}</script>"
     )
     head = (
         f"<title>Which Countries?</title>\n"

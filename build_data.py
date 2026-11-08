@@ -773,13 +773,14 @@ SDG_TARGETS = {  # goal: [(field, target, "max" = at most / "min" = at least)]
     10: [("gini", 30, "max")],
     11: [("pm25", 10, "max")],
     13: [("co2_per_capita", 2, "max")],
+    14: [("protected_sea_pct", 30, "min")],
     15: [("protected_land_pct", 30, "min")],
     16: [("homicides", 1.5, "max")],
-}  # goals 12, 14 and 17 are left out: there is no good yearly data for every country
+}  # goals 12 and 17 are left out (14 is coastal countries only): there is no good yearly data for every country
 SDG_NAMES = {1: "No poverty", 2: "Zero hunger", 3: "Good health and well-being", 4: "Quality education", 5: "Gender equality",
     6: "Clean water and sanitation", 7: "Affordable and clean energy", 8: "Decent work and economic growth",
     9: "Industry, innovation and infrastructure", 10: "Reduced inequalities", 11: "Sustainable cities and communities",
-    13: "Climate action", 15: "Life on land", 16: "Peace, justice and strong institutions"}
+    13: "Climate action", 14: "Life below water", 15: "Life on land", 16: "Peace, justice and strong institutions"}
 SDG_STATUS = ["Achieved", "On track", "Improving too slowly", "Stagnating", "Getting worse"]
 def sdg_point(vals, lo, hi):
     """The latest value in years lo..hi (newest first), as (year, value)."""

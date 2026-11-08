@@ -66,7 +66,8 @@ window.SDGS = [
   { n: 12, name: "Responsible consumption and production", colour: "#BF8B2E", aim: "Sustainable consumption and production.", keywords: "", measures: [] },
   { n: 13, name: "Climate action", colour: "#3F7E44", aim: "Urgent action on climate change.", keywords: "climate co2 emissions",
     measures: [["co2_per_capita", "CO₂ emissions: 2 tonnes per person or less"]] },
-  { n: 14, name: "Life below water", colour: "#0A97D9", aim: "Conserve the oceans, seas and marine life.", keywords: "", measures: [] },
+  { n: 14, name: "Life below water", colour: "#0A97D9", aim: "Conserve the oceans, seas and marine life.", keywords: "ocean sea marine protected",
+    measures: [["protected_sea_pct", "protected sea: 30% or more (the “30 by 30” target)"]] },
   { n: 15, name: "Life on land", colour: "#56C02B", aim: "Protect forests, land and wildlife.", keywords: "nature protected land biodiversity",
     measures: [["protected_land_pct", "protected land: 30% or more (the “30 by 30” target)"]] },
   { n: 16, name: "Peace, justice and strong institutions", colour: "#00689D", aim: "Peaceful societies, justice and effective institutions.", keywords: "peace murder violence",
@@ -961,10 +962,22 @@ window.FILTERS = [
     info: "Trips abroad made by people living in the country, before COVID-19. Many countries don't report this.",
     keywords: "outbound tourism departures travel abroad holidays",
   }),
+  num("col_years", "Politics", "Years under European colonial rule", {
+    short: "Colonial rule", format: "years", source: "coldat", year: null, yearText: "1462–1984",
+    say: (b) => `it was ruled by a European power for ${b}`,
+    info: "How many years the land of today's country was a colony (or protectorate or mandate) of Belgium, Britain, France, Germany, Italy, the Netherlands, Portugal or Spain, from the COLDAT dataset. 0 means none of these eight ruled it; some were ruled by other powers instead (such as the Ottoman, Russian or Japanese empires, Denmark or the USA), which this does not count. See More on the map → Colonial history.",
+    keywords: "colonial colonisation colonialism empire history british empire french empire",
+  }),
+  num("col_end", "Politics", "Year European colonial rule ended", {
+    short: "Independence", format: "year", source: "coldat", year: null, yearText: "COLDAT",
+    say: (b) => `the year European colonial rule ended is ${b}`,
+    info: "The year the last European colonial power (of the eight in COLDAT) gave up rule of the land of today's country: usually independence. Play the Colonial history layer to watch decolonisation, especially 1945–1975.",
+    keywords: "independence decolonisation decolonization colonial end year",
+  }),
   num("world_heritage_sites", "Tourism", "UNESCO World Heritage sites", {
-    short: "World Heritage", format: "count", clip: true, source: "whc", year: null, yearText: "2025",
+    short: "World Heritage", format: "count", clip: true, source: "unesco", year: "world_heritage_sites_year",
     say: (b) => `the country has ${b} World Heritage sites`,
-    info: "Places on UNESCO's World Heritage List for their cultural or natural importance, to the 2025 session. Sites shared between countries count for each of them. Sites added in 2026 are not yet included.",
+    info: "Places on UNESCO's World Heritage List for their cultural or natural importance, including the sites added in July 2026. Sites shared between countries count for each of them. Play it from 1978, when the first 12 were listed. See them all in More on the map → World Heritage Sites.",
     keywords: "unesco world heritage sites culture nature monuments",
   }),
 
@@ -1184,6 +1197,18 @@ window.FILTERS = [
     info: "Carbon dioxide from fossil fuels and industry each year, in tonnes per person.",
     keywords: "carbon emissions climate pollution co2 environment",
   }),
+  num("co2_trade_share", "Climate", "CO₂ imported in goods (% of own emissions)", {
+    short: "CO₂ in trade", format: "pctpm", source: "owid", year: "co2_trade_share_year", bounds: [-100, 200],
+    say: (b) => `CO₂ in its trade is ${b} of its own emissions`,
+    info: "How much more (+) or less (−) CO₂ a country is responsible for when goods it imports and exports are counted, as a share of the emissions made within its borders. Positive: it imports more emissions in goods than it exports (it has “offshored” them).",
+    keywords: "carbon leakage offshoring emissions trade imports exports co2",
+  }),
+  num("co2_cumulative_gt", "Climate", "CO₂ emitted since 1750 (total)", {
+    short: "Historical CO₂", scale: "log", format: "gt", source: "owid", year: "co2_cumulative_gt_year",
+    say: (b) => `it has emitted ${b} of CO₂ since 1750`,
+    info: "All the CO₂ from fossil fuels and industry a country has emitted since 1750, in billions of tonnes. CO₂ stays in the air for centuries, so this measures responsibility for the warming so far. The UK, where the Industrial Revolution began, was the biggest emitter until about 1890; play it from 1960 to see China catch up.",
+    keywords: "historical cumulative emissions responsibility climate justice co2 since industrial revolution",
+  }),
   num("renewables_pct", "Energy & resources", "Renewable share of all energy", {
     short: "Renewables", format: "pct", bounds: [0, 100],
     say: (b) => `${b} of energy used is renewable`,
@@ -1213,6 +1238,12 @@ window.FILTERS = [
     say: (b) => `${b} of land is protected`,
     info: "Share of land in national parks, nature reserves and other protected areas. In 2022 countries agreed to protect 30% of land by 2030 (“30 by 30”). One of the SDG 15 measures.",
     keywords: "protected areas national parks nature reserves biodiversity conservation sdg 15 30x30",
+  }),
+  num("protected_sea_pct", "Environment", "Protected sea", {
+    short: "Protected sea", format: "pct", bounds: [0, 100],
+    say: (b) => `${b} of its sea is protected`,
+    info: "Share of a country's own sea (its territorial waters and exclusive economic zone, up to 200 nautical miles from the coast) in marine protected areas, where fishing, drilling or other activities are limited. The “30 by 30” target is to protect 30% of the sea as well as the land by 2030. Countries with no coast have no figure. One of the SDG 14 measures.",
+    keywords: "marine protected areas mpa ocean sea reserves fishing coral reefs conservation sdg 14 30x30",
   }),
   num("homicides", "Politics", "Murder rate", {
     short: "Murders", format: "per100kpop", scale: "log",
@@ -1258,6 +1289,7 @@ window.FILTERS = [
 ];
 
 window.SOURCES = {
+  ibtracs: { name: "Knapp, K. R. and others (2010), International Best Track Archive for Climate Stewardship (IBTrACS) v04r01, NOAA National Centers for Environmental Information, doi:10.25921/82ty-9e16", url: "https://www.ncei.noaa.gov/products/international-best-track-archive", licence: "Public domain (US government)" },
   lanes: { name: "Benden, P. (2022), Global Shipping Lanes (traced from the CIA's Map of the World's Oceans), doi:10.5281/zenodo.6361763", url: "https://github.com/newzealandpaul/Shipping-Lanes", licence: "CC BY 4.0" },
   cfrgct: { name: "Council on Foreign Relations, Global Conflict Tracker", url: "https://www.cfr.org/global-conflict-tracker", licence: "Status as published; explanations written for this site" },
   elect: { name: "National electoral calendars (Wikipedia), checked against national electoral commissions where possible", url: "https://en.wikipedia.org/wiki/2026_national_electoral_calendar", licence: "CC BY-SA 4.0" },
@@ -2070,6 +2102,16 @@ Object.assign(window.SOURCES, {
   era5: { name: "Copernicus Climate Change Service, ERA5, via Our World in Data", url: "https://ourworldindata.org/grapher/annual-temperature-anomalies", licence: "CC BY 4.0" },
   ghi: { name: "Global Hunger Index 2026 (Welthungerhilfe, Concern Worldwide, IFHV)", url: "https://www.globalhungerindex.org/", licence: "Free to use with attribution" },
   faoowid: { name: "Food and Agriculture Organization (FAO, incl. AQUASTAT), via Our World in Data", url: "https://ourworldindata.org/", licence: "CC BY 4.0" },
+  unesco: { name: "UNESCO World Heritage Centre, World Heritage List (August 2026)", url: "https://whc.unesco.org/en/list/", licence: "CC BY-SA 3.0 IGO" },
+  cables: { name: "TeleGeography, Submarine Cable Map (2026), cleaned by T. Hotham (2026), The internet's seabed", url: "https://github.com/Tristan-Hotham/submarine-cables", licence: "CC BY-NC-SA 3.0" },
+  pb2002: { name: "Bird, P. (2003), An updated digital model of plate boundaries, G-cubed 4(3), 1027 (PB2002), via Ahlenius/Nordpil", url: "https://github.com/fraxen/tectonicplates", licence: "ODC-By 1.0" },
+  blackmarble: { name: "NASA Earth Observatory, Black Marble 2016 (Suomi NPP VIIRS), via NASA GIBS", url: "https://earthobservatory.nasa.gov/features/NightLights", licence: "Public domain (NASA)" },
+  ipccatlas: { name: "IPCC AR6 WGI Atlas (Iturbide and others, 2022): CMIP6 projections averaged over the reference regions", url: "https://github.com/IPCC-WG1/Atlas", licence: "CC BY 4.0" },
+  coldat: { name: "Becker, B. (2019), Introducing COLDAT: The Colonial Dates Dataset, Harvard Dataverse", url: "https://colsoc.uni-bremen.de/post/introducing-coldat-the-colonial-dates-dataset", licence: "CC0 1.0" },
+  nsidc: { name: "Fetterer, F. and others, Sea Ice Index, Version 4 (G02135), NSIDC", url: "https://nsidc.org/data/g02135", licence: "Free to use with citation (NSIDC)" },
+  aiddata: { name: "AidData, Geospatial Global Chinese Development Finance Dataset v3.0 (Goodman and others, 2024); locations © OpenStreetMap contributors", url: "https://github.com/aiddata/gcdf-geospatial-data", licence: "ODC-By 1.0; locations ODbL" },
+  firms: { name: "NASA FIRMS (Fire Information for Resource Management System), MODIS active fires, live; NASA EONET", url: "https://firms.modaps.eosdis.nasa.gov/", licence: "Public domain (NASA)" },
+  usgsmin: { name: "US Geological Survey, Mineral Commodity Summaries 2026", url: "https://www.usgs.gov/centers/national-minerals-information-center/mineral-commodity-summaries", licence: "Public domain (US government)" },
   gfw: { name: "Global Forest Watch (Hansen et al., University of Maryland), via Our World in Data", url: "https://ourworldindata.org/grapher/tree-cover-loss", licence: "CC BY 4.0" },
   gfn: { name: "National Footprint and Biocapacity Accounts 2026, Global Footprint Network / FoDaFo, York University", url: "https://www.footprintnetwork.org/public", licence: "CC BY-SA 4.0" },
   wup: { name: "UN World Urbanization Prospects 2025", url: "https://population.un.org/wup/", licence: "CC BY 3.0 IGO" },
@@ -2115,11 +2157,28 @@ Object.assign(window.SOURCES, {
   x("temp_anomaly", "Climate", "Temperature compared with 1991–2020", "Temperature anomaly", "era5", "anom",
     "How much warmer (or cooler) the year was than the country's 1991–2020 average, in °C. Play it from 1960 to see warming spread.",
     (b) => `the year was ${b} warmer than usual`, "warming global warming temperature anomaly climate change heat", { step: 0.1, bounds: [-2.5, 3] });
+  // climate projections: change from 1995–2014 (IPCC AR6 Atlas, CMIP6 models; make_projections_climate.py)
+  {
+    const SSP = { ssp126: ["low emissions (SSP1-2.6)", "Low"], ssp245: ["middle emissions (SSP2-4.5)", "Middle"], ssp585: ["very high emissions (SSP5-8.5)", "Very high"] };
+    const PER = { "2050": ["2041–2060", "by 2050"], "2100": ["2081–2100", "by 2100"] };
+    const NOTE = " Change from the 1995–2014 average to the average of the years shown, over land, as the middle (median) of about 30 climate models, for the IPCC's large regions; each country gets the average of the regions it covers, so differences between neighbours are smoothed out. SSP1-2.6 is a world that cuts emissions fast; SSP2-4.5 one that carries on roughly as now; SSP5-8.5 one that burns much more fossil fuel.";
+    for (const [s, [sl, ss]] of Object.entries(SSP)) for (const [p, [pl, ps]] of Object.entries(PER)) {
+      x(`clim_t_${s}_${p}`, "Climate", `Warming ${ps}, ${sl}`, `Warming ${ps} (${ss.toLowerCase()})`, "ipccatlas", "anom",
+        `How much warmer the yearly average temperature is expected to be in ${pl} than in 1995–2014, if the world follows ${sl}.` + NOTE,
+        (b) => `it is expected to warm by ${b} ${ps}`, "climate change projection future warming temperature ipcc cmip6 ssp scenario", { step: 0.1, year: null, yearText: pl });
+      x(`clim_p_${s}_${p}`, "Climate", `Change in rainfall ${ps}, ${sl}`, `Rainfall change ${ps} (${ss.toLowerCase()})`, "ipccatlas", "pctpm",
+        `How much more (+) or less (−) rain and snow is expected each year in ${pl} than in 1995–2014, if the world follows ${sl}. Many places get wetter winters and drier summers, which a yearly total hides.` + NOTE,
+        (b) => `yearly rainfall is expected to change by ${b} ${ps}`, "climate change projection future rainfall precipitation drought ipcc cmip6 ssp scenario", { year: null, yearText: pl });
+    }
+  }
   x("tree_loss_ha", "Environment", "Tree cover lost in a year", "Tree cover lost", "gfw", "ha",
     "Area of tree cover lost during the year, in hectares (1 ha = 100 m × 100 m), from satellite images. Includes deforestation, logging, fires and plantations being harvested.",
     (b) => `${b} of tree cover was lost`, "deforestation forest loss trees logging rainforest amazon", { scale: "log" });
   x("tree_loss_pct", "Environment", "Tree cover lost, % of the country", "Tree loss (% of land)", "gfw", "pct",
     "Tree cover lost during the year as a share of the country's land area, so big and small countries can be compared.", (b) => `${b} of the land lost its tree cover`, "deforestation forest loss rate", { step: 0.01, clip: true });
+  x("cables_intl", "Technology", "International undersea cables", "Undersea cables", "cables", "count",
+    "Submarine internet cables in service that link the country to another country (TeleGeography, 2026). Countries with only one cable can be cut off if it breaks, as Tonga was in 2022.",
+    (b) => `${b} international undersea cables land`, "submarine cables internet connectivity undersea fibre data", { clip: true });
   x("eco_footprint", "Environment", "Ecological footprint per person", "Ecological footprint", "gfn", "gha",
     "How much biologically productive land and sea each person uses for food, timber, fibre, housing and to absorb their carbon emissions, in global hectares (2023).",
     (b) => `the footprint is ${b} per person`, "ecological footprint sustainability consumption overshoot", { step: 0.1, clip: true });
@@ -2184,6 +2243,10 @@ Object.assign(window.SOURCES, {
       variants: [["dis_deaths_10y", "All disasters"], ["dis_deaths_10y_pm", "Per million people"], ["quake_deaths_10y", "Earthquakes"], ["flood_deaths_10y", "Floods"], ["storm_deaths_10y", "Storms"], ["drought_deaths_10y", "Droughts"], ["heat_deaths_10y", "Extreme temperatures"]] },
     { id: "disdisp", label: "Displaced by disasters", short: "Displaced", info: "People forced from their homes by disasters during the year.",
       variants: [["dis_displaced", "Number"], ["dis_displaced_per1000", "Per 1,000 people"]] },
+    { id: "climt", label: "Future warming (projections)", short: "Future warming", info: "How much warmer each country is expected to be by 2050 and 2100, under low, middle and very high emissions (IPCC AR6 Atlas).",
+      variants: [["clim_t_ssp126_2050", "2050 · low"], ["clim_t_ssp245_2050", "2050 · middle"], ["clim_t_ssp585_2050", "2050 · very high"], ["clim_t_ssp126_2100", "2100 · low"], ["clim_t_ssp245_2100", "2100 · middle"], ["clim_t_ssp585_2100", "2100 · very high"]] },
+    { id: "climp", label: "Future rainfall (projections)", short: "Future rainfall", info: "How much wetter or drier each country is expected to be by 2050 and 2100, under low, middle and very high emissions (IPCC AR6 Atlas).",
+      variants: [["clim_p_ssp126_2050", "2050 · low"], ["clim_p_ssp245_2050", "2050 · middle"], ["clim_p_ssp585_2050", "2050 · very high"], ["clim_p_ssp126_2100", "2100 · low"], ["clim_p_ssp245_2100", "2100 · middle"], ["clim_p_ssp585_2100", "2100 · very high"]] },
     { id: "treeloss", label: "Tree cover lost", short: "Tree cover lost", info: "Tree cover lost each year.", variants: [["tree_loss_ha", "Hectares"], ["tree_loss_pct", "% of the land"]] },
     { id: "footprint", label: "Ecological footprint", short: "Footprint", info: "How much of the planet's productive land and sea people use, and how much the country has.",
       variants: [["eco_footprint", "Footprint"], ["biocapacity", "Biocapacity"], ["eco_reserve", "Reserve or deficit"], ["earths_needed", "Earths needed"]] },
